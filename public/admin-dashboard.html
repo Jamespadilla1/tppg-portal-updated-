@@ -622,61 +622,107 @@ function filterAgents(val,btn){
   btn.classList.add('active-af','border-orange-500/50','bg-orange-500/10','text-orange-400');btn.classList.remove('border-white/10','text-gray-400');
   renderAgents();
 }
-function renderAgents(){
-  const allAgents = load(K.agents);
-  const filtered  = agentFilter==='all' ? allAgents : allAgents.filter(a=>a.status===agentFilter);
-  document.getElementById('agentsBody').innerHTML = filtered.map((a)=>{
-    const id = a.agentId || a.email; // use agentId as unique key
-    return `<tr>
-      <td class="px-5 py-3 font-medium text-white text-xs">${a.name}</td>
-      <td class="px-5 py-3 text-gray-400 text-xs">${a.email}</td>
-      <td class="px-5 py-3 text-gray-400 text-xs">${a.phone||'—'}</td>
-      <td class="px-5 py-3 font-mono text-xs">${a.agentId||'—'}</td>
-      <td class="px-5 py-3 text-xs">
-        ${a.idFront?`<a href="${a.idFront}" target="_blank" class="text-blue-400 hover:underline mr-1">Front</a>`:''}
-        ${a.idBack?`<a href="${a.idBack}" target="_blank" class="text-blue-400 hover:underline">Back</a>`:''}
-        ${(!a.idFront&&!a.idBack)?'<span class="text-gray-600">—</span>':''}
-      </td>
-      <td class="px-5 py-3"><span class="badge ${SB[a.status]||'bg-blue'}">${a.status.charAt(0).toUpperCase()+a.status.slice(1)}</span></td>
-      <td class="px-5 py-3">
-        <div class="flex gap-2 flex-wrap">
-          <button onclick="viewAgent('${id}')" class="text-xs text-blue-400 hover:text-blue-300">View</button>
-          ${a.status==='pending'?`<button onclick="agentAction('${id}','approved')" class="text-xs text-green-400 hover:text-green-300">Approve</button><button onclick="agentAction('${id}','rejected')" class="text-xs text-red-400 hover:text-red-300">Reject</button>`:''}
-          ${a.status==='approved'?`<button onclick="agentAction('${id}','suspended')" class="text-xs text-purple-400 hover:text-purple-300">Suspend</button>`:''}
-          ${a.status==='suspended'?`<button onclick="agentAction('${id}','approved')" class="text-xs text-green-400 hover:text-green-300">Reinstate</button>`:''}
-        </div>
-      </td>
-    </tr>`;
-  }).join('')||`<tr><td colspan="7" class="px-5 py-5 text-center text-gray-500 text-xs">No agents found.</td></tr>`;
+async function renderAgents(){
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch('/api/agents', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const allAgents = await res.json();
+    const filtered = agentFilter === 'all' ? allAgents : allAgents.filter(a => a.status === agentFilter);
+
+    document.getElementById('agentsBody').innerHTML = filtered.map((a) => {
+      return `<tr>
+        <td class="px-5 py-3 font-medium text-white text-xs">${a.name}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${a.email}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${a.phone||'—'}</td>
+        <td class="px-5 py-3 font-mono text-xs">${a.agent_id||'—'}</td>
+        <td class="px-5 py-3 text-xs">
+          ${a.id_front?`<a href="${a.id_front}" target="_blank" class="text-blue-400 hover:underline mr-1">Front</a>`:''}
+          ${a.id_back?`<a href="${a.id_back}" target="_blank" class="text-blue-400 hover:underline">Back</a>`:''}
+          ${(!a.id_front&&!a.id_back)?'<span class="text-gray-600">—</span>':''}
+        </td>
+        <td class="px-5 py-3"><span class="badge ${SB[a.status]||'bg-blue'}">${a.status.charAt(0).toUpperCase()+a.status.slice(1)}</span></td>
+        <td class="px-5 py-3">
+          <div class="flex gap-2 flex-wrap">
+            <button onclick="viewAgent('${a.id}')" class="text-xs text-blue-400 hover:text-blue-300">View</button>
+            ${a.status==='pending'?`<button onclick="agentAction('${a.id}','approved')" class="text-xs text-green-400 hover:text-green-300">Approve</button><button onclick="agentAction('${a.id}','rejected')" class="text-xs text-red-400 hover:text-red-300">Reject</button>`:''}
+            ${a.status==='approved'?`<button onclick="agentAction('${a.id}','suspended')" class="text-xs text-purple-400 hover:text-purple-300">Suspend</button>`:''}
+            ${a.status==='suspended'?`<button onclick="agentAction('${a.id}','approved')" class="text-xs text-green-400 hover:text-green-300">Reinstate</button>`:''}
+            <button onclick="deleteAgent('${a.id}')" class="text-xs text-red-400 hover:text-red-300">Delete</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="7" class="px-5 py-5 text-center text-gray-500 text-xs">No agents found.</td></tr>`;
+  } catch(err) {
+    console.error('Error loading agents:', err);
+  }
 }
-function agentAction(agentId, status){
-  const agents = load(K.agents);
-  const agent  = agents.find(a => (a.agentId||a.email) === agentId);
-  if (!agent) return;
-  const prev = agent.status;
-  agent.status = status;
-  save(K.agents, agents);
-  addLog(`Agent "${agent.name}" status changed from ${prev} → ${status}`);
-  renderAgents();
-  renderOverview();
+async function agentAction(id, status) {
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch(`/api/agents/${id}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status })
+    });
+    if (!res.ok) throw new Error('Failed to update status');
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ message: `Agent status changed to ${status}`, actor: 'Admin', role: 'admin' })
+    });
+    renderAgents();
+  } catch(err) {
+    console.error('Error updating agent status:', err);
+    alert('Failed to update agent status.');
+  }
 }
-function viewAgent(agentId){
-  const a = load(K.agents).find(a=>(a.agentId||a.email)===agentId);
-  if (!a) return;
-  document.getElementById('agentProfileContent').innerHTML=`
-    <div class="grid grid-cols-2 gap-3">
-      <div><p class="text-gray-500 text-xs mb-0.5">Full Name</p><p class="text-white font-medium">${a.name}</p></div>
-      <div><p class="text-gray-500 text-xs mb-0.5">Agent ID</p><p class="font-mono">${a.agentId||'—'}</p></div>
-      <div><p class="text-gray-500 text-xs mb-0.5">Email</p><p>${a.email}</p></div>
-      <div><p class="text-gray-500 text-xs mb-0.5">Phone</p><p>${a.phone||'—'}</p></div>
-      <div><p class="text-gray-500 text-xs mb-0.5">Status</p><span class="badge ${SB[a.status]||'bg-blue'}">${a.status}</span></div>
-    </div>
-    ${a.idFront||a.idBack?`<div class="border-t border-white/8 pt-3 mt-3"><p class="text-gray-500 text-xs mb-2">ID Documents</p><div class="flex gap-3">
-      ${a.idFront?`<div><p class="text-xs text-gray-400 mb-1">Front</p><img src="${a.idFront}" class="w-32 h-20 object-cover rounded border border-white/10"></div>`:''}
-      ${a.idBack?`<div><p class="text-xs text-gray-400 mb-1">Back</p><img src="${a.idBack}" class="w-32 h-20 object-cover rounded border border-white/10"></div>`:''}
-    </div></div>`:''}
-  `;
-  openModal('viewAgentModal');
+async function viewAgent(id) {
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch('/api/agents', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const agents = await res.json();
+    const a = agents.find(a => a.id === id);
+    if (!a) return;
+    document.getElementById('agentProfileContent').innerHTML = `
+      <div class="grid grid-cols-2 gap-3">
+        <div><p class="text-gray-500 text-xs mb-0.5">Full Name</p><p class="text-white font-medium">${a.name}</p></div>
+        <div><p class="text-gray-500 text-xs mb-0.5">Agent ID</p><p class="font-mono">${a.agent_id||'—'}</p></div>
+        <div><p class="text-gray-500 text-xs mb-0.5">Email</p><p>${a.email}</p></div>
+        <div><p class="text-gray-500 text-xs mb-0.5">Phone</p><p>${a.phone||'—'}</p></div>
+        <div><p class="text-gray-500 text-xs mb-0.5">Status</p><span class="badge ${SB[a.status]||'bg-blue'}">${a.status}</span></div>
+      </div>
+      ${a.id_front||a.id_back?`<div class="border-t border-white/8 pt-3 mt-3"><p class="text-gray-500 text-xs mb-2">ID Documents</p><div class="flex gap-3">
+        ${a.id_front?`<div><p class="text-xs text-gray-400 mb-1">Front</p><img src="${a.id_front}" class="w-32 h-20 object-cover rounded border border-white/10"></div>`:''}
+        ${a.id_back?`<div><p class="text-xs text-gray-400 mb-1">Back</p><img src="${a.id_back}" class="w-32 h-20 object-cover rounded border border-white/10"></div>`:''}
+      </div></div>`:''}
+    `;
+    openModal('viewAgentModal');
+  } catch(err) {
+    console.error('Error viewing agent:', err);
+  }
+}
+async function deleteAgent(id) {
+  if (!confirm('Delete this agent?')) return;
+  const token = localStorage.getItem('token');
+  try {
+    await fetch(`/api/agents/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    renderAgents();
+  } catch(err) {
+    console.error('Error deleting agent:', err);
+  }
 }
 
 // ══════════════════════════════════════
