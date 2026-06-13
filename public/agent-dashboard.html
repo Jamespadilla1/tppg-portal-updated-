@@ -331,6 +331,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (linkEl) linkEl.classList.add('active');
     document.getElementById('pageTitle').textContent = linkEl ? linkEl.textContent.trim() : id;
     if (renderers[id]) renderers[id]();
+    
+    document.getElementById('sidebar').classList.remove('open');
   };
 
   // ── COMPUTATION ──

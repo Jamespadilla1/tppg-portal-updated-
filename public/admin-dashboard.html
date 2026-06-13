@@ -544,6 +544,8 @@ function go(id, linkEl) {
   document.getElementById('pageTitle').textContent = linkEl ? linkEl.textContent.trim() : id;
   currentSection = id;
 
+  document.getElementById('sidebar').classList.remove('open');
+
   // Header buttons
   document.getElementById('addPropBtn').classList.toggle('hidden', id!=='properties');
   document.getElementById('addSellerBtn').classList.toggle('hidden', id!=='sellers');
