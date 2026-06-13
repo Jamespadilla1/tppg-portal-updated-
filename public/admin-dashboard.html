@@ -969,19 +969,36 @@ function exportPDF(){ window.print(); addLog('PDF/Print report exported'); }
 // ══════════════════════════════════════
 // LOGS
 // ══════════════════════════════════════
-function renderLogs(){
-  const logs=load(K.logs);
-  document.getElementById('logsContainer').innerHTML=logs.map(l=>`
-    <div class="px-5 py-3 flex justify-between text-xs">
-      <span class="text-gray-300">${l.msg}</span>
-      <span class="text-gray-600 ml-4 whitespace-nowrap">${l.time}</span>
-    </div>
-  `).join('')||'<div class="px-5 py-5 text-xs text-gray-600 text-center">No activity logged yet.</div>';
+async function renderLogs(){
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch('/api/logs', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const logs = await res.json();
+    document.getElementById('logsContainer').innerHTML = logs.map(l=>`
+      <div class="px-5 py-3 flex justify-between text-xs">
+        <span class="text-gray-300">${l.message}</span>
+        <span class="text-gray-600 ml-4 whitespace-nowrap">${new Date(l.created_at).toLocaleString()}</span>
+      </div>
+    `).join('') || '<div class="px-5 py-5 text-xs text-gray-600 text-center">No activity logged yet.</div>';
+  } catch (err) {
+    console.error('Error loading logs:', err);
+    document.getElementById('logsContainer').innerHTML = '<div class="px-5 py-5 text-xs text-gray-600 text-center">Error loading logs.</div>';
+  }
 }
-function clearLogs(){
-  if(!confirm('Clear all logs?'))return;
-  save(K.logs,[]);
-  renderLogs();
+async function clearLogs(){
+  if(!confirm('Clear all logs?')) return;
+  const token = localStorage.getItem('token');
+  try {
+    await fetch('/api/logs', {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    renderLogs();
+  } catch(err) {
+    console.error('Error clearing logs:', err);
+  }
 }
 
 // ══════════════════════════════════════

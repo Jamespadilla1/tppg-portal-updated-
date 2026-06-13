@@ -104,6 +104,13 @@ const register = async (req, res) => {
 
     if (error) throw error;
 
+    // Log the registration
+    await supabase.from('logs').insert([{
+      message: `New agent application submitted: ${name} (${agentId})`,
+      actor: name,
+      role: 'agent',
+    }]);
+
     res.status(201).json({
       message: 'Application submitted.',
       agentId: agent.agent_id,
