@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard - TPPG</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { font-family:'DM Sans',sans-serif; }
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#374151;border-radius:4px}
+
+.nav-link{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;color:#9ca3af;font-size:.8rem;cursor:pointer;transition:all .15s;user-select:none}
+.nav-link:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav-link.active{background:rgba(249,115,22,.15);color:#f97316}
+.nav-link .dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.5;flex-shrink:0}
+.nav-link.active .dot{opacity:1;background:#f97316}
+.nav-section-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:#4b5563;padding:12px 11px 4px;font-weight:600}
+
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;transition:border-color .2s}
+.card:hover{border-color:rgba(255,255,255,.14)}
+
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:500}
+.bg-green{background:rgba(34,197,94,.12);color:#4ade80}
+.bg-yellow{background:rgba(234,179,8,.12);color:#facc15}
+.bg-red{background:rgba(239,68,68,.12);color:#f87171}
+.bg-blue{background:rgba(59,130,246,.12);color:#60a5fa}
+.bg-orange{background:rgba(249,115,22,.12);color:#fb923c}
+.bg-purple{background:rgba(168,85,247,.12);color:#c084fc}
+
+.section{display:none}.section.active{display:block}
+
+.field{width:100%;padding:9px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:.85rem;outline:none;transition:border-color .15s}
+.field:focus{border-color:#f97316}
+.field::placeholder{color:#6b7280}
+select.field option{background:#1f2937;color:#fff}
+textarea.field{resize:vertical;min-height:70px}
+
+tr:hover td{background:rgba(255,255,255,.025)}
+
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;align-items:center;justify-content:center;padding:1rem}
+.modal-backdrop.open{display:flex}
+.modal-box{background:#111827;border:1px solid rgba(255,255,255,.1);border-radius:16px;width:100%;max-width:520px;padding:28px;position:relative;max-height:92vh;overflow-y:auto}
+
+.stat-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:18px 20px;transition:border-color .2s}
+.stat-card:hover{border-color:rgba(255,255,255,.16)}
+
+@media(max-width:768px){
+  #sidebar{position:fixed;transform:translateX(-100%);z-index:40;transition:transform .25s}
+  #sidebar.open{transform:translateX(0)}
+  #main{margin-left:0!important}
+}
+</style>
+</head>
+<body class="bg-gray-950 text-white min-h-screen">
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SIDEBAR -->
+<!-- ═══════════════════════════════════════════════════ -->
+<aside id="sidebar" class="fixed left-0 top-0 h-full w-56 bg-gray-900 border-r border-white/8 flex flex-col z-30">
+
+  <div class="px-4 py-4 border-b border-white/8 flex items-center gap-3">
+    <div class="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center font-bold text-sm">T</div>
+    <span class="font-bold text-white text-base">TPPG Admin</span>
+  </div>
+
+  <nav class="flex-1 px-2 py-3 overflow-y-auto space-y-0.5">
+    <div class="nav-section-label">Main</div>
+    <div class="nav-link active" onclick="go('overview',this)"><span class="dot"></span>Dashboard</div>
+
+    <div class="nav-section-label">Management</div>
+    <div class="nav-link" onclick="go('agents',this)"><span class="dot"></span>Agent Management</div>
+    <div class="nav-link" onclick="go('properties',this)"><span class="dot"></span>Property Listings</div>
+    <div class="nav-link" onclick="go('sellers',this)"><span class="dot"></span>Seller Management</div>
+    <div class="nav-link" onclick="go('buyers',this)"><span class="dot"></span>Buyer Management</div>
+
+    <div class="nav-section-label">Finance</div>
+    <div class="nav-link" onclick="go('commission',this)"><span class="dot"></span>Commission Monitoring</div>
+    <div class="nav-link" onclick="go('sales',this)"><span class="dot"></span>Sales Performance</div>
+    <div class="nav-link" onclick="go('compute',this)"><span class="dot"></span>Property Computation</div>
+
+    <div class="nav-section-label">System</div>
+    <div class="nav-link" onclick="go('reports',this)"><span class="dot"></span>Reports & Analytics</div>
+    <div class="nav-link" onclick="go('logs',this)"><span class="dot"></span>Portal Usage Logs</div>
+    <div class="nav-link" onclick="go('settings',this)"><span class="dot"></span>Settings</div>
+  </nav>
+
+  <div class="px-4 py-3 border-t border-white/8">
+    <div class="flex items-center gap-2 mb-2">
+      <div class="w-7 h-7 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-bold">A</div>
+      <div>
+        <p class="text-xs font-semibold text-white" id="adminName">Administrator</p>
+        <p class="text-xs text-gray-500" id="adminEmail">admin@tppg.com</p>
+      </div>
+    </div>
+    <button onclick="logout()" class="text-xs text-gray-500 hover:text-red-400 transition-colors">← Log out</button>
+  </div>
+</aside>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- MAIN -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="main" class="ml-56 min-h-screen flex flex-col">
+
+  <header class="sticky top-0 z-20 bg-gray-950/90 backdrop-blur border-b border-white/8 px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <button class="md:hidden text-gray-400" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+      <h2 id="pageTitle" class="text-base font-semibold">Dashboard Overview</h2>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="pendingAlert" class="hidden badge bg-yellow text-xs cursor-pointer" onclick="go('agents',document.querySelectorAll('.nav-link')[1])">⚠ Pending Agents</span>
+      <button id="addPropBtn" onclick="openModal('addPropModal')" class="hidden bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">+ Add Property</button>
+      <button id="addSellerBtn" onclick="openModal('addSellerModal')" class="hidden bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">+ Add Seller</button>
+      <button id="addBuyerBtn" onclick="openModal('addBuyerModal')" class="hidden bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">+ Add Buyer</button>
+    </div>
+  </header>
+
+  <main class="flex-1 p-6">
+
+    <!-- ══ DASHBOARD OVERVIEW ══ -->
+    <div id="sec-overview" class="section active space-y-5">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="overviewCards"></div>
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-white/8 flex justify-between items-center">
+          <h3 class="font-semibold text-sm">Recent Properties</h3>
+          <button onclick="go('properties',document.querySelectorAll('.nav-link')[2])" class="text-xs text-orange-400 hover:underline">View all →</button>
+        </div>
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
+            <th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Location</th><th class="text-left px-5 py-2">Price</th><th class="text-left px-5 py-2">Status</th>
+          </tr></thead>
+          <tbody id="overviewTable" class="divide-y divide-white/6 text-gray-300"></tbody>
+        </table></div>
+      </div>
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-white/8"><h3 class="font-semibold text-sm">Recent Activity</h3></div>
+        <div id="overviewLogs" class="divide-y divide-white/6 max-h-48 overflow-y-auto"></div>
+      </div>
+    </div>
+
+    <!-- ══ AGENT MANAGEMENT ══ -->
+    <div id="sec-agents" class="section space-y-4">
+      <div class="flex gap-2 flex-wrap" id="agentFilterBtns">
+        <button onclick="filterAgents('all',this)"      class="af-btn active-af px-3 py-1.5 rounded-lg text-xs border border-orange-500/50 bg-orange-500/10 text-orange-400">All</button>
+        <button onclick="filterAgents('pending',this)"  class="af-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Pending</button>
+        <button onclick="filterAgents('approved',this)" class="af-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Approved</button>
+        <button onclick="filterAgents('rejected',this)" class="af-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Rejected</button>
+        <button onclick="filterAgents('suspended',this)"class="af-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Suspended</button>
+      </div>
+      <div class="card overflow-hidden">
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
+            <th class="text-left px-5 py-2">Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Agent ID</th><th class="text-left px-5 py-2">IDs</th><th class="text-left px-5 py-2">Status</th><th class="text-left px-5 py-2">Actions</th>
+          </tr></thead>
+          <tbody id="agentsBody" class="divide-y divide-white/6 text-gray-300"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ══ PROPERTY LISTINGS ══ -->
+    <div id="sec-properties" class="section space-y-4">
+      <div class="flex gap-2 flex-wrap" id="propFilterBtns">
+        <button onclick="filterProps('all',this)"       class="pf-btn active-pf px-3 py-1.5 rounded-lg text-xs border border-orange-500/50 bg-orange-500/10 text-orange-400">All</button>
+        <button onclick="filterProps('Available',this)" class="pf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Available</button>
+        <button onclick="filterProps('Reserved',this)"  class="pf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Reserved</button>
+        <button onclick="filterProps('Sold',this)"      class="pf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Sold</button>
+        <input type="text" placeholder="Search…" oninput="propSearch=this.value.toLowerCase();renderProps()" class="field ml-auto w-40 text-xs py-1.5">
+      </div>
+      <div class="card overflow-hidden">
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
+            <th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Location</th><th class="text-left px-5 py-2">Price</th><th class="text-left px-5 py-2">Rate</th><th class="text-left px-5 py-2">Description</th><th class="text-left px-5 py-2">Status</th><th class="text-left px-5 py-2">Actions</th>
+          </tr></thead>
+          <tbody id="propBody" class="divide-y divide-white/6 text-gray-300"></tbody>
+        </table></div>
+        <div class="px-5 py-2 border-t border-white/8 text-xs text-gray-500" id="propCount"></div>
+      </div>
+    </div>
+
+    <!-- ══ SELLER MANAGEMENT ══ -->
+    <div id="sec-sellers" class="section space-y-4">
+      <div class="card overflow-hidden">
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
+            <th class="text-left px-5 py-2">Full Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Address</th><th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Actions</th>
+          </tr></thead>
+          <tbody id="sellersBody" class="divide-y divide-white/6 text-gray-300"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ══ BUYER MANAGEMENT ══ -->
+    <div id="sec-buyers" class="section space-y-4">
+      <div class="card overflow-hidden">
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
+            <th class="text-left px-5 py-2">Full Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Address</th><th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Actions</th>
+          </tr></thead>
+          <tbody id="buyersBody" class="divide-y divide-white/6 text-gray-300"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ══ COMMISSION MONITORING ══ -->
+    <div id="sec-commission" class="section space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="commCards"></div>
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-white/8"><h3 class="font-semibold text-sm">Commission Records</h3></div>
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
+            <th class="text-left px-5 py-2">Agent</th><th class="text-left px-5 py-2">Property Sold</th><th class="text-left px-5 py-2">Property Price</th><th class="text-left px-5 py-2">Rate</th><th class="text-left px-5 py-2">Commission</th>
+          </tr></thead>
+          <tbody id="commBody" class="divide-y divide-white/6 text-gray-300"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ══ SALES PERFORMANCE ══ -->
+    <div id="sec-sales" class="section space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="salesCards"></div>
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-white/8"><h3 class="font-semibold text-sm">Top Performing Agents</h3></div>
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
+            <th class="text-left px-5 py-2">Agent</th><th class="text-left px-5 py-2">No. of Sales</th><th class="text-left px-5 py-2">Sales Amount</th><th class="text-left px-5 py-2">Commission Earned</th>
+          </tr></thead>
+          <tbody id="salesBody" class="divide-y divide-white/6 text-gray-300"></tbody>
+        </table></div>
+      </div>
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-white/8"><h3 class="font-semibold text-sm">Completed Transactions</h3></div>
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
+            <th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Location</th><th class="text-left px-5 py-2">Price</th><th class="text-left px-5 py-2">Commission</th>
+          </tr></thead>
+          <tbody id="transBody" class="divide-y divide-white/6 text-gray-300"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ══ PROPERTY COMPUTATION ══ -->
+    <div id="sec-compute" class="section">
+      <div class="max-w-lg space-y-4">
+        <div class="card p-6 space-y-4">
+          <div><h3 class="font-semibold">Commission Calculator</h3><p class="text-xs text-gray-500 mt-0.5">Compute commission and incentive amounts.</p></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-gray-400 mb-1 block">Property Price (₱)</label>
+              <input id="cPrice" type="number" placeholder="3500000" class="field" oninput="doCompute()">
+            </div>
+            <div>
+              <label class="text-xs text-gray-400 mb-1 block">Commission Rate (%)</label>
+              <input id="cRate" type="number" placeholder="3" class="field" oninput="doCompute()">
+            </div>
+            <div>
+              <label class="text-xs text-gray-400 mb-1 block">Incentive Rate (%) <span class="text-gray-600">optional</span></label>
+              <input id="cInc" type="number" placeholder="0.5" class="field" oninput="doCompute()">
+            </div>
+          </div>
+          <div id="cResult" class="hidden rounded-xl bg-orange-500/10 border border-orange-500/25 p-5 space-y-3">
+            <div><p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Commission Amount</p><p id="cAmount" class="text-3xl font-bold text-orange-400"></p></div>
+            <div id="cIncRow" class="hidden"><p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Incentive Amount</p><p id="cIncAmount" class="text-xl font-bold text-purple-400"></p></div>
+            <div class="pt-3 border-t border-orange-500/20 grid grid-cols-3 gap-2 text-xs text-gray-400">
+              <div>Price<br><span class="text-white" id="cSP"></span></div>
+              <div>Comm. Rate<br><span class="text-white" id="cSR"></span></div>
+              <div id="cSIRow">Inc. Rate<br><span class="text-white" id="cSI"></span></div>
+            </div>
+          </div>
+          <p class="text-xs text-gray-600 italic">Commission = Price × Rate ÷ 100</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ REPORTS & ANALYTICS ══ -->
+    <div id="sec-reports" class="section space-y-4">
+      <div class="card p-5 space-y-4">
+        <h3 class="font-semibold">Summary Report</h3>
+        <div id="reportContent" class="space-y-3 text-sm"></div>
+        <div class="flex gap-3 pt-2">
+          <button onclick="exportPDF()" class="px-4 py-2 bg-red-500/80 hover:bg-red-600 rounded-lg text-sm font-medium transition-colors">📄 Export PDF</button>
+          <button onclick="exportCSV()" class="px-4 py-2 bg-green-600/80 hover:bg-green-700 rounded-lg text-sm font-medium transition-colors">📊 Export CSV</button>
+          <button onclick="window.print()"  class="px-4 py-2 bg-white/10 hover:bg-white/15 rounded-lg text-sm font-medium transition-colors">🖨 Print</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PORTAL USAGE LOGS ══ -->
+    <div id="sec-logs" class="section space-y-4">
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-white/8 flex justify-between items-center">
+          <h3 class="font-semibold text-sm">System Activity Log</h3>
+          <button onclick="clearLogs()" class="text-xs text-red-400 hover:text-red-300">Clear Logs</button>
+        </div>
+        <div id="logsContainer" class="divide-y divide-white/6 max-h-[60vh] overflow-y-auto"></div>
+      </div>
+    </div>
+
+    <!-- ══ SETTINGS ══ -->
+    <div id="sec-settings" class="section space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <!-- Profile -->
+        <div class="card p-6 space-y-4">
+          <h3 class="font-semibold">Update Profile</h3>
+          <div>
+            <label class="text-xs text-gray-400 mb-1 block">Admin ID</label>
+            <input id="setAdminId" type="text" class="field" placeholder="ADMIN-001">
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 mb-1 block">Full Name</label>
+            <input id="setName" type="text" class="field" placeholder="Administrator">
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 mb-1 block">Email</label>
+            <input id="setEmail" type="email" class="field" placeholder="admin@tppg.com">
+          </div>
+          <button onclick="saveProfile()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg text-sm font-semibold transition-colors">Save Profile</button>
+          <p id="profileMsg" class="text-xs text-green-400 hidden">Profile updated.</p>
+        </div>
+
+        <!-- Password -->
+        <div class="card p-6 space-y-4">
+          <h3 class="font-semibold">Change Password</h3>
+          <div>
+            <label class="text-xs text-gray-400 mb-1 block">Current Password</label>
+            <input id="setPwCur" type="password" class="field" placeholder="••••••••">
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 mb-1 block">New Password</label>
+            <input id="setPwNew" type="password" class="field" placeholder="••••••••">
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 mb-1 block">Confirm New Password</label>
+            <input id="setPwCon" type="password" class="field" placeholder="••••••••">
+          </div>
+          <button onclick="changePassword()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg text-sm font-semibold transition-colors">Change Password</button>
+          <p id="pwMsg" class="text-xs hidden"></p>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- MODALS -->
+<!-- ═══════════════════════════════════════════════════ -->
+
+<!-- ADD PROPERTY -->
+<div id="addPropModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('addPropModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-1">Add New Property</h3>
+    <p class="text-xs text-gray-500 mb-4">Fill in all required fields.</p>
+    <div class="space-y-3">
+      <div><label class="text-xs text-gray-400 mb-1 block">Property Name *</label><input id="pName" type="text" class="field" placeholder="e.g. Modern House A"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Location *</label><input id="pLoc" type="text" class="field" placeholder="e.g. Cebu City"></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs text-gray-400 mb-1 block">Price (₱) *</label><input id="pPrice" type="number" class="field" placeholder="3500000"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Commission Rate (%) *</label><input id="pRate" type="number" class="field" placeholder="3"></div>
+      </div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Description</label><textarea id="pDesc" class="field" placeholder="Brief property description…"></textarea></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="pStatus" class="field"><option value="Available">Available</option><option value="Reserved">Reserved</option><option value="Sold">Sold</option></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Date Added</label><input id="pDate" type="date" class="field"></div>
+      <p id="pErr" class="text-red-400 text-xs hidden">Please fill in all required fields.</p>
+      <button onclick="saveProp()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors mt-1">Save Property</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PROPERTY -->
+<div id="editPropModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('editPropModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Edit Property</h3>
+    <div class="space-y-3">
+      <input id="ePI" type="hidden">
+      <div><label class="text-xs text-gray-400 mb-1 block">Property Name</label><input id="ePName" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Location</label><input id="ePLoc" type="text" class="field"></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs text-gray-400 mb-1 block">Price (₱)</label><input id="ePPrice" type="number" class="field"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Commission Rate (%)</label><input id="ePRate" type="number" class="field"></div>
+      </div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Description</label><textarea id="ePDesc" class="field"></textarea></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="ePStatus" class="field"><option value="Available">Available</option><option value="Reserved">Reserved</option><option value="Sold">Sold</option></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Date Added</label><input id="ePDate" type="date" class="field"></div>
+      <button onclick="updateProp()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Property</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SELLER -->
+<div id="addSellerModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('addSellerModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Add Seller</h3>
+    <div class="space-y-3">
+      <div><label class="text-xs text-gray-400 mb-1 block">Full Name *</label><input id="sName" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Email *</label><input id="sEmail" type="email" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Phone *</label><input id="sPhone" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Address</label><input id="sAddr" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Property Sold</label><input id="sProp" type="text" class="field"></div>
+      <p id="sErr" class="text-red-400 text-xs hidden">Please fill required fields.</p>
+      <button onclick="saveSeller()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Seller</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT SELLER -->
+<div id="editSellerModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('editSellerModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Edit Seller</h3>
+    <div class="space-y-3">
+      <input id="eSI" type="hidden">
+      <div><label class="text-xs text-gray-400 mb-1 block">Full Name</label><input id="eSName" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="eSEmail" type="email" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="eSPhone" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Address</label><input id="eSAddr" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Property Sold</label><input id="eSProp" type="text" class="field"></div>
+      <button onclick="updateSeller()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Seller</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD BUYER -->
+<div id="addBuyerModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('addBuyerModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Add Buyer</h3>
+    <div class="space-y-3">
+      <div><label class="text-xs text-gray-400 mb-1 block">Full Name *</label><input id="bName" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Email *</label><input id="bEmail" type="email" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Phone *</label><input id="bPhone" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Address</label><input id="bAddr" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Property Purchased</label><input id="bProp" type="text" class="field"></div>
+      <p id="bErr" class="text-red-400 text-xs hidden">Please fill required fields.</p>
+      <button onclick="saveBuyer()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Buyer</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT BUYER -->
+<div id="editBuyerModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('editBuyerModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Edit Buyer</h3>
+    <div class="space-y-3">
+      <input id="eBI" type="hidden">
+      <div><label class="text-xs text-gray-400 mb-1 block">Full Name</label><input id="eBName" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="eBEmail" type="email" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="eBPhone" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Address</label><input id="eBAddr" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Property Purchased</label><input id="eBProp" type="text" class="field"></div>
+      <button onclick="updateBuyer()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Buyer</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW AGENT MODAL -->
+<div id="viewAgentModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('viewAgentModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Agent Profile</h3>
+    <div id="agentProfileContent" class="space-y-3 text-sm text-gray-300"></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCRIPT -->
+<!-- ═══════════════════════════════════════════════════ -->
+<script>
+// ── KEYS ──
+const K = { props:'tppg_props', agents:'tppg_agents', sellers:'tppg_sellers', buyers:'tppg_buyers', logs:'tppg_logs', settings:'tppg_settings' };
+
+// ── STORAGE HELPERS ──
+const load = k => JSON.parse(localStorage.getItem(k)||'[]');
+const save = (k,d) => localStorage.setItem(k,JSON.stringify(d));
+const loadObj = k => JSON.parse(localStorage.getItem(k)||'{}');
+const saveObj = (k,d) => localStorage.setItem(k,JSON.stringify(d));
+
+// ── PESO FORMAT ──
+const peso = n => '₱'+Number(n).toLocaleString('en-PH',{minimumFractionDigits:0,maximumFractionDigits:0});
+
+// ── STATUS BADGE CLASSES ──
+const SB = { Available:'bg-green', Reserved:'bg-yellow', Sold:'bg-red', approved:'bg-green', pending:'bg-yellow', rejected:'bg-red', suspended:'bg-purple' };
+
+// ── LOG ──
+function addLog(msg) {
+  const logs = load(K.logs);
+  logs.unshift({ msg, time: new Date().toLocaleString() });
+  if(logs.length>200) logs.pop();
+  save(K.logs, logs);
+}
+
+// ── SEED SAMPLE DATA ──
+(function seed(){
+  if(!load(K.props).length){
+    save(K.props,[
+      {name:'Modern House A',loc:'Cebu City',price:3500000,rate:3,desc:'3BR modern house with garden.',status:'Sold',agent:'Juan dela Cruz',date:'2025-01-15'},
+      {name:'Condo Unit B',loc:'Mandaue',price:2000000,rate:3,desc:'Studio condo near mall.',status:'Reserved',agent:'Juan dela Cruz',date:'2025-03-01'},
+      {name:'Lot C',loc:'Lapu-Lapu',price:1200000,rate:3,desc:'Corner lot 200sqm.',status:'Sold',agent:'Maria Lim',date:'2025-02-10'},
+      {name:'Townhouse D',loc:'Talisay',price:4800000,rate:4,desc:'3-storey townhouse.',status:'Available',agent:'',date:'2025-04-20'},
+      {name:'Bungalow E',loc:'Consolacion',price:2750000,rate:3,desc:'2BR bungalow with garage.',status:'Available',agent:'',date:'2025-05-05'},
+    ]);
+  }
+  if(!load(K.agents).length){
+    save(K.agents,[
+      {name:'Juan dela Cruz',email:'juan@tppg.com',phone:'09123456789',agentId:'AGT-00142',password:'juan123',status:'approved'},
+      {name:'Maria Lim',email:'maria@gmail.com',phone:'09187654321',agentId:'AGT-00143',password:'maria123',status:'pending'},
+      {name:'Carlos Santos',email:'carlos@gmail.com',phone:'09221234567',agentId:'AGT-00144',password:'carlos123',status:'pending'},
+    ]);
+  }
+  if(!load(K.sellers).length){
+    save(K.sellers,[
+      {name:'Elena Reyes',email:'elena@gmail.com',phone:'09111111111',addr:'Cebu City',prop:'Modern House A'},
+      {name:'Pedro Cruz',email:'pedro@gmail.com',phone:'09222222222',addr:'Lapu-Lapu',prop:'Lot C'},
+    ]);
+  }
+  if(!load(K.buyers).length){
+    save(K.buyers,[
+      {name:'Jose Reyes',email:'jose@gmail.com',phone:'09333333333',addr:'Mandaue',prop:'Modern House A'},
+      {name:'Rosa Dela Cruz',email:'rosa@gmail.com',phone:'09444444444',addr:'Cebu City',prop:'Lot C'},
+    ]);
+  }
+
+  // Load settings
+  const s = loadObj(K.settings);
+  if(s.adminId){ document.getElementById('setAdminId').value=s.adminId; }
+  if(s.name) { document.getElementById('adminName').textContent=s.name; document.getElementById('setName').value=s.name; }
+  if(s.email){ document.getElementById('adminEmail').textContent=s.email; document.getElementById('setEmail').value=s.email; }
+})();
+
+// ── SECTION SWITCHING ──
+let currentSection = 'overview';
+function go(id, linkEl) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+  if(linkEl) linkEl.classList.add('active');
+  document.getElementById('pageTitle').textContent = linkEl ? linkEl.textContent.trim() : id;
+  currentSection = id;
+
+  // Header buttons
+  document.getElementById('addPropBtn').classList.toggle('hidden', id!=='properties');
+  document.getElementById('addSellerBtn').classList.toggle('hidden', id!=='sellers');
+  document.getElementById('addBuyerBtn').classList.toggle('hidden', id!=='buyers');
+
+  // Render
+  const r = {overview:renderOverview,agents:renderAgents,properties:renderProps,sellers:renderSellers,buyers:renderBuyers,commission:renderCommission,sales:renderSales,reports:renderReports,logs:renderLogs};
+  if(r[id]) r[id]();
+}
+
+// ── MODALS ──
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-backdrop').forEach(m=>{
+  m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); });
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.modal-backdrop.open').forEach(m=>m.classList.remove('open')); });
+
+// ══════════════════════════════════════
+// OVERVIEW
+// ══════════════════════════════════════
+function renderOverview(){
+  const props   = load(K.props);
+  const agents  = load(K.agents);
+  const sold    = props.filter(p=>p.status==='Sold');
+  const pending = agents.filter(a=>a.status==='pending');
+  const totalComm = sold.reduce((s,p)=>s+p.price*p.rate/100,0);
+  const totalRev  = sold.reduce((s,p)=>s+p.price,0);
+
+  document.getElementById('overviewCards').innerHTML = [
+    ['Total Properties', props.length, ''],
+    ['Available', props.filter(p=>p.status==='Available').length, 'text-green-400'],
+    ['Reserved',  props.filter(p=>p.status==='Reserved').length,  'text-yellow-400'],
+    ['Sold',      sold.length, 'text-red-400'],
+    ['Total Agents', agents.length, ''],
+    ['Pending Registrations', pending.length, 'text-yellow-400'],
+    ['Total Sales', peso(totalRev), 'text-orange-400'],
+    ['Total Commissions', peso(totalComm), 'text-orange-400'],
+  ].map(([label,val,cls])=>`
+    <div class="stat-card">
+      <p class="text-gray-400 text-xs uppercase tracking-wide mb-1">${label}</p>
+      <p class="text-2xl font-bold ${cls}">${val}</p>
+    </div>
+  `).join('');
+
+  document.getElementById('overviewTable').innerHTML = props.slice(-5).reverse().map(p=>`
+    <tr>
+      <td class="px-5 py-2 font-medium text-white text-xs">${p.name}</td>
+      <td class="px-5 py-2 text-gray-400 text-xs">${p.loc}</td>
+      <td class="px-5 py-2 text-xs">${peso(p.price)}</td>
+      <td class="px-5 py-2"><span class="badge ${SB[p.status]}">${p.status}</span></td>
+    </tr>
+  `).join('') || `<tr><td colspan="4" class="px-5 py-4 text-center text-gray-500 text-xs">No properties yet.</td></tr>`;
+
+  // pending badge
+  const pb = document.getElementById('pendingAlert');
+  pending.length>0 ? pb.classList.remove('hidden') : pb.classList.add('hidden');
+
+  // logs preview
+  const logs = load(K.logs);
+  document.getElementById('overviewLogs').innerHTML = logs.slice(0,5).map(l=>`
+    <div class="px-5 py-2.5 flex justify-between text-xs">
+      <span class="text-gray-300">${l.msg}</span>
+      <span class="text-gray-600 ml-4 whitespace-nowrap">${l.time}</span>
+    </div>
+  `).join('') || '<div class="px-5 py-4 text-xs text-gray-600">No activity yet.</div>';
+}
+
+// ══════════════════════════════════════
+// AGENTS
+// ══════════════════════════════════════
+let agentFilter = 'all';
+function filterAgents(val,btn){
+  agentFilter=val;
+  document.querySelectorAll('.af-btn').forEach(b=>{b.classList.remove('active-af','border-orange-500/50','bg-orange-500/10','text-orange-400');b.classList.add('border-white/10','text-gray-400');});
+  btn.classList.add('active-af','border-orange-500/50','bg-orange-500/10','text-orange-400');btn.classList.remove('border-white/10','text-gray-400');
+  renderAgents();
+}
+function renderAgents(){
+  const allAgents = load(K.agents);
+  const filtered  = agentFilter==='all' ? allAgents : allAgents.filter(a=>a.status===agentFilter);
+  document.getElementById('agentsBody').innerHTML = filtered.map((a)=>{
+    const id = a.agentId || a.email; // use agentId as unique key
+    return `<tr>
+      <td class="px-5 py-3 font-medium text-white text-xs">${a.name}</td>
+      <td class="px-5 py-3 text-gray-400 text-xs">${a.email}</td>
+      <td class="px-5 py-3 text-gray-400 text-xs">${a.phone||'—'}</td>
+      <td class="px-5 py-3 font-mono text-xs">${a.agentId||'—'}</td>
+      <td class="px-5 py-3 text-xs">
+        ${a.idFront?`<a href="${a.idFront}" target="_blank" class="text-blue-400 hover:underline mr-1">Front</a>`:''}
+        ${a.idBack?`<a href="${a.idBack}" target="_blank" class="text-blue-400 hover:underline">Back</a>`:''}
+        ${(!a.idFront&&!a.idBack)?'<span class="text-gray-600">—</span>':''}
+      </td>
+      <td class="px-5 py-3"><span class="badge ${SB[a.status]||'bg-blue'}">${a.status.charAt(0).toUpperCase()+a.status.slice(1)}</span></td>
+      <td class="px-5 py-3">
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="viewAgent('${id}')" class="text-xs text-blue-400 hover:text-blue-300">View</button>
+          ${a.status==='pending'?`<button onclick="agentAction('${id}','approved')" class="text-xs text-green-400 hover:text-green-300">Approve</button><button onclick="agentAction('${id}','rejected')" class="text-xs text-red-400 hover:text-red-300">Reject</button>`:''}
+          ${a.status==='approved'?`<button onclick="agentAction('${id}','suspended')" class="text-xs text-purple-400 hover:text-purple-300">Suspend</button>`:''}
+          ${a.status==='suspended'?`<button onclick="agentAction('${id}','approved')" class="text-xs text-green-400 hover:text-green-300">Reinstate</button>`:''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('')||`<tr><td colspan="7" class="px-5 py-5 text-center text-gray-500 text-xs">No agents found.</td></tr>`;
+}
+function agentAction(agentId, status){
+  const agents = load(K.agents);
+  const agent  = agents.find(a => (a.agentId||a.email) === agentId);
+  if (!agent) return;
+  const prev = agent.status;
+  agent.status = status;
+  save(K.agents, agents);
+  addLog(`Agent "${agent.name}" status changed from ${prev} → ${status}`);
+  renderAgents();
+  renderOverview();
+}
+function viewAgent(agentId){
+  const a = load(K.agents).find(a=>(a.agentId||a.email)===agentId);
+  if (!a) return;
+  document.getElementById('agentProfileContent').innerHTML=`
+    <div class="grid grid-cols-2 gap-3">
+      <div><p class="text-gray-500 text-xs mb-0.5">Full Name</p><p class="text-white font-medium">${a.name}</p></div>
+      <div><p class="text-gray-500 text-xs mb-0.5">Agent ID</p><p class="font-mono">${a.agentId||'—'}</p></div>
+      <div><p class="text-gray-500 text-xs mb-0.5">Email</p><p>${a.email}</p></div>
+      <div><p class="text-gray-500 text-xs mb-0.5">Phone</p><p>${a.phone||'—'}</p></div>
+      <div><p class="text-gray-500 text-xs mb-0.5">Status</p><span class="badge ${SB[a.status]||'bg-blue'}">${a.status}</span></div>
+    </div>
+    ${a.idFront||a.idBack?`<div class="border-t border-white/8 pt-3 mt-3"><p class="text-gray-500 text-xs mb-2">ID Documents</p><div class="flex gap-3">
+      ${a.idFront?`<div><p class="text-xs text-gray-400 mb-1">Front</p><img src="${a.idFront}" class="w-32 h-20 object-cover rounded border border-white/10"></div>`:''}
+      ${a.idBack?`<div><p class="text-xs text-gray-400 mb-1">Back</p><img src="${a.idBack}" class="w-32 h-20 object-cover rounded border border-white/10"></div>`:''}
+    </div></div>`:''}
+  `;
+  openModal('viewAgentModal');
+}
+
+// ══════════════════════════════════════
+// PROPERTIES
+// ══════════════════════════════════════
+let propFilter='all', propSearch='';
+function filterProps(val,btn){
+  propFilter=val;
+  document.querySelectorAll('.pf-btn').forEach(b=>{b.classList.remove('active-pf','border-orange-500/50','bg-orange-500/10','text-orange-400');b.classList.add('border-white/10','text-gray-400');});
+  btn.classList.add('active-pf','border-orange-500/50','bg-orange-500/10','text-orange-400');btn.classList.remove('border-white/10','text-gray-400');
+  renderProps();
+}
+function renderProps(){
+  const all=load(K.props);
+  const filtered=all.filter((p,i)=>{
+    p._i=i;
+    const mf=propFilter==='all'||p.status===propFilter;
+    const ms=p.name.toLowerCase().includes(propSearch)||p.loc.toLowerCase().includes(propSearch);
+    return mf&&ms;
+  });
+  document.getElementById('propBody').innerHTML=filtered.map(p=>{
+    const i=all.indexOf(p);
+    const comm=p.price*p.rate/100;
+    return `<tr>
+      <td class="px-5 py-3 font-medium text-white text-xs">${p.name}</td>
+      <td class="px-5 py-3 text-gray-400 text-xs">${p.loc}</td>
+      <td class="px-5 py-3 text-xs">${peso(p.price)}</td>
+      <td class="px-5 py-3 text-xs text-orange-400">${p.rate}%</td>
+      <td class="px-5 py-3 text-xs text-gray-500 max-w-xs truncate">${p.desc||'—'}</td>
+      <td class="px-5 py-3"><span class="badge ${SB[p.status]}">${p.status}</span></td>
+      <td class="px-5 py-3 flex gap-2">
+        <button onclick="openEditProp(${i})" class="text-xs text-orange-400 hover:text-orange-300">Edit</button>
+        <button onclick="deleteProp(${i})" class="text-xs text-red-400 hover:text-red-300">Delete</button>
+      </td>
+    </tr>`;
+  }).join('')||`<tr><td colspan="7" class="px-5 py-5 text-center text-gray-500 text-xs">No properties found.</td></tr>`;
+  document.getElementById('propCount').textContent=`Showing ${filtered.length} of ${all.length} properties`;
+}
+function saveProp(){
+  const name=document.getElementById('pName').value.trim();
+  const loc=document.getElementById('pLoc').value.trim();
+  const price=parseFloat(document.getElementById('pPrice').value);
+  const rate=parseFloat(document.getElementById('pRate').value);
+  if(!name||!loc||!price||!rate){document.getElementById('pErr').classList.remove('hidden');return;}
+  document.getElementById('pErr').classList.add('hidden');
+  const props=load(K.props);
+  props.push({name,loc,price,rate,desc:document.getElementById('pDesc').value.trim(),status:document.getElementById('pStatus').value,agent:document.getElementById('pAgent').value.trim(),date:document.getElementById('pDate').value});
+  save(K.props,props);
+  addLog(`Property "${name}" added by Admin`);
+  closeModal('addPropModal');
+  ['pName','pLoc','pPrice','pRate','pDesc','pAgent','pDate'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pStatus').value='Available';
+  renderProps(); renderOverview();
+}
+function openEditProp(i){
+  const p=load(K.props)[i];
+  document.getElementById('ePI').value=i;
+  document.getElementById('ePName').value=p.name;
+  document.getElementById('ePLoc').value=p.loc;
+  document.getElementById('ePPrice').value=p.price;
+  document.getElementById('ePRate').value=p.rate;
+  document.getElementById('ePDesc').value=p.desc||'';
+  document.getElementById('ePStatus').value=p.status;
+  document.getElementById('ePAgent').value=p.agent||'';
+  document.getElementById('ePDate').value=p.date||'';
+  openModal('editPropModal');
+}
+function updateProp(){
+  const i=parseInt(document.getElementById('ePI').value);
+  const props=load(K.props);
+  const old=props[i].status;
+  props[i]={name:document.getElementById('ePName').value.trim(),loc:document.getElementById('ePLoc').value.trim(),price:parseFloat(document.getElementById('ePPrice').value),rate:parseFloat(document.getElementById('ePRate').value),desc:document.getElementById('ePDesc').value.trim(),status:document.getElementById('ePStatus').value,agent:document.getElementById('ePAgent').value.trim(),date:document.getElementById('ePDate').value};
+  save(K.props,props);
+  if(old!==props[i].status) addLog(`Property "${props[i].name}" status changed to ${props[i].status}`);
+  else addLog(`Property "${props[i].name}" updated`);
+  closeModal('editPropModal'); renderProps(); renderOverview();
+}
+function deleteProp(i){
+  if(!confirm('Delete this property?')) return;
+  const props=load(K.props);
+  addLog(`Property "${props[i].name}" deleted`);
+  props.splice(i,1); save(K.props,props); renderProps(); renderOverview();
+}
+
+// ══════════════════════════════════════
+// SELLERS
+// ══════════════════════════════════════
+function renderSellers(){
+  document.getElementById('sellersBody').innerHTML=load(K.sellers).map((s,i)=>`
+    <tr>
+      <td class="px-5 py-3 font-medium text-white text-xs">${s.name}</td>
+      <td class="px-5 py-3 text-gray-400 text-xs">${s.email}</td>
+      <td class="px-5 py-3 text-gray-400 text-xs">${s.phone}</td>
+      <td class="px-5 py-3 text-gray-400 text-xs">${s.addr||'—'}</td>
+      <td class="px-5 py-3 text-gray-400 text-xs">${s.prop||'—'}</td>
+      <td class="px-5 py-3 flex gap-2">
+        <button onclick="openEditSeller(${i})" class="text-xs text-orange-400 hover:text-orange-300">Edit</button>
+        <button onclick="deleteSeller(${i})" class="text-xs text-red-400 hover:text-red-300">Delete</button>
+      </td>
+    </tr>
+  `).join('')||`<tr><td colspan="6" class="px-5 py-5 text-center text-gray-500 text-xs">No sellers yet.</td></tr>`;
+}
+function saveSeller(){
+  const name=document.getElementById('sName').value.trim(),email=document.getElementById('sEmail').value.trim(),phone=document.getElementById('sPhone').value.trim();
+  if(!name||!email||!phone){document.getElementById('sErr').classList.remove('hidden');return;}
+  document.getElementById('sErr').classList.add('hidden');
+  const s=load(K.sellers);
+  s.push({name,email,phone,addr:document.getElementById('sAddr').value.trim(),prop:document.getElementById('sProp').value.trim()});
+  save(K.sellers,s); addLog(`Seller "${name}" added`);
+  closeModal('addSellerModal');['sName','sEmail','sPhone','sAddr','sProp'].forEach(id=>document.getElementById(id).value='');
+  renderSellers();
+}
+function openEditSeller(i){
+  const s=load(K.sellers)[i];
+  document.getElementById('eSI').value=i;['Name','Email','Phone','Addr','Prop'].forEach(f=>document.getElementById('eS'+f).value=s[f.toLowerCase()]||'');
+  openModal('editSellerModal');
+}
+function updateSeller(){
+  const i=parseInt(document.getElementById('eSI').value),s=load(K.sellers);
+  s[i]={name:document.getElementById('eSName').value.trim(),email:document.getElementById('eSEmail').value.trim(),phone:document.getElementById('eSPhone').value.trim(),addr:document.getElementById('eSAddr').value.trim(),prop:document.getElementById('eSProp').value.trim()};
+  save(K.sellers,s); addLog(`Seller "${s[i].name}" updated`); closeModal('editSellerModal'); renderSellers();
+}
+function deleteSeller(i){
+  if(!confirm('Delete this seller?'))return;
+  const s=load(K.sellers); addLog(`Seller "${s[i].name}" deleted`); s.splice(i,1); save(K.sellers,s); renderSellers();
+}
+
+// ══════════════════════════════════════
+// BUYERS
+// ══════════════════════════════════════
+function renderBuyers(){
+  document.getElementById('buyersBody').innerHTML=load(K.buyers).map((b,i)=>`
+    <tr>
+      <td class="px-5 py-3 font-medium text-white text-xs">${b.name}</td>
+      <td class="px-5 py-3 text-gray-400 text-xs">${b.email}</td>
+      <td class="px-5 py-3 text-gray-400 text-xs">${b.phone}</td>
+      <td class="px-5 py-3 text-gray-400 text-xs">${b.addr||'—'}</td>
+      <td class="px-5 py-3 text-gray-400 text-xs">${b.prop||'—'}</td>
+      <td class="px-5 py-3 flex gap-2">
+        <button onclick="openEditBuyer(${i})" class="text-xs text-orange-400 hover:text-orange-300">Edit</button>
+        <button onclick="deleteBuyer(${i})" class="text-xs text-red-400 hover:text-red-300">Delete</button>
+      </td>
+    </tr>
+  `).join('')||`<tr><td colspan="6" class="px-5 py-5 text-center text-gray-500 text-xs">No buyers yet.</td></tr>`;
+}
+function saveBuyer(){
+  const name=document.getElementById('bName').value.trim(),email=document.getElementById('bEmail').value.trim(),phone=document.getElementById('bPhone').value.trim();
+  if(!name||!email||!phone){document.getElementById('bErr').classList.remove('hidden');return;}
+  document.getElementById('bErr').classList.add('hidden');
+  const b=load(K.buyers);
+  b.push({name,email,phone,addr:document.getElementById('bAddr').value.trim(),prop:document.getElementById('bProp').value.trim()});
+  save(K.buyers,b); addLog(`Buyer "${name}" added`);
+  closeModal('addBuyerModal');['bName','bEmail','bPhone','bAddr','bProp'].forEach(id=>document.getElementById(id).value='');
+  renderBuyers();
+}
+function openEditBuyer(i){
+  const b=load(K.buyers)[i];
+  document.getElementById('eBI').value=i;['Name','Email','Phone','Addr','Prop'].forEach(f=>document.getElementById('eB'+f).value=b[f.toLowerCase()]||'');
+  openModal('editBuyerModal');
+}
+function updateBuyer(){
+  const i=parseInt(document.getElementById('eBI').value),b=load(K.buyers);
+  b[i]={name:document.getElementById('eBName').value.trim(),email:document.getElementById('eBEmail').value.trim(),phone:document.getElementById('eBPhone').value.trim(),addr:document.getElementById('eBAddr').value.trim(),prop:document.getElementById('eBProp').value.trim()};
+  save(K.buyers,b); addLog(`Buyer "${b[i].name}" updated`); closeModal('editBuyerModal'); renderBuyers();
+}
+function deleteBuyer(i){
+  if(!confirm('Delete this buyer?'))return;
+  const b=load(K.buyers); addLog(`Buyer "${b[i].name}" deleted`); b.splice(i,1); save(K.buyers,b); renderBuyers();
+}
+
+// ══════════════════════════════════════
+// COMMISSION
+// ══════════════════════════════════════
+function renderCommission(){
+  const sold=load(K.props).filter(p=>p.status==='Sold');
+  const total=sold.reduce((s,p)=>s+p.price*p.rate/100,0);
+  const avg=sold.length?total/sold.length:0;
+  document.getElementById('commCards').innerHTML=`
+    <div class="stat-card"><p class="text-gray-400 text-xs uppercase tracking-wide mb-1">Total Commissions</p><p class="text-2xl font-bold text-orange-400">${peso(total)}</p></div>
+    <div class="stat-card"><p class="text-gray-400 text-xs uppercase tracking-wide mb-1">Deals Closed</p><p class="text-2xl font-bold">${sold.length}</p></div>
+    <div class="stat-card"><p class="text-gray-400 text-xs uppercase tracking-wide mb-1">Avg. Commission</p><p class="text-2xl font-bold">${peso(avg)}</p></div>
+  `;
+  document.getElementById('commBody').innerHTML=sold.map(p=>`
+    <tr>
+      <td class="px-5 py-3 text-xs text-gray-400">${p.agent||'Unassigned'}</td>
+      <td class="px-5 py-3 font-medium text-white text-xs">${p.name}</td>
+      <td class="px-5 py-3 text-xs">${peso(p.price)}</td>
+      <td class="px-5 py-3 text-xs">${p.rate}%</td>
+      <td class="px-5 py-3 text-xs text-orange-400 font-semibold">${peso(p.price*p.rate/100)}</td>
+    </tr>
+  `).join('')||`<tr><td colspan="5" class="px-5 py-5 text-center text-gray-500 text-xs">No sold properties yet.</td></tr>`;
+}
+
+// ══════════════════════════════════════
+// SALES PERFORMANCE
+// ══════════════════════════════════════
+function renderSales(){
+  const sold=load(K.props).filter(p=>p.status==='Sold');
+  const rev=sold.reduce((s,p)=>s+p.price,0);
+  const best=sold.length?sold.reduce((a,b)=>b.price>a.price?b:a):null;
+
+  document.getElementById('salesCards').innerHTML=`
+    <div class="stat-card"><p class="text-gray-400 text-xs uppercase tracking-wide mb-1">Total Sales</p><p class="text-2xl font-bold">${sold.length}</p></div>
+    <div class="stat-card"><p class="text-gray-400 text-xs uppercase tracking-wide mb-1">Total Revenue</p><p class="text-2xl font-bold text-orange-400">${peso(rev)}</p></div>
+    <div class="stat-card"><p class="text-gray-400 text-xs uppercase tracking-wide mb-1">Best Property</p><p class="text-lg font-bold text-white">${best?best.name:'—'}</p></div>
+  `;
+
+  // Agent performance
+  const agentMap={};
+  sold.forEach(p=>{
+    const a=p.agent||'Unassigned';
+    if(!agentMap[a]) agentMap[a]={sales:0,amount:0,comm:0};
+    agentMap[a].sales++;
+    agentMap[a].amount+=p.price;
+    agentMap[a].comm+=p.price*p.rate/100;
+  });
+  document.getElementById('salesBody').innerHTML=Object.entries(agentMap).sort((a,b)=>b[1].amount-a[1].amount).map(([name,d])=>`
+    <tr>
+      <td class="px-5 py-3 font-medium text-white text-xs">${name}</td>
+      <td class="px-5 py-3 text-xs">${d.sales}</td>
+      <td class="px-5 py-3 text-xs">${peso(d.amount)}</td>
+      <td class="px-5 py-3 text-xs text-orange-400">${peso(d.comm)}</td>
+    </tr>
+  `).join('')||`<tr><td colspan="4" class="px-5 py-5 text-center text-gray-500 text-xs">No data yet.</td></tr>`;
+
+  document.getElementById('transBody').innerHTML=sold.map(p=>`
+    <tr>
+      <td class="px-5 py-3 font-medium text-white text-xs">${p.name}</td>
+      <td class="px-5 py-3 text-gray-400 text-xs">${p.loc}</td>
+      <td class="px-5 py-3 text-xs">${peso(p.price)}</td>
+      <td class="px-5 py-3 text-xs text-orange-400">${peso(p.price*p.rate/100)}</td>
+    </tr>
+  `).join('')||`<tr><td colspan="4" class="px-5 py-5 text-center text-gray-500 text-xs">No transactions yet.</td></tr>`;
+}
+
+// ══════════════════════════════════════
+// COMPUTATION
+// ══════════════════════════════════════
+function doCompute(){
+  const price=parseFloat(document.getElementById('cPrice').value)||0;
+  const rate=parseFloat(document.getElementById('cRate').value)||0;
+  const inc=parseFloat(document.getElementById('cInc').value)||0;
+  const r=document.getElementById('cResult');
+  if(!price||!rate){r.classList.add('hidden');return;}
+  const comm=price*rate/100;
+  const incAmt=price*inc/100;
+  document.getElementById('cAmount').textContent=peso(comm);
+  document.getElementById('cSP').textContent=peso(price);
+  document.getElementById('cSR').textContent=rate+'%';
+  document.getElementById('cSI').textContent=inc?inc+'%':'—';
+  const incRow=document.getElementById('cIncRow');
+  if(inc>0){incRow.classList.remove('hidden');document.getElementById('cIncAmount').textContent=peso(incAmt);}else{incRow.classList.add('hidden');}
+  r.classList.remove('hidden');
+}
+
+// ══════════════════════════════════════
+// REPORTS
+// ══════════════════════════════════════
+function renderReports(){
+  const props=load(K.props),agents=load(K.agents),sellers=load(K.sellers),buyers=load(K.buyers);
+  const sold=props.filter(p=>p.status==='Sold');
+  const totalComm=sold.reduce((s,p)=>s+p.price*p.rate/100,0);
+  const totalRev=sold.reduce((s,p)=>s+p.price,0);
+  document.getElementById('reportContent').innerHTML=`
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      ${[['Properties',props.length,''],['Agents',agents.length,''],['Sellers',sellers.length,''],['Buyers',buyers.length,'']].map(([l,v,c])=>`<div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">${l}</p><p class="text-xl font-bold ${c}">${v}</p></div>`).join('')}
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      ${[['Available',props.filter(p=>p.status==='Available').length,'text-green-400'],['Reserved',props.filter(p=>p.status==='Reserved').length,'text-yellow-400'],['Sold',sold.length,'text-red-400'],['Approved Agents',agents.filter(a=>a.status==='approved').length,'text-green-400']].map(([l,v,c])=>`<div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">${l}</p><p class="text-xl font-bold ${c}">${v}</p></div>`).join('')}
+    </div>
+    <div class="border-t border-white/8 pt-4 space-y-2">
+      <div class="flex justify-between text-sm"><span class="text-gray-500">Total Sales Revenue</span><span class="font-semibold text-white">${peso(totalRev)}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-gray-500">Total Commissions Paid</span><span class="font-semibold text-orange-400">${peso(totalComm)}</span></div>
+      <div class="flex justify-between text-sm"><span class="text-gray-500">Pending Agent Applications</span><span class="font-semibold text-yellow-400">${agents.filter(a=>a.status==='pending').length}</span></div>
+    </div>
+  `;
+}
+function exportCSV(){
+  const props=load(K.props);
+  const rows=[['Property','Location','Price','Rate','Commission','Status','Agent'],
+    ...props.map(p=>[p.name,p.loc,p.price,p.rate+'%',p.price*p.rate/100,p.status,p.agent||''])];
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='tppg_report.csv'; a.click();
+  addLog('CSV report exported');
+}
+function exportPDF(){ window.print(); addLog('PDF/Print report exported'); }
+
+// ══════════════════════════════════════
+// LOGS
+// ══════════════════════════════════════
+function renderLogs(){
+  const logs=load(K.logs);
+  document.getElementById('logsContainer').innerHTML=logs.map(l=>`
+    <div class="px-5 py-3 flex justify-between text-xs">
+      <span class="text-gray-300">${l.msg}</span>
+      <span class="text-gray-600 ml-4 whitespace-nowrap">${l.time}</span>
+    </div>
+  `).join('')||'<div class="px-5 py-5 text-xs text-gray-600 text-center">No activity logged yet.</div>';
+}
+function clearLogs(){
+  if(!confirm('Clear all logs?'))return;
+  save(K.logs,[]);
+  renderLogs();
+}
+
+// ══════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════
+function saveProfile(){
+  const adminId = document.getElementById('setAdminId').value.trim();
+  const name    = document.getElementById('setName').value.trim();
+  const email   = document.getElementById('setEmail').value.trim();
+  if(!name||!email||!adminId)return;
+  const s = loadObj(K.settings);
+  s.adminId = adminId; s.name = name; s.email = email;
+  saveObj(K.settings,s);
+  document.getElementById('adminName').textContent=name;
+  document.getElementById('adminEmail').textContent=email;
+  document.getElementById('profileMsg').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('profileMsg').classList.add('hidden'),2000);
+  addLog('Admin profile updated');
+}
+function changePassword(){
+  const cur=document.getElementById('setPwCur').value;
+  const nw=document.getElementById('setPwNew').value;
+  const con=document.getElementById('setPwCon').value;
+  const msg=document.getElementById('pwMsg');
+  const s=loadObj(K.settings);
+  const stored=s.password||'admin123';
+  if(cur!==stored){msg.textContent='Current password is incorrect.';msg.className='text-xs text-red-400';msg.classList.remove('hidden');return;}
+  if(nw!==con){msg.textContent='New passwords do not match.';msg.className='text-xs text-red-400';msg.classList.remove('hidden');return;}
+  if(nw.length<6){msg.textContent='Password must be at least 6 characters.';msg.className='text-xs text-red-400';msg.classList.remove('hidden');return;}
+  s.password=nw; saveObj(K.settings,s);
+  msg.textContent='Password changed successfully.';msg.className='text-xs text-green-400';msg.classList.remove('hidden');
+  ['setPwCur','setPwNew','setPwCon'].forEach(id=>document.getElementById(id).value='');
+  setTimeout(()=>msg.classList.add('hidden'),2500);
+  addLog('Admin password changed');
+}
+
+function logout(){
+  addLog('Admin logged out');
+  localStorage.removeItem('role');
+  window.location.href='index.html';
+}
+
+// ── INIT ──
+addLog('Admin logged in');
+renderOverview();
+</script>
+</body>
+</html>
