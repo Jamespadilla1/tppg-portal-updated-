@@ -69,7 +69,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
     <div class="nav-link active" onclick="go('overview',this)"><span class="dot"></span>Dashboard</div>
 
     <div class="nav-section-label">Management</div>
-    <div class="nav-link" onclick="go('agents',this)"><span class="dot"></span>Agent Management</div>
+    <div class="nav-link" onclick="go('agents',this)"><span class="dot"></span>Pending Agents</div>
     <div class="nav-link" onclick="go('properties',this)"><span class="dot"></span>Property Listings</div>
     <div class="nav-link" onclick="go('approvedagents',this)"><span class="dot"></span>Approved Agents</div>
     <div class="nav-link" onclick="go('buyers',this)"><span class="dot"></span>Buyer Management</div>
@@ -140,8 +140,8 @@ tr:hover td{background:rgba(255,255,255,.025)}
     <!-- ══ AGENT MANAGEMENT ══ -->
     <div id="sec-agents" class="section space-y-4">
       <div class="flex gap-2 flex-wrap" id="agentFilterBtns">
-        <button onclick="filterAgents('all',this)"      class="af-btn active-af px-3 py-1.5 rounded-lg text-xs border border-orange-500/50 bg-orange-500/10 text-orange-400">All</button>
-        <button onclick="filterAgents('pending',this)"  class="af-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Pending</button>
+        <button onclick="filterAgents('all',this)"      class="af-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">All</button>
+        <button onclick="filterAgents('pending',this)"  class="af-btn active-af px-3 py-1.5 rounded-lg text-xs border border-orange-500/50 bg-orange-500/10 text-orange-400">Pending</button>
         <button onclick="filterAgents('approved',this)" class="af-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Approved</button>
         <button onclick="filterAgents('rejected',this)" class="af-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Rejected</button>
         <button onclick="filterAgents('suspended',this)"class="af-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Suspended</button>
@@ -616,7 +616,7 @@ function renderOverview(){
 // ══════════════════════════════════════
 // AGENTS
 // ══════════════════════════════════════
-let agentFilter = 'all';
+let agentFilter = 'pending';
 function filterAgents(val,btn){
   agentFilter=val;
   document.querySelectorAll('.af-btn').forEach(b=>{b.classList.remove('active-af','border-orange-500/50','bg-orange-500/10','text-orange-400');b.classList.add('border-white/10','text-gray-400');});
@@ -661,6 +661,31 @@ async function renderAgents(){
 }
 async function agentAction(id, status) {
   const token = localStorage.getItem('token');
+
+  // Rejecting an agent deletes their record entirely instead of just flagging it
+  if (status === 'rejected') {
+    if (!confirm('Reject this agent? This will permanently delete their application.')) return;
+    try {
+      await fetch(`/api/agents/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      await fetch('/api/logs', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message: `Agent application rejected and removed`, actor: 'Admin', role: 'admin' })
+      });
+      renderAgents();
+    } catch(err) {
+      console.error('Error rejecting agent:', err);
+      alert('Failed to reject agent.');
+    }
+    return;
+  }
+
   try {
     const res = await fetch(`/api/agents/${id}/status`, {
       method: 'PATCH',
