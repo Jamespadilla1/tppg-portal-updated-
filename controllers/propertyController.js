@@ -24,7 +24,8 @@ const getProperties = async (req, res) => {
 // POST /api/properties (admin only)
 const createProperty = async (req, res) => {
   try {
-    const { name, location, price, rate, description, status } = req.body;
+    const { name, location, price, rate, description, status, available_units } = req.body;
+    const image_url = req.file ? `/uploads/${req.file.filename}` : null;
 
     const { data: property, error } = await supabase
       .from('properties')
@@ -35,6 +36,8 @@ const createProperty = async (req, res) => {
         rate,
         description,
         status: status || 'Available',
+        available_units: available_units || 1,
+        image_url,
         date: new Date(),
       }])
       .select()
@@ -50,19 +53,25 @@ const createProperty = async (req, res) => {
 // PUT /api/properties/:id (admin only)
 const updateProperty = async (req, res) => {
   try {
-    const { name, location, price, rate, description, status } = req.body;
+    const { name, location, price, rate, description, status, available_units } = req.body;
+
+    const updateData = {
+      name,
+      location,
+      price,
+      rate,
+      description,
+      status,
+      available_units,
+      updated_at: new Date(),
+    };
+
+    // Only overwrite the image if a new one was uploaded
+    if (req.file) updateData.image_url = `/uploads/${req.file.filename}`;
 
     const { data: property, error } = await supabase
       .from('properties')
-      .update({
-        name,
-        location,
-        price,
-        rate,
-        description,
-        status,
-        updated_at: new Date(),
-      })
+      .update(updateData)
       .eq('id', req.params.id)
       .select()
       .single();

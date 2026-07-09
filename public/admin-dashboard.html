@@ -165,15 +165,8 @@ tr:hover td{background:rgba(255,255,255,.025)}
         <button onclick="filterProps('Sold',this)"      class="pf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Sold</button>
         <input type="text" placeholder="Search…" oninput="propSearch=this.value.toLowerCase();renderProps()" class="field ml-auto w-40 text-xs py-1.5">
       </div>
-      <div class="card overflow-hidden">
-        <div class="overflow-x-auto"><table class="w-full text-sm">
-          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
-            <th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Location</th><th class="text-left px-5 py-2">Price</th><th class="text-left px-5 py-2">Rate</th><th class="text-left px-5 py-2">Description</th><th class="text-left px-5 py-2">Status</th><th class="text-left px-5 py-2">Actions</th>
-          </tr></thead>
-          <tbody id="propBody" class="divide-y divide-white/6 text-gray-300"></tbody>
-        </table></div>
-        <div class="px-5 py-2 border-t border-white/8 text-xs text-gray-500" id="propCount"></div>
-      </div>
+      <div id="propGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+      <p id="propCount" class="text-xs text-gray-500"></p>
     </div>
 
     <!-- ══ APPROVED AGENTS ══ -->
@@ -355,12 +348,14 @@ tr:hover td{background:rgba(255,255,255,.025)}
     <h3 class="font-bold text-lg mb-1">Add New Property</h3>
     <p class="text-xs text-gray-500 mb-4">Fill in all required fields.</p>
     <div class="space-y-3">
+      <div><label class="text-xs text-gray-400 mb-1 block">Property Photo</label><input id="pImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Property Name *</label><input id="pName" type="text" class="field" placeholder="e.g. Modern House A"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Location *</label><input id="pLoc" type="text" class="field" placeholder="e.g. Cebu City"></div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="text-xs text-gray-400 mb-1 block">Price (₱) *</label><input id="pPrice" type="number" class="field" placeholder="3500000"></div>
         <div><label class="text-xs text-gray-400 mb-1 block">Commission Rate (%) *</label><input id="pRate" type="number" class="field" placeholder="3"></div>
       </div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Available Units</label><input id="pUnits" type="number" min="0" class="field" placeholder="1" value="1"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Description</label><textarea id="pDesc" class="field" placeholder="Brief property description…"></textarea></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="pStatus" class="field"><option value="Available">Available</option><option value="Reserved">Reserved</option><option value="Sold">Sold</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Date Added</label><input id="pDate" type="date" class="field"></div>
@@ -377,17 +372,27 @@ tr:hover td{background:rgba(255,255,255,.025)}
     <h3 class="font-bold text-lg mb-4">Edit Property</h3>
     <div class="space-y-3">
       <input id="ePI" type="hidden">
+      <div><label class="text-xs text-gray-400 mb-1 block">Property Photo (leave blank to keep current)</label><input id="ePImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Property Name</label><input id="ePName" type="text" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Location</label><input id="ePLoc" type="text" class="field"></div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="text-xs text-gray-400 mb-1 block">Price (₱)</label><input id="ePPrice" type="number" class="field"></div>
         <div><label class="text-xs text-gray-400 mb-1 block">Commission Rate (%)</label><input id="ePRate" type="number" class="field"></div>
       </div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Available Units</label><input id="ePUnits" type="number" min="0" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Description</label><textarea id="ePDesc" class="field"></textarea></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="ePStatus" class="field"><option value="Available">Available</option><option value="Reserved">Reserved</option><option value="Sold">Sold</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Date Added</label><input id="ePDate" type="date" class="field"></div>
       <button onclick="updateProp()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Property</button>
     </div>
+  </div>
+</div>
+
+<!-- PROPERTY DETAIL (clickable card view) -->
+<div id="propDetailModal" class="modal-backdrop">
+  <div class="modal-box max-w-lg">
+    <button onclick="closeModal('propDetailModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <div id="propDetailContent"></div>
   </div>
 </div>
 
@@ -754,83 +759,193 @@ async function deleteAgent(id) {
 // ══════════════════════════════════════
 // PROPERTIES
 // ══════════════════════════════════════
-let propFilter='all', propSearch='';
 function filterProps(val,btn){
   propFilter=val;
   document.querySelectorAll('.pf-btn').forEach(b=>{b.classList.remove('active-pf','border-orange-500/50','bg-orange-500/10','text-orange-400');b.classList.add('border-white/10','text-gray-400');});
   btn.classList.add('active-pf','border-orange-500/50','bg-orange-500/10','text-orange-400');btn.classList.remove('border-white/10','text-gray-400');
   renderProps();
 }
-function renderProps(){
-  const all=load(K.props);
-  const filtered=all.filter((p,i)=>{
-    p._i=i;
-    const mf=propFilter==='all'||p.status===propFilter;
-    const ms=p.name.toLowerCase().includes(propSearch)||p.loc.toLowerCase().includes(propSearch);
-    return mf&&ms;
-  });
-  document.getElementById('propBody').innerHTML=filtered.map(p=>{
-    const i=all.indexOf(p);
-    const comm=p.price*p.rate/100;
-    return `<tr>
-      <td class="px-5 py-3 font-medium text-white text-xs">${p.name}</td>
-      <td class="px-5 py-3 text-gray-400 text-xs">${p.loc}</td>
-      <td class="px-5 py-3 text-xs">${peso(p.price)}</td>
-      <td class="px-5 py-3 text-xs text-orange-400">${p.rate}%</td>
-      <td class="px-5 py-3 text-xs text-gray-500 max-w-xs truncate">${p.desc||'—'}</td>
-      <td class="px-5 py-3"><span class="badge ${SB[p.status]}">${p.status}</span></td>
-      <td class="px-5 py-3 flex gap-2">
-        <button onclick="openEditProp(${i})" class="text-xs text-orange-400 hover:text-orange-300">Edit</button>
-        <button onclick="deleteProp(${i})" class="text-xs text-red-400 hover:text-red-300">Delete</button>
-      </td>
-    </tr>`;
-  }).join('')||`<tr><td colspan="7" class="px-5 py-5 text-center text-gray-500 text-xs">No properties found.</td></tr>`;
-  document.getElementById('propCount').textContent=`Showing ${filtered.length} of ${all.length} properties`;
+let propFilter='all', propSearch='', propCache=[];
+async function renderProps(){
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch('/api/properties', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const all = await res.json();
+    propCache = all;
+
+    const filtered = all.filter(p => {
+      const mf = propFilter==='all' || p.status===propFilter;
+      const ms = p.name.toLowerCase().includes(propSearch) || (p.location||'').toLowerCase().includes(propSearch);
+      return mf && ms;
+    });
+
+    document.getElementById('propGrid').innerHTML = filtered.map(p => `
+      <div onclick="viewProperty('${p.id}')" class="card overflow-hidden cursor-pointer hover:border-orange-500/40 transition-colors">
+        <div class="w-full h-36 bg-white/5 flex items-center justify-center overflow-hidden">
+          ${p.image_url
+            ? `<img src="${p.image_url}" class="w-full h-full object-cover">`
+            : `<span class="text-gray-600 text-xs">No photo</span>`}
+        </div>
+        <div class="p-3 space-y-1">
+          <div class="flex items-start justify-between gap-2">
+            <p class="font-semibold text-white text-sm leading-tight">${p.name}</p>
+            <span class="badge ${SB[p.status]} shrink-0">${p.status}</span>
+          </div>
+          <p class="text-gray-500 text-xs">${p.location||'—'}</p>
+          <p class="text-orange-400 font-bold text-sm">${peso(p.price)}</p>
+          <p class="text-gray-500 text-xs">${p.available_units ?? 1} unit(s) available</p>
+        </div>
+      </div>
+    `).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No properties found.</p>`;
+
+    document.getElementById('propCount').textContent = `Showing ${filtered.length} of ${all.length} properties`;
+  } catch(err) {
+    console.error('Error loading properties:', err);
+  }
 }
-function saveProp(){
+function viewProperty(id){
+  const p = propCache.find(x => x.id === id);
+  if(!p) return;
+  const comm = (p.price * p.rate / 100) || 0;
+  document.getElementById('propDetailContent').innerHTML = `
+    <div class="w-full h-48 bg-white/5 rounded-lg overflow-hidden mb-4 flex items-center justify-center">
+      ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-600 text-xs">No photo</span>`}
+    </div>
+    <div class="flex items-start justify-between gap-2 mb-1">
+      <h3 class="font-bold text-lg text-white">${p.name}</h3>
+      <span class="badge ${SB[p.status]}">${p.status}</span>
+    </div>
+    <p class="text-gray-400 text-sm mb-3">${p.location||'—'}</p>
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Price</p><p class="text-white font-bold">${peso(p.price)}</p></div>
+      <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Available Units</p><p class="text-white font-bold">${p.available_units ?? 1}</p></div>
+    </div>
+    <div class="rounded-xl bg-orange-500/10 border border-orange-500/25 p-4 mb-3">
+      <p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Commission (Price × ${p.rate}%)</p>
+      <p class="text-2xl font-bold text-orange-400">${peso(comm)}</p>
+    </div>
+    <p class="text-gray-500 text-xs mb-1">Description</p>
+    <p class="text-gray-300 text-sm mb-4">${p.description||'No description provided.'}</p>
+    <div class="flex gap-2">
+      <button onclick="closeModal('propDetailModal');openEditProp('${p.id}')" class="flex-1 bg-orange-500 hover:bg-orange-600 py-2 rounded-lg text-sm font-medium transition-colors">Edit</button>
+      <button onclick="deleteProp('${p.id}')" class="flex-1 bg-red-500/80 hover:bg-red-600 py-2 rounded-lg text-sm font-medium transition-colors">Delete</button>
+    </div>
+  `;
+  openModal('propDetailModal');
+}
+async function saveProp(){
   const name=document.getElementById('pName').value.trim();
   const loc=document.getElementById('pLoc').value.trim();
   const price=parseFloat(document.getElementById('pPrice').value);
   const rate=parseFloat(document.getElementById('pRate').value);
   if(!name||!loc||!price||!rate){document.getElementById('pErr').classList.remove('hidden');return;}
   document.getElementById('pErr').classList.add('hidden');
-  const props=load(K.props);
-  props.push({name,loc,price,rate,desc:document.getElementById('pDesc').value.trim(),status:document.getElementById('pStatus').value,agent:document.getElementById('pAgent').value.trim(),date:document.getElementById('pDate').value});
-  save(K.props,props);
-  addLog(`Property "${name}" added by Admin`);
-  closeModal('addPropModal');
-  ['pName','pLoc','pPrice','pRate','pDesc','pAgent','pDate'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('pStatus').value='Available';
-  renderProps(); renderOverview();
+
+  const token = localStorage.getItem('token');
+  const fd = new FormData();
+  fd.append('name', name);
+  fd.append('location', loc);
+  fd.append('price', price);
+  fd.append('rate', rate);
+  fd.append('available_units', document.getElementById('pUnits').value || 1);
+  fd.append('description', document.getElementById('pDesc').value.trim());
+  fd.append('status', document.getElementById('pStatus').value);
+  const imgFile = document.getElementById('pImage').files[0];
+  if(imgFile) fd.append('image', imgFile);
+
+  try {
+    const res = await fetch('/api/properties', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: fd
+    });
+    if(!res.ok) throw new Error('Failed to save property');
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Property "${name}" added by Admin`, actor: 'Admin', role: 'admin' })
+    });
+    closeModal('addPropModal');
+    ['pName','pLoc','pPrice','pRate','pDesc','pUnits'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('pImage').value='';
+    document.getElementById('pStatus').value='Available';
+    renderProps();
+  } catch(err) {
+    console.error('Error saving property:', err);
+    alert('Failed to save property.');
+  }
 }
-function openEditProp(i){
-  const p=load(K.props)[i];
-  document.getElementById('ePI').value=i;
+function openEditProp(id){
+  const p = propCache.find(x => x.id === id);
+  if(!p) return;
+  document.getElementById('ePI').value=p.id;
   document.getElementById('ePName').value=p.name;
-  document.getElementById('ePLoc').value=p.loc;
+  document.getElementById('ePLoc').value=p.location||'';
   document.getElementById('ePPrice').value=p.price;
   document.getElementById('ePRate').value=p.rate;
-  document.getElementById('ePDesc').value=p.desc||'';
+  document.getElementById('ePUnits').value=p.available_units ?? 1;
+  document.getElementById('ePDesc').value=p.description||'';
   document.getElementById('ePStatus').value=p.status;
-  document.getElementById('ePAgent').value=p.agent||'';
-  document.getElementById('ePDate').value=p.date||'';
+  document.getElementById('ePImage').value='';
   openModal('editPropModal');
 }
-function updateProp(){
-  const i=parseInt(document.getElementById('ePI').value);
-  const props=load(K.props);
-  const old=props[i].status;
-  props[i]={name:document.getElementById('ePName').value.trim(),loc:document.getElementById('ePLoc').value.trim(),price:parseFloat(document.getElementById('ePPrice').value),rate:parseFloat(document.getElementById('ePRate').value),desc:document.getElementById('ePDesc').value.trim(),status:document.getElementById('ePStatus').value,agent:document.getElementById('ePAgent').value.trim(),date:document.getElementById('ePDate').value};
-  save(K.props,props);
-  if(old!==props[i].status) addLog(`Property "${props[i].name}" status changed to ${props[i].status}`);
-  else addLog(`Property "${props[i].name}" updated`);
-  closeModal('editPropModal'); renderProps(); renderOverview();
+async function updateProp(){
+  const id = document.getElementById('ePI').value;
+  const token = localStorage.getItem('token');
+  const name = document.getElementById('ePName').value.trim();
+
+  const fd = new FormData();
+  fd.append('name', name);
+  fd.append('location', document.getElementById('ePLoc').value.trim());
+  fd.append('price', parseFloat(document.getElementById('ePPrice').value));
+  fd.append('rate', parseFloat(document.getElementById('ePRate').value));
+  fd.append('available_units', document.getElementById('ePUnits').value || 1);
+  fd.append('description', document.getElementById('ePDesc').value.trim());
+  fd.append('status', document.getElementById('ePStatus').value);
+  const imgFile = document.getElementById('ePImage').files[0];
+  if(imgFile) fd.append('image', imgFile);
+
+  try {
+    const res = await fetch(`/api/properties/${id}`, {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: fd
+    });
+    if(!res.ok) throw new Error('Failed to update property');
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Property "${name}" updated`, actor: 'Admin', role: 'admin' })
+    });
+    closeModal('editPropModal');
+    renderProps();
+  } catch(err) {
+    console.error('Error updating property:', err);
+    alert('Failed to update property.');
+  }
 }
-function deleteProp(i){
+async function deleteProp(id){
   if(!confirm('Delete this property?')) return;
-  const props=load(K.props);
-  addLog(`Property "${props[i].name}" deleted`);
-  props.splice(i,1); save(K.props,props); renderProps(); renderOverview();
+  const token = localStorage.getItem('token');
+  const p = propCache.find(x => x.id === id);
+  try {
+    await fetch(`/api/properties/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Property "${p?.name||''}" deleted`, actor: 'Admin', role: 'admin' })
+    });
+    closeModal('propDetailModal');
+    renderProps();
+  } catch(err) {
+    console.error('Error deleting property:', err);
+    alert('Failed to delete property.');
+  }
 }
 
 // ══════════════════════════════════════
