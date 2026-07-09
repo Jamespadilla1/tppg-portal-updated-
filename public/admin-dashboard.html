@@ -71,7 +71,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
     <div class="nav-section-label">Management</div>
     <div class="nav-link" onclick="go('agents',this)"><span class="dot"></span>Agent Management</div>
     <div class="nav-link" onclick="go('properties',this)"><span class="dot"></span>Property Listings</div>
-    <div class="nav-link" onclick="go('sellers',this)"><span class="dot"></span>Seller Management</div>
+    <div class="nav-link" onclick="go('approvedagents',this)"><span class="dot"></span>Approved Agents</div>
     <div class="nav-link" onclick="go('buyers',this)"><span class="dot"></span>Buyer Management</div>
 
     <div class="nav-section-label">Finance</div>
@@ -110,7 +110,6 @@ tr:hover td{background:rgba(255,255,255,.025)}
     <div class="flex items-center gap-2">
       <span id="pendingAlert" class="hidden badge bg-yellow text-xs cursor-pointer" onclick="go('agents',document.querySelectorAll('.nav-link')[1])">⚠ Pending Agents</span>
       <button id="addPropBtn" onclick="openModal('addPropModal')" class="hidden bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">+ Add Property</button>
-      <button id="addSellerBtn" onclick="openModal('addSellerModal')" class="hidden bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">+ Add Seller</button>
       <button id="addBuyerBtn" onclick="openModal('addBuyerModal')" class="hidden bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">+ Add Buyer</button>
     </div>
   </header>
@@ -177,15 +176,16 @@ tr:hover td{background:rgba(255,255,255,.025)}
       </div>
     </div>
 
-    <!-- ══ SELLER MANAGEMENT ══ -->
-    <div id="sec-sellers" class="section space-y-4">
+    <!-- ══ APPROVED AGENTS ══ -->
+    <div id="sec-approvedagents" class="section space-y-4">
       <div class="card overflow-hidden">
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
-            <th class="text-left px-5 py-2">Full Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Address</th><th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Actions</th>
+            <th class="text-left px-5 py-2">Full Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Agent ID</th><th class="text-left px-5 py-2">Status</th><th class="text-left px-5 py-2">Actions</th>
           </tr></thead>
-          <tbody id="sellersBody" class="divide-y divide-white/6 text-gray-300"></tbody>
+          <tbody id="approvedAgentsBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
+        <div class="px-5 py-2 border-t border-white/8 text-xs text-gray-500" id="approvedAgentCount"></div>
       </div>
     </div>
 
@@ -548,11 +548,10 @@ function go(id, linkEl) {
 
   // Header buttons
   document.getElementById('addPropBtn').classList.toggle('hidden', id!=='properties');
-  document.getElementById('addSellerBtn').classList.toggle('hidden', id!=='sellers');
   document.getElementById('addBuyerBtn').classList.toggle('hidden', id!=='buyers');
 
   // Render
-  const r = {overview:renderOverview,agents:renderAgents,properties:renderProps,sellers:renderSellers,buyers:renderBuyers,commission:renderCommission,sales:renderSales,reports:renderReports,logs:renderLogs};
+  const r = {overview:renderOverview,agents:renderAgents,properties:renderProps,approvedagents:renderApprovedAgents,buyers:renderBuyers,commission:renderCommission,sales:renderSales,reports:renderReports,logs:renderLogs};
   if(r[id]) r[id]();
 }
 
@@ -810,22 +809,35 @@ function deleteProp(i){
 }
 
 // ══════════════════════════════════════
-// SELLERS
+// APPROVED AGENTS (real data — pulled from /api/agents, filtered)
 // ══════════════════════════════════════
-function renderSellers(){
-  document.getElementById('sellersBody').innerHTML=load(K.sellers).map((s,i)=>`
-    <tr>
-      <td class="px-5 py-3 font-medium text-white text-xs">${s.name}</td>
-      <td class="px-5 py-3 text-gray-400 text-xs">${s.email}</td>
-      <td class="px-5 py-3 text-gray-400 text-xs">${s.phone}</td>
-      <td class="px-5 py-3 text-gray-400 text-xs">${s.addr||'—'}</td>
-      <td class="px-5 py-3 text-gray-400 text-xs">${s.prop||'—'}</td>
-      <td class="px-5 py-3 flex gap-2">
-        <button onclick="openEditSeller(${i})" class="text-xs text-orange-400 hover:text-orange-300">Edit</button>
-        <button onclick="deleteSeller(${i})" class="text-xs text-red-400 hover:text-red-300">Delete</button>
-      </td>
-    </tr>
-  `).join('')||`<tr><td colspan="6" class="px-5 py-5 text-center text-gray-500 text-xs">No sellers yet.</td></tr>`;
+async function renderApprovedAgents(){
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch('/api/agents', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const allAgents = await res.json();
+    const approved = allAgents.filter(a => a.status === 'approved');
+
+    document.getElementById('approvedAgentsBody').innerHTML = approved.map((a) => `
+      <tr>
+        <td class="px-5 py-3 font-medium text-white text-xs">${a.name}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${a.email}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${a.phone||'—'}</td>
+        <td class="px-5 py-3 font-mono text-xs">${a.agent_id||'—'}</td>
+        <td class="px-5 py-3 text-xs"><span class="badge ${SB[a.status]||'bg-blue'}">${a.status.charAt(0).toUpperCase()+a.status.slice(1)}</span></td>
+        <td class="px-5 py-3 flex gap-2">
+          <button onclick="viewAgent('${a.id}')" class="text-xs text-blue-400 hover:text-blue-300">View</button>
+          <button onclick="agentAction('${a.id}','suspended')" class="text-xs text-purple-400 hover:text-purple-300">Suspend</button>
+        </td>
+      </tr>
+    `).join('') || `<tr><td colspan="6" class="px-5 py-5 text-center text-gray-500 text-xs">No approved agents yet.</td></tr>`;
+
+    document.getElementById('approvedAgentCount').textContent = `${approved.length} approved agent${approved.length===1?'':'s'}`;
+  } catch(err) {
+    console.error('Error loading approved agents:', err);
+  }
 }
 function saveSeller(){
   const name=document.getElementById('sName').value.trim(),email=document.getElementById('sEmail').value.trim(),phone=document.getElementById('sPhone').value.trim();
