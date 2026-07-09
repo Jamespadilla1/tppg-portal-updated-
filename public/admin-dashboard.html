@@ -109,7 +109,6 @@ tr:hover td{background:rgba(255,255,255,.025)}
     </div>
     <div class="flex items-center gap-2">
       <span id="pendingAlert" class="hidden badge bg-yellow text-xs cursor-pointer" onclick="go('agents',document.querySelectorAll('.nav-link')[1])">⚠ Pending Agents</span>
-      <button id="addPropBtn" onclick="openModal('addPropModal')" class="hidden bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">+ Add Property</button>
       <button id="addBuyerBtn" onclick="openModal('addBuyerModal')" class="hidden bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">+ Add Buyer</button>
     </div>
   </header>
@@ -158,15 +157,32 @@ tr:hover td{background:rgba(255,255,255,.025)}
 
     <!-- ══ PROPERTY LISTINGS ══ -->
     <div id="sec-properties" class="section space-y-4">
-      <div class="flex gap-2 flex-wrap" id="propFilterBtns">
-        <button onclick="filterProps('all',this)"       class="pf-btn active-pf px-3 py-1.5 rounded-lg text-xs border border-orange-500/50 bg-orange-500/10 text-orange-400">All</button>
-        <button onclick="filterProps('Available',this)" class="pf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Available</button>
-        <button onclick="filterProps('Reserved',this)"  class="pf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Reserved</button>
-        <button onclick="filterProps('Sold',this)"      class="pf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Sold</button>
-        <input type="text" placeholder="Search…" oninput="propSearch=this.value.toLowerCase();renderProps()" class="field ml-auto w-40 text-xs py-1.5">
+      <!-- LEVEL 1: Developer cards -->
+      <div id="devListView">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-xs text-gray-500">Select a developer to view their properties.</p>
+          <button onclick="openModal('addDevModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Developer</button>
+        </div>
+        <div id="devGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
       </div>
-      <div id="propGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
-      <p id="propCount" class="text-xs text-gray-500"></p>
+
+      <!-- LEVEL 2: A developer's properties -->
+      <div id="devPropsView" class="hidden space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <button onclick="backToDevelopers()" class="text-xs text-gray-400 hover:text-white flex items-center gap-1">← Back to Developers</button>
+          <h3 id="devPropsTitle" class="font-semibold text-white text-sm"></h3>
+          <button onclick="openModal('addPropModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Property</button>
+        </div>
+        <div class="flex gap-2 flex-wrap" id="propFilterBtns">
+          <button onclick="filterProps('all',this)"       class="pf-btn active-pf px-3 py-1.5 rounded-lg text-xs border border-orange-500/50 bg-orange-500/10 text-orange-400">All</button>
+          <button onclick="filterProps('Available',this)" class="pf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Available</button>
+          <button onclick="filterProps('Reserved',this)"  class="pf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Reserved</button>
+          <button onclick="filterProps('Sold',this)"      class="pf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Sold</button>
+          <input type="text" placeholder="Search…" oninput="propSearch=this.value.toLowerCase();renderProps()" class="field ml-auto w-40 text-xs py-1.5">
+        </div>
+        <div id="propGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+        <p id="propCount" class="text-xs text-gray-500"></p>
+      </div>
     </div>
 
     <!-- ══ APPROVED AGENTS ══ -->
@@ -342,6 +358,21 @@ tr:hover td{background:rgba(255,255,255,.025)}
 <!-- ═══════════════════════════════════════════════════ -->
 
 <!-- ADD PROPERTY -->
+<!-- ADD DEVELOPER -->
+<div id="addDevModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('addDevModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-1">Add Developer</h3>
+    <p class="text-xs text-gray-500 mb-4">Just a name and logo — properties come next.</p>
+    <div class="space-y-3">
+      <div><label class="text-xs text-gray-400 mb-1 block">Developer Logo</label><input id="devLogo" type="file" accept="image/*" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Developer Name *</label><input id="devName" type="text" class="field" placeholder="e.g. Megaworld"></div>
+      <p id="devErr" class="text-red-400 text-xs hidden">Developer name is required.</p>
+      <button onclick="saveDeveloper()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors mt-1">Save Developer</button>
+    </div>
+  </div>
+</div>
+
 <div id="addPropModal" class="modal-backdrop">
   <div class="modal-box">
     <button onclick="closeModal('addPropModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
@@ -552,11 +583,10 @@ function go(id, linkEl) {
   document.getElementById('sidebar').classList.remove('open');
 
   // Header buttons
-  document.getElementById('addPropBtn').classList.toggle('hidden', id!=='properties');
   document.getElementById('addBuyerBtn').classList.toggle('hidden', id!=='buyers');
 
   // Render
-  const r = {overview:renderOverview,agents:renderAgents,properties:renderProps,approvedagents:renderApprovedAgents,buyers:renderBuyers,commission:renderCommission,sales:renderSales,reports:renderReports,logs:renderLogs};
+  const r = {overview:renderOverview,agents:renderAgents,properties:enterProperties,approvedagents:renderApprovedAgents,buyers:renderBuyers,commission:renderCommission,sales:renderSales,reports:renderReports,logs:renderLogs};
   if(r[id]) r[id]();
 }
 
@@ -766,10 +796,85 @@ function filterProps(val,btn){
   renderProps();
 }
 let propFilter='all', propSearch='', propCache=[];
-async function renderProps(){
+let currentDevId=null, currentDevName='', devCache=[];
+
+function enterProperties(){
+  currentDevId=null;
+  document.getElementById('devPropsView').classList.add('hidden');
+  document.getElementById('devListView').classList.remove('hidden');
+  renderDevelopers();
+}
+async function renderDevelopers(){
   const token = localStorage.getItem('token');
   try {
-    const res = await fetch('/api/properties', {
+    const res = await fetch('/api/developers', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const developers = await res.json();
+    devCache = developers;
+
+    document.getElementById('devGrid').innerHTML = developers.map(d => `
+      <div onclick="viewDeveloper('${d.id}','${d.name.replace(/'/g,"\\'")}')" class="card overflow-hidden cursor-pointer hover:border-orange-500/40 transition-colors text-center">
+        <div class="w-full h-28 bg-white/5 flex items-center justify-center overflow-hidden">
+          ${d.logo_url ? `<img src="${d.logo_url}" class="w-full h-full object-cover">` : `<span class="text-gray-600 text-xs">No logo</span>`}
+        </div>
+        <div class="p-3">
+          <p class="font-semibold text-white text-sm">${d.name}</p>
+        </div>
+      </div>
+    `).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No developers yet — click "+ Add Developer" to start.</p>`;
+  } catch(err) {
+    console.error('Error loading developers:', err);
+  }
+}
+async function saveDeveloper(){
+  const name = document.getElementById('devName').value.trim();
+  if(!name){ document.getElementById('devErr').classList.remove('hidden'); return; }
+  document.getElementById('devErr').classList.add('hidden');
+
+  const token = localStorage.getItem('token');
+  const fd = new FormData();
+  fd.append('name', name);
+  const logoFile = document.getElementById('devLogo').files[0];
+  if(logoFile) fd.append('logo', logoFile);
+
+  try {
+    const res = await fetch('/api/developers', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: fd
+    });
+    if(!res.ok) throw new Error('Failed to save developer');
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Developer "${name}" added by Admin`, actor: 'Admin', role: 'admin' })
+    });
+    closeModal('addDevModal');
+    document.getElementById('devName').value='';
+    document.getElementById('devLogo').value='';
+    renderDevelopers();
+  } catch(err) {
+    console.error('Error saving developer:', err);
+    alert('Failed to save developer.');
+  }
+}
+function viewDeveloper(id, name){
+  currentDevId = id;
+  currentDevName = name;
+  document.getElementById('devListView').classList.add('hidden');
+  document.getElementById('devPropsView').classList.remove('hidden');
+  document.getElementById('devPropsTitle').textContent = name;
+  renderProps();
+}
+function backToDevelopers(){
+  enterProperties();
+}
+async function renderProps(){
+  if(!currentDevId) return;
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch(`/api/properties?developer_id=${currentDevId}`, {
       headers: { 'Authorization': 'Bearer ' + token }
     });
     const all = await res.json();
@@ -798,7 +903,7 @@ async function renderProps(){
           <p class="text-gray-500 text-xs">${p.available_units ?? 1} unit(s) available</p>
         </div>
       </div>
-    `).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No properties found.</p>`;
+    `).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No properties yet for ${currentDevName} — click "+ Add Property" to start.</p>`;
 
     document.getElementById('propCount').textContent = `Showing ${filtered.length} of ${all.length} properties`;
   } catch(err) {
@@ -852,6 +957,7 @@ async function saveProp(){
   fd.append('available_units', document.getElementById('pUnits').value || 1);
   fd.append('description', document.getElementById('pDesc').value.trim());
   fd.append('status', document.getElementById('pStatus').value);
+  if(currentDevId) fd.append('developer_id', currentDevId);
   const imgFile = document.getElementById('pImage').files[0];
   if(imgFile) fd.append('image', imgFile);
 

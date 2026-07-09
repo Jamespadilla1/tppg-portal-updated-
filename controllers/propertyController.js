@@ -3,7 +3,7 @@ const supabase = require('../config/db');
 // GET /api/properties
 const getProperties = async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, developer_id } = req.query;
 
     let query = supabase
       .from('properties')
@@ -11,6 +11,7 @@ const getProperties = async (req, res) => {
       .order('created_at', { ascending: false });
 
     if (status) query = query.eq('status', status);
+    if (developer_id) query = query.eq('developer_id', developer_id);
 
     const { data: properties, error } = await query;
 
@@ -24,7 +25,7 @@ const getProperties = async (req, res) => {
 // POST /api/properties (admin only)
 const createProperty = async (req, res) => {
   try {
-    const { name, location, price, rate, description, status, available_units } = req.body;
+    const { name, location, price, rate, description, status, available_units, developer_id } = req.body;
     const image_url = req.file ? `/uploads/${req.file.filename}` : null;
 
     const { data: property, error } = await supabase
@@ -38,6 +39,7 @@ const createProperty = async (req, res) => {
         status: status || 'Available',
         available_units: available_units || 1,
         image_url,
+        developer_id: developer_id || null,
         date: new Date(),
       }])
       .select()
@@ -53,7 +55,7 @@ const createProperty = async (req, res) => {
 // PUT /api/properties/:id (admin only)
 const updateProperty = async (req, res) => {
   try {
-    const { name, location, price, rate, description, status, available_units } = req.body;
+    const { name, location, price, rate, description, status, available_units, developer_id } = req.body;
 
     const updateData = {
       name,
@@ -65,6 +67,8 @@ const updateProperty = async (req, res) => {
       available_units,
       updated_at: new Date(),
     };
+
+    if (developer_id) updateData.developer_id = developer_id;
 
     // Only overwrite the image if a new one was uploaded
     if (req.file) updateData.image_url = `/uploads/${req.file.filename}`;

@@ -19,6 +19,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/auth',       require('./routes/auth'));
 app.use('/api/agents',     require('./routes/agents'));
 app.use('/api/properties', require('./routes/properties'));
+app.use('/api/developers', require('./routes/developers'));
 app.use('/api/sellers',    require('./routes/sellers'));
 app.use('/api/buyers',     require('./routes/buyers'));
 app.use('/api/logs',       require('./routes/logs'));
