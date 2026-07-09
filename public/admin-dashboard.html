@@ -173,15 +173,27 @@ tr:hover td{background:rgba(255,255,255,.025)}
           <h3 id="devPropsTitle" class="font-semibold text-white text-sm"></h3>
           <button onclick="openModal('addPropModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Property</button>
         </div>
-        <div class="flex gap-2 flex-wrap" id="propFilterBtns">
-          <button onclick="filterProps('all',this)"       class="pf-btn active-pf px-3 py-1.5 rounded-lg text-xs border border-orange-500/50 bg-orange-500/10 text-orange-400">All</button>
-          <button onclick="filterProps('Available',this)" class="pf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Available</button>
-          <button onclick="filterProps('Reserved',this)"  class="pf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Reserved</button>
-          <button onclick="filterProps('Sold',this)"      class="pf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Sold</button>
-          <input type="text" placeholder="Search…" oninput="propSearch=this.value.toLowerCase();renderProps()" class="field ml-auto w-40 text-xs py-1.5">
-        </div>
+        <input type="text" placeholder="Search properties…" oninput="propSearch=this.value.toLowerCase();renderProps()" class="field w-52 text-xs py-1.5">
         <div id="propGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
         <p id="propCount" class="text-xs text-gray-500"></p>
+      </div>
+
+      <!-- LEVEL 3: A property's units -->
+      <div id="unitsView" class="hidden space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <button onclick="backToProperties()" class="text-xs text-gray-400 hover:text-white flex items-center gap-1">← Back to Properties</button>
+          <h3 id="unitsViewTitle" class="font-semibold text-white text-sm"></h3>
+          <button onclick="openModal('addUnitModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Unit</button>
+        </div>
+        <div class="flex gap-2 flex-wrap" id="unitFilterBtns">
+          <button onclick="filterUnits('all',this)"       class="uf-btn active-uf px-3 py-1.5 rounded-lg text-xs border border-orange-500/50 bg-orange-500/10 text-orange-400">All</button>
+          <button onclick="filterUnits('Available',this)" class="uf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Available</button>
+          <button onclick="filterUnits('Reserved',this)"  class="uf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Reserved</button>
+          <button onclick="filterUnits('Sold',this)"      class="uf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Sold</button>
+          <input type="text" placeholder="Search units…" oninput="unitSearch=this.value.toLowerCase();renderUnits()" class="field ml-auto w-40 text-xs py-1.5">
+        </div>
+        <div id="unitGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+        <p id="unitCount" class="text-xs text-gray-500"></p>
       </div>
     </div>
 
@@ -377,19 +389,12 @@ tr:hover td{background:rgba(255,255,255,.025)}
   <div class="modal-box">
     <button onclick="closeModal('addPropModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
     <h3 class="font-bold text-lg mb-1">Add New Property</h3>
-    <p class="text-xs text-gray-500 mb-4">Fill in all required fields.</p>
+    <p class="text-xs text-gray-500 mb-4">Name, location, type, and a photo — units come next.</p>
     <div class="space-y-3">
       <div><label class="text-xs text-gray-400 mb-1 block">Property Photo</label><input id="pImage" type="file" accept="image/*" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Property Name *</label><input id="pName" type="text" class="field" placeholder="e.g. Modern House A"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Property Name *</label><input id="pName" type="text" class="field" placeholder="e.g. Bernwood Centrale"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Location *</label><input id="pLoc" type="text" class="field" placeholder="e.g. Cebu City"></div>
-      <div class="grid grid-cols-2 gap-3">
-        <div><label class="text-xs text-gray-400 mb-1 block">Price (₱) *</label><input id="pPrice" type="number" class="field" placeholder="3500000"></div>
-        <div><label class="text-xs text-gray-400 mb-1 block">Commission Rate (%) *</label><input id="pRate" type="number" class="field" placeholder="3"></div>
-      </div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Available Units</label><input id="pUnits" type="number" min="0" class="field" placeholder="1" value="1"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Description</label><textarea id="pDesc" class="field" placeholder="Brief property description…"></textarea></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="pStatus" class="field"><option value="Available">Available</option><option value="Reserved">Reserved</option><option value="Sold">Sold</option></select></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Date Added</label><input id="pDate" type="date" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Property Type *</label><select id="pType" class="field"><option value="Condo">Condo</option><option value="House and Lot">House and Lot</option></select></div>
       <p id="pErr" class="text-red-400 text-xs hidden">Please fill in all required fields.</p>
       <button onclick="saveProp()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors mt-1">Save Property</button>
     </div>
@@ -406,24 +411,68 @@ tr:hover td{background:rgba(255,255,255,.025)}
       <div><label class="text-xs text-gray-400 mb-1 block">Property Photo (leave blank to keep current)</label><input id="ePImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Property Name</label><input id="ePName" type="text" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Location</label><input id="ePLoc" type="text" class="field"></div>
-      <div class="grid grid-cols-2 gap-3">
-        <div><label class="text-xs text-gray-400 mb-1 block">Price (₱)</label><input id="ePPrice" type="number" class="field"></div>
-        <div><label class="text-xs text-gray-400 mb-1 block">Commission Rate (%)</label><input id="ePRate" type="number" class="field"></div>
-      </div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Available Units</label><input id="ePUnits" type="number" min="0" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Description</label><textarea id="ePDesc" class="field"></textarea></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="ePStatus" class="field"><option value="Available">Available</option><option value="Reserved">Reserved</option><option value="Sold">Sold</option></select></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Date Added</label><input id="ePDate" type="date" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Property Type</label><select id="ePType" class="field"><option value="Condo">Condo</option><option value="House and Lot">House and Lot</option></select></div>
       <button onclick="updateProp()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Property</button>
     </div>
   </div>
 </div>
 
-<!-- PROPERTY DETAIL (clickable card view) -->
-<div id="propDetailModal" class="modal-backdrop">
+<!-- ADD UNIT -->
+<div id="addUnitModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('addUnitModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-1">Add Unit</h3>
+    <p class="text-xs text-gray-500 mb-4">Fill in the unit's details.</p>
+    <div class="space-y-3">
+      <div><label class="text-xs text-gray-400 mb-1 block">Unit Photo</label><input id="uImage" type="file" accept="image/*" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Unit Name / Number *</label><input id="uName" type="text" class="field" placeholder="e.g. Tower A - Unit 501"></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs text-gray-400 mb-1 block">Price (₱) *</label><input id="uPrice" type="number" class="field" placeholder="3500000"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Commission Rate (%)</label><input id="uRate" type="number" step="0.1" class="field" value="2"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs text-gray-400 mb-1 block">Bedrooms</label><input id="uBeds" type="number" min="0" class="field" placeholder="2"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Square Meters</label><input id="uSqm" type="number" step="0.1" class="field" placeholder="45"></div>
+      </div>
+      <div id="uCornerRow" class="hidden flex items-center gap-2"><input id="uCorner" type="checkbox" class="w-4 h-4"><label for="uCorner" class="text-xs text-gray-400">Corner Lot</label></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="uStatus" class="field"><option value="Available">Available</option><option value="Reserved">Reserved</option><option value="Sold">Sold</option></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Description</label><textarea id="uDesc" class="field" placeholder="Brief unit description…"></textarea></div>
+      <p id="uErr" class="text-red-400 text-xs hidden">Please fill in all required fields.</p>
+      <button onclick="saveUnit()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors mt-1">Save Unit</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT UNIT -->
+<div id="editUnitModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('editUnitModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Edit Unit</h3>
+    <div class="space-y-3">
+      <input id="eUI" type="hidden">
+      <div><label class="text-xs text-gray-400 mb-1 block">Unit Photo (leave blank to keep current)</label><input id="eUImage" type="file" accept="image/*" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Unit Name / Number</label><input id="eUName" type="text" class="field"></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs text-gray-400 mb-1 block">Price (₱)</label><input id="eUPrice" type="number" class="field"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Commission Rate (%)</label><input id="eURate" type="number" step="0.1" class="field"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs text-gray-400 mb-1 block">Bedrooms</label><input id="eUBeds" type="number" min="0" class="field"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Square Meters</label><input id="eUSqm" type="number" step="0.1" class="field"></div>
+      </div>
+      <div id="eUCornerRow" class="hidden flex items-center gap-2"><input id="eUCorner" type="checkbox" class="w-4 h-4"><label for="eUCorner" class="text-xs text-gray-400">Corner Lot</label></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="eUStatus" class="field"><option value="Available">Available</option><option value="Reserved">Reserved</option><option value="Sold">Sold</option></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Description</label><textarea id="eUDesc" class="field"></textarea></div>
+      <button onclick="updateUnit()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Unit</button>
+    </div>
+  </div>
+</div>
+
+<!-- UNIT DETAIL (clickable card view) -->
+<div id="unitDetailModal" class="modal-backdrop">
   <div class="modal-box max-w-lg">
-    <button onclick="closeModal('propDetailModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
-    <div id="propDetailContent"></div>
+    <button onclick="closeModal('unitDetailModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <div id="unitDetailContent"></div>
   </div>
 </div>
 
@@ -789,18 +838,15 @@ async function deleteAgent(id) {
 // ══════════════════════════════════════
 // PROPERTIES
 // ══════════════════════════════════════
-function filterProps(val,btn){
-  propFilter=val;
-  document.querySelectorAll('.pf-btn').forEach(b=>{b.classList.remove('active-pf','border-orange-500/50','bg-orange-500/10','text-orange-400');b.classList.add('border-white/10','text-gray-400');});
-  btn.classList.add('active-pf','border-orange-500/50','bg-orange-500/10','text-orange-400');btn.classList.remove('border-white/10','text-gray-400');
-  renderProps();
-}
-let propFilter='all', propSearch='', propCache=[];
+let propSearch='', propCache=[];
 let currentDevId=null, currentDevName='', devCache=[];
+let unitFilter='all', unitSearch='', unitCache=[];
+let currentPropId=null, currentPropName='', currentPropType='Condo';
 
 function enterProperties(){
   currentDevId=null;
   document.getElementById('devPropsView').classList.add('hidden');
+  document.getElementById('unitsView').classList.add('hidden');
   document.getElementById('devListView').classList.remove('hidden');
   renderDevelopers();
 }
@@ -863,6 +909,7 @@ function viewDeveloper(id, name){
   currentDevId = id;
   currentDevName = name;
   document.getElementById('devListView').classList.add('hidden');
+  document.getElementById('unitsView').classList.add('hidden');
   document.getElementById('devPropsView').classList.remove('hidden');
   document.getElementById('devPropsTitle').textContent = name;
   renderProps();
@@ -870,6 +917,8 @@ function viewDeveloper(id, name){
 function backToDevelopers(){
   enterProperties();
 }
+
+// ── LEVEL 2: PROPERTIES (under a developer) ──
 async function renderProps(){
   if(!currentDevId) return;
   const token = localStorage.getItem('token');
@@ -881,9 +930,8 @@ async function renderProps(){
     propCache = all;
 
     const filtered = all.filter(p => {
-      const mf = propFilter==='all' || p.status===propFilter;
       const ms = p.name.toLowerCase().includes(propSearch) || (p.location||'').toLowerCase().includes(propSearch);
-      return mf && ms;
+      return ms;
     });
 
     document.getElementById('propGrid').innerHTML = filtered.map(p => `
@@ -894,13 +942,9 @@ async function renderProps(){
             : `<span class="text-gray-600 text-xs">No photo</span>`}
         </div>
         <div class="p-3 space-y-1">
-          <div class="flex items-start justify-between gap-2">
-            <p class="font-semibold text-white text-sm leading-tight">${p.name}</p>
-            <span class="badge ${SB[p.status]} shrink-0">${p.status}</span>
-          </div>
+          <p class="font-semibold text-white text-sm leading-tight">${p.name}</p>
           <p class="text-gray-500 text-xs">${p.location||'—'}</p>
-          <p class="text-orange-400 font-bold text-sm">${peso(p.price)}</p>
-          <p class="text-gray-500 text-xs">${p.available_units ?? 1} unit(s) available</p>
+          <p class="text-gray-500 text-xs">${p.property_type||'Condo'}</p>
         </div>
       </div>
     `).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No properties yet for ${currentDevName} — click "+ Add Property" to start.</p>`;
@@ -913,50 +957,30 @@ async function renderProps(){
 function viewProperty(id){
   const p = propCache.find(x => x.id === id);
   if(!p) return;
-  const comm = (p.price * p.rate / 100) || 0;
-  document.getElementById('propDetailContent').innerHTML = `
-    <div class="w-full h-48 bg-white/5 rounded-lg overflow-hidden mb-4 flex items-center justify-center">
-      ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-600 text-xs">No photo</span>`}
-    </div>
-    <div class="flex items-start justify-between gap-2 mb-1">
-      <h3 class="font-bold text-lg text-white">${p.name}</h3>
-      <span class="badge ${SB[p.status]}">${p.status}</span>
-    </div>
-    <p class="text-gray-400 text-sm mb-3">${p.location||'—'}</p>
-    <div class="grid grid-cols-2 gap-3 mb-3">
-      <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Price</p><p class="text-white font-bold">${peso(p.price)}</p></div>
-      <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Available Units</p><p class="text-white font-bold">${p.available_units ?? 1}</p></div>
-    </div>
-    <div class="rounded-xl bg-orange-500/10 border border-orange-500/25 p-4 mb-3">
-      <p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Commission (Price × ${p.rate}%)</p>
-      <p class="text-2xl font-bold text-orange-400">${peso(comm)}</p>
-    </div>
-    <p class="text-gray-500 text-xs mb-1">Description</p>
-    <p class="text-gray-300 text-sm mb-4">${p.description||'No description provided.'}</p>
-    <div class="flex gap-2">
-      <button onclick="closeModal('propDetailModal');openEditProp('${p.id}')" class="flex-1 bg-orange-500 hover:bg-orange-600 py-2 rounded-lg text-sm font-medium transition-colors">Edit</button>
-      <button onclick="deleteProp('${p.id}')" class="flex-1 bg-red-500/80 hover:bg-red-600 py-2 rounded-lg text-sm font-medium transition-colors">Delete</button>
-    </div>
-  `;
-  openModal('propDetailModal');
+  currentPropId = p.id;
+  currentPropName = p.name;
+  currentPropType = p.property_type || 'Condo';
+  document.getElementById('devPropsView').classList.add('hidden');
+  document.getElementById('unitsView').classList.remove('hidden');
+  document.getElementById('unitsViewTitle').textContent = p.name;
+  renderUnits();
+}
+function backToProperties(){
+  document.getElementById('unitsView').classList.add('hidden');
+  document.getElementById('devPropsView').classList.remove('hidden');
+  renderProps();
 }
 async function saveProp(){
   const name=document.getElementById('pName').value.trim();
   const loc=document.getElementById('pLoc').value.trim();
-  const price=parseFloat(document.getElementById('pPrice').value);
-  const rate=parseFloat(document.getElementById('pRate').value);
-  if(!name||!loc||!price||!rate){document.getElementById('pErr').classList.remove('hidden');return;}
+  if(!name||!loc){document.getElementById('pErr').classList.remove('hidden');return;}
   document.getElementById('pErr').classList.add('hidden');
 
   const token = localStorage.getItem('token');
   const fd = new FormData();
   fd.append('name', name);
   fd.append('location', loc);
-  fd.append('price', price);
-  fd.append('rate', rate);
-  fd.append('available_units', document.getElementById('pUnits').value || 1);
-  fd.append('description', document.getElementById('pDesc').value.trim());
-  fd.append('status', document.getElementById('pStatus').value);
+  fd.append('property_type', document.getElementById('pType').value);
   if(currentDevId) fd.append('developer_id', currentDevId);
   const imgFile = document.getElementById('pImage').files[0];
   if(imgFile) fd.append('image', imgFile);
@@ -974,9 +998,9 @@ async function saveProp(){
       body: JSON.stringify({ message: `Property "${name}" added by Admin`, actor: 'Admin', role: 'admin' })
     });
     closeModal('addPropModal');
-    ['pName','pLoc','pPrice','pRate','pDesc','pUnits'].forEach(id=>document.getElementById(id).value='');
+    ['pName','pLoc'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('pImage').value='';
-    document.getElementById('pStatus').value='Available';
+    document.getElementById('pType').value='Condo';
     renderProps();
   } catch(err) {
     console.error('Error saving property:', err);
@@ -989,11 +1013,7 @@ function openEditProp(id){
   document.getElementById('ePI').value=p.id;
   document.getElementById('ePName').value=p.name;
   document.getElementById('ePLoc').value=p.location||'';
-  document.getElementById('ePPrice').value=p.price;
-  document.getElementById('ePRate').value=p.rate;
-  document.getElementById('ePUnits').value=p.available_units ?? 1;
-  document.getElementById('ePDesc').value=p.description||'';
-  document.getElementById('ePStatus').value=p.status;
+  document.getElementById('ePType').value=p.property_type||'Condo';
   document.getElementById('ePImage').value='';
   openModal('editPropModal');
 }
@@ -1005,11 +1025,7 @@ async function updateProp(){
   const fd = new FormData();
   fd.append('name', name);
   fd.append('location', document.getElementById('ePLoc').value.trim());
-  fd.append('price', parseFloat(document.getElementById('ePPrice').value));
-  fd.append('rate', parseFloat(document.getElementById('ePRate').value));
-  fd.append('available_units', document.getElementById('ePUnits').value || 1);
-  fd.append('description', document.getElementById('ePDesc').value.trim());
-  fd.append('status', document.getElementById('ePStatus').value);
+  fd.append('property_type', document.getElementById('ePType').value);
   const imgFile = document.getElementById('ePImage').files[0];
   if(imgFile) fd.append('image', imgFile);
 
@@ -1033,7 +1049,7 @@ async function updateProp(){
   }
 }
 async function deleteProp(id){
-  if(!confirm('Delete this property?')) return;
+  if(!confirm('Delete this property? This will also delete all of its units.')) return;
   const token = localStorage.getItem('token');
   const p = propCache.find(x => x.id === id);
   try {
@@ -1046,11 +1062,207 @@ async function deleteProp(id){
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: `Property "${p?.name||''}" deleted`, actor: 'Admin', role: 'admin' })
     });
-    closeModal('propDetailModal');
     renderProps();
   } catch(err) {
     console.error('Error deleting property:', err);
     alert('Failed to delete property.');
+  }
+}
+
+// ── LEVEL 3: UNITS (under a property) ──
+function filterUnits(val, btn){
+  unitFilter = val;
+  document.querySelectorAll('.uf-btn').forEach(b=>b.classList.remove('active-uf','border-orange-500/50','bg-orange-500/10','text-orange-400'));
+  btn.classList.add('active-uf','border-orange-500/50','bg-orange-500/10','text-orange-400');
+  renderUnits();
+}
+async function renderUnits(){
+  if(!currentPropId) return;
+  const token = localStorage.getItem('token');
+  document.getElementById('uCornerRow').classList.toggle('hidden', currentPropType!=='House and Lot');
+  try {
+    const res = await fetch(`/api/units?property_id=${currentPropId}`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const all = await res.json();
+    unitCache = all;
+
+    const filtered = all.filter(u => {
+      const mf = unitFilter==='all' || u.status===unitFilter;
+      const ms = u.unit_name.toLowerCase().includes(unitSearch);
+      return mf && ms;
+    });
+
+    document.getElementById('unitGrid').innerHTML = filtered.map(u => `
+      <div onclick="viewUnit('${u.id}')" class="card overflow-hidden cursor-pointer hover:border-orange-500/40 transition-colors">
+        <div class="w-full h-36 bg-white/5 flex items-center justify-center overflow-hidden">
+          ${u.image_url
+            ? `<img src="${u.image_url}" class="w-full h-full object-cover">`
+            : `<span class="text-gray-600 text-xs">No photo</span>`}
+        </div>
+        <div class="p-3 space-y-1">
+          <div class="flex items-start justify-between gap-2">
+            <p class="font-semibold text-white text-sm leading-tight">${u.unit_name}</p>
+            <span class="badge ${SB[u.status]} shrink-0">${u.status}</span>
+          </div>
+          <p class="text-orange-400 font-bold text-sm">${peso(u.price)}</p>
+          <p class="text-gray-500 text-xs">${u.bedrooms??'—'} BR · ${u.square_meters??'—'} sqm${u.corner_lot?' · Corner Lot':''}</p>
+        </div>
+      </div>
+    `).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No units yet for ${currentPropName} — click "+ Add Unit" to start.</p>`;
+
+    document.getElementById('unitCount').textContent = `Showing ${filtered.length} of ${all.length} units`;
+  } catch(err) {
+    console.error('Error loading units:', err);
+  }
+}
+function viewUnit(id){
+  const u = unitCache.find(x => x.id === id);
+  if(!u) return;
+  const comm = (u.price * u.commission_rate / 100) || 0;
+  document.getElementById('unitDetailContent').innerHTML = `
+    <div class="w-full h-48 bg-white/5 rounded-lg overflow-hidden mb-4 flex items-center justify-center">
+      ${u.image_url ? `<img src="${u.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-600 text-xs">No photo</span>`}
+    </div>
+    <div class="flex items-start justify-between gap-2 mb-1">
+      <h3 class="font-bold text-lg text-white">${u.unit_name}</h3>
+      <span class="badge ${SB[u.status]}">${u.status}</span>
+    </div>
+    <p class="text-gray-400 text-sm mb-3">${currentPropName}</p>
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Price</p><p class="text-white font-bold">${peso(u.price)}</p></div>
+      <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Bedrooms</p><p class="text-white font-bold">${u.bedrooms??'—'}</p></div>
+      <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Square Meters</p><p class="text-white font-bold">${u.square_meters??'—'}</p></div>
+      <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Corner Lot</p><p class="text-white font-bold">${u.corner_lot?'Yes':'No'}</p></div>
+    </div>
+    <div class="rounded-xl bg-orange-500/10 border border-orange-500/25 p-4 mb-3">
+      <p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Commission (Price × ${u.commission_rate}%)</p>
+      <p class="text-2xl font-bold text-orange-400">${peso(comm)}</p>
+    </div>
+    <p class="text-gray-500 text-xs mb-1">Description</p>
+    <p class="text-gray-300 text-sm mb-4">${u.description||'No description provided.'}</p>
+    <div class="flex gap-2">
+      <button onclick="closeModal('unitDetailModal');openEditUnit('${u.id}')" class="flex-1 bg-orange-500 hover:bg-orange-600 py-2 rounded-lg text-sm font-medium transition-colors">Edit</button>
+      <button onclick="deleteUnit('${u.id}')" class="flex-1 bg-red-500/80 hover:bg-red-600 py-2 rounded-lg text-sm font-medium transition-colors">Delete</button>
+    </div>
+  `;
+  openModal('unitDetailModal');
+}
+async function saveUnit(){
+  const name=document.getElementById('uName').value.trim();
+  const price=parseFloat(document.getElementById('uPrice').value);
+  if(!name||!price){document.getElementById('uErr').classList.remove('hidden');return;}
+  document.getElementById('uErr').classList.add('hidden');
+
+  const token = localStorage.getItem('token');
+  const fd = new FormData();
+  fd.append('property_id', currentPropId);
+  fd.append('unit_name', name);
+  fd.append('price', price);
+  fd.append('commission_rate', document.getElementById('uRate').value || 2);
+  fd.append('bedrooms', document.getElementById('uBeds').value || '');
+  fd.append('square_meters', document.getElementById('uSqm').value || '');
+  fd.append('corner_lot', currentPropType==='House and Lot' ? document.getElementById('uCorner').checked : false);
+  fd.append('status', document.getElementById('uStatus').value);
+  fd.append('description', document.getElementById('uDesc').value.trim());
+  const imgFile = document.getElementById('uImage').files[0];
+  if(imgFile) fd.append('image', imgFile);
+
+  try {
+    const res = await fetch('/api/units', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: fd
+    });
+    if(!res.ok) throw new Error('Failed to save unit');
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Unit "${name}" added under ${currentPropName}`, actor: 'Admin', role: 'admin' })
+    });
+    closeModal('addUnitModal');
+    ['uName','uPrice','uBeds','uSqm','uDesc'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('uRate').value='2';
+    document.getElementById('uCorner').checked=false;
+    document.getElementById('uStatus').value='Available';
+    document.getElementById('uImage').value='';
+    renderUnits();
+  } catch(err) {
+    console.error('Error saving unit:', err);
+    alert('Failed to save unit.');
+  }
+}
+function openEditUnit(id){
+  const u = unitCache.find(x => x.id === id);
+  if(!u) return;
+  document.getElementById('eUI').value=u.id;
+  document.getElementById('eUName').value=u.unit_name;
+  document.getElementById('eUPrice').value=u.price;
+  document.getElementById('eURate').value=u.commission_rate;
+  document.getElementById('eUBeds').value=u.bedrooms??'';
+  document.getElementById('eUSqm').value=u.square_meters??'';
+  document.getElementById('eUCorner').checked=!!u.corner_lot;
+  document.getElementById('eUCornerRow').classList.toggle('hidden', currentPropType!=='House and Lot');
+  document.getElementById('eUStatus').value=u.status;
+  document.getElementById('eUDesc').value=u.description||'';
+  document.getElementById('eUImage').value='';
+  openModal('editUnitModal');
+}
+async function updateUnit(){
+  const id = document.getElementById('eUI').value;
+  const token = localStorage.getItem('token');
+  const name = document.getElementById('eUName').value.trim();
+
+  const fd = new FormData();
+  fd.append('unit_name', name);
+  fd.append('price', parseFloat(document.getElementById('eUPrice').value));
+  fd.append('commission_rate', document.getElementById('eURate').value || 2);
+  fd.append('bedrooms', document.getElementById('eUBeds').value || '');
+  fd.append('square_meters', document.getElementById('eUSqm').value || '');
+  fd.append('corner_lot', currentPropType==='House and Lot' ? document.getElementById('eUCorner').checked : false);
+  fd.append('status', document.getElementById('eUStatus').value);
+  fd.append('description', document.getElementById('eUDesc').value.trim());
+  const imgFile = document.getElementById('eUImage').files[0];
+  if(imgFile) fd.append('image', imgFile);
+
+  try {
+    const res = await fetch(`/api/units/${id}`, {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: fd
+    });
+    if(!res.ok) throw new Error('Failed to update unit');
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Unit "${name}" updated`, actor: 'Admin', role: 'admin' })
+    });
+    closeModal('editUnitModal');
+    renderUnits();
+  } catch(err) {
+    console.error('Error updating unit:', err);
+    alert('Failed to update unit.');
+  }
+}
+async function deleteUnit(id){
+  if(!confirm('Delete this unit?')) return;
+  const token = localStorage.getItem('token');
+  const u = unitCache.find(x => x.id === id);
+  try {
+    await fetch(`/api/units/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Unit "${u?.unit_name||''}" deleted`, actor: 'Admin', role: 'admin' })
+    });
+    closeModal('unitDetailModal');
+    renderUnits();
+  } catch(err) {
+    console.error('Error deleting unit:', err);
+    alert('Failed to delete unit.');
   }
 }
 
