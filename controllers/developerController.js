@@ -11,6 +11,7 @@ const getDevelopers = async (req, res) => {
     if (error) throw error;
     res.json(developers);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };
@@ -32,6 +33,7 @@ const createDeveloper = async (req, res) => {
     if (error) throw error;
     res.status(201).json(developer);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };
@@ -55,6 +57,7 @@ const updateDeveloper = async (req, res) => {
 
     res.json(developer);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };
@@ -70,6 +73,7 @@ const deleteDeveloper = async (req, res) => {
     if (error) throw error;
     res.json({ message: 'Developer deleted.' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };

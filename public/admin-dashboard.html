@@ -434,7 +434,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
         <div><label class="text-xs text-gray-400 mb-1 block">Bedrooms</label><input id="uBeds" type="number" min="0" class="field" placeholder="2"></div>
         <div><label class="text-xs text-gray-400 mb-1 block">Square Meters</label><input id="uSqm" type="number" step="0.1" class="field" placeholder="45"></div>
       </div>
-      <div id="uCornerRow" class="hidden flex items-center gap-2"><input id="uCorner" type="checkbox" class="w-4 h-4"><label for="uCorner" class="text-xs text-gray-400">Corner Lot</label></div>
+      <div id="uLotRow" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Lot Position</label><select id="uLotType" class="field"><option value="Corner Lot">Corner Lot</option><option value="End Unit">End Unit</option><option value="Middle Unit">Middle Unit</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="uStatus" class="field"><option value="Available">Available</option><option value="Reserved">Reserved</option><option value="Sold">Sold</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Description</label><textarea id="uDesc" class="field" placeholder="Brief unit description…"></textarea></div>
       <p id="uErr" class="text-red-400 text-xs hidden">Please fill in all required fields.</p>
@@ -460,7 +460,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
         <div><label class="text-xs text-gray-400 mb-1 block">Bedrooms</label><input id="eUBeds" type="number" min="0" class="field"></div>
         <div><label class="text-xs text-gray-400 mb-1 block">Square Meters</label><input id="eUSqm" type="number" step="0.1" class="field"></div>
       </div>
-      <div id="eUCornerRow" class="hidden flex items-center gap-2"><input id="eUCorner" type="checkbox" class="w-4 h-4"><label for="eUCorner" class="text-xs text-gray-400">Corner Lot</label></div>
+      <div id="eULotRow" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Lot Position</label><select id="eULotType" class="field"><option value="Corner Lot">Corner Lot</option><option value="End Unit">End Unit</option><option value="Middle Unit">Middle Unit</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="eUStatus" class="field"><option value="Available">Available</option><option value="Reserved">Reserved</option><option value="Sold">Sold</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Description</label><textarea id="eUDesc" class="field"></textarea></div>
       <button onclick="updateUnit()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Unit</button>
@@ -1079,7 +1079,8 @@ function filterUnits(val, btn){
 async function renderUnits(){
   if(!currentPropId) return;
   const token = localStorage.getItem('token');
-  document.getElementById('uCornerRow').classList.toggle('hidden', currentPropType!=='House and Lot');
+  const showLot = currentPropType==='House and Lot';
+  document.getElementById('uLotRow').classList.toggle('hidden', !showLot);
   try {
     const res = await fetch(`/api/units?property_id=${currentPropId}`, {
       headers: { 'Authorization': 'Bearer ' + token }
@@ -1106,7 +1107,7 @@ async function renderUnits(){
             <span class="badge ${SB[u.status]} shrink-0">${u.status}</span>
           </div>
           <p class="text-orange-400 font-bold text-sm">${peso(u.price)}</p>
-          <p class="text-gray-500 text-xs">${u.bedrooms??'—'} BR · ${u.square_meters??'—'} sqm${u.corner_lot?' · Corner Lot':''}</p>
+          <p class="text-gray-500 text-xs">${u.bedrooms??'—'} BR · ${u.square_meters??'—'} sqm${u.lot_type?' · '+u.lot_type:''}</p>
         </div>
       </div>
     `).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No units yet for ${currentPropName} — click "+ Add Unit" to start.</p>`;
@@ -1133,7 +1134,7 @@ function viewUnit(id){
       <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Price</p><p class="text-white font-bold">${peso(u.price)}</p></div>
       <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Bedrooms</p><p class="text-white font-bold">${u.bedrooms??'—'}</p></div>
       <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Square Meters</p><p class="text-white font-bold">${u.square_meters??'—'}</p></div>
-      <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Corner Lot</p><p class="text-white font-bold">${u.corner_lot?'Yes':'No'}</p></div>
+      <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Lot Position</p><p class="text-white font-bold">${u.lot_type||'—'}</p></div>
     </div>
     <div class="rounded-xl bg-orange-500/10 border border-orange-500/25 p-4 mb-3">
       <p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Commission (Price × ${u.commission_rate}%)</p>
@@ -1162,7 +1163,7 @@ async function saveUnit(){
   fd.append('commission_rate', document.getElementById('uRate').value || 2);
   fd.append('bedrooms', document.getElementById('uBeds').value || '');
   fd.append('square_meters', document.getElementById('uSqm').value || '');
-  fd.append('corner_lot', currentPropType==='House and Lot' ? document.getElementById('uCorner').checked : false);
+  fd.append('lot_type', currentPropType==='House and Lot' ? document.getElementById('uLotType').value : '');
   fd.append('status', document.getElementById('uStatus').value);
   fd.append('description', document.getElementById('uDesc').value.trim());
   const imgFile = document.getElementById('uImage').files[0];
@@ -1183,7 +1184,6 @@ async function saveUnit(){
     closeModal('addUnitModal');
     ['uName','uPrice','uBeds','uSqm','uDesc'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('uRate').value='2';
-    document.getElementById('uCorner').checked=false;
     document.getElementById('uStatus').value='Available';
     document.getElementById('uImage').value='';
     renderUnits();
@@ -1201,8 +1201,8 @@ function openEditUnit(id){
   document.getElementById('eURate').value=u.commission_rate;
   document.getElementById('eUBeds').value=u.bedrooms??'';
   document.getElementById('eUSqm').value=u.square_meters??'';
-  document.getElementById('eUCorner').checked=!!u.corner_lot;
-  document.getElementById('eUCornerRow').classList.toggle('hidden', currentPropType!=='House and Lot');
+  if(u.lot_type) document.getElementById('eULotType').value=u.lot_type;
+  document.getElementById('eULotRow').classList.toggle('hidden', currentPropType!=='House and Lot');
   document.getElementById('eUStatus').value=u.status;
   document.getElementById('eUDesc').value=u.description||'';
   document.getElementById('eUImage').value='';
@@ -1219,7 +1219,7 @@ async function updateUnit(){
   fd.append('commission_rate', document.getElementById('eURate').value || 2);
   fd.append('bedrooms', document.getElementById('eUBeds').value || '');
   fd.append('square_meters', document.getElementById('eUSqm').value || '');
-  fd.append('corner_lot', currentPropType==='House and Lot' ? document.getElementById('eUCorner').checked : false);
+  fd.append('lot_type', currentPropType==='House and Lot' ? document.getElementById('eULotType').value : '');
   fd.append('status', document.getElementById('eUStatus').value);
   fd.append('description', document.getElementById('eUDesc').value.trim());
   const imgFile = document.getElementById('eUImage').files[0];

@@ -18,6 +18,7 @@ const getProperties = async (req, res) => {
     if (error) throw error;
     res.json(properties);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };
@@ -44,6 +45,7 @@ const createProperty = async (req, res) => {
     if (error) throw error;
     res.status(201).json(property);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };
@@ -75,6 +77,7 @@ const updateProperty = async (req, res) => {
 
     res.json(property);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };
@@ -90,6 +93,7 @@ const deleteProperty = async (req, res) => {
     if (error) throw error;
     res.json({ message: 'Property deleted.' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };

@@ -18,6 +18,7 @@ const getUnits = async (req, res) => {
     if (error) throw error;
     res.json(units);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };
@@ -25,7 +26,7 @@ const getUnits = async (req, res) => {
 // POST /api/units (admin only)
 const createUnit = async (req, res) => {
   try {
-    const { property_id, unit_name, price, commission_rate, status, bedrooms, square_meters, corner_lot, description } = req.body;
+    const { property_id, unit_name, price, commission_rate, status, bedrooms, square_meters, lot_type, description } = req.body;
     const image_url = req.file ? `/uploads/${req.file.filename}` : null;
 
     const { data: unit, error } = await supabase
@@ -38,7 +39,7 @@ const createUnit = async (req, res) => {
         status: status || 'Available',
         bedrooms: bedrooms || null,
         square_meters: square_meters || null,
-        corner_lot: corner_lot === 'true' || corner_lot === true,
+        lot_type: lot_type || null,
         description,
         image_url,
       }])
@@ -48,6 +49,7 @@ const createUnit = async (req, res) => {
     if (error) throw error;
     res.status(201).json(unit);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };
@@ -55,7 +57,7 @@ const createUnit = async (req, res) => {
 // PUT /api/units/:id (admin only)
 const updateUnit = async (req, res) => {
   try {
-    const { unit_name, price, commission_rate, status, bedrooms, square_meters, corner_lot, description } = req.body;
+    const { unit_name, price, commission_rate, status, bedrooms, square_meters, lot_type, description } = req.body;
 
     const updateData = {
       unit_name,
@@ -64,7 +66,7 @@ const updateUnit = async (req, res) => {
       status,
       bedrooms: bedrooms || null,
       square_meters: square_meters || null,
-      corner_lot: corner_lot === 'true' || corner_lot === true,
+      lot_type: lot_type || null,
       description,
       updated_at: new Date(),
     };
@@ -83,6 +85,7 @@ const updateUnit = async (req, res) => {
 
     res.json(unit);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };
@@ -98,6 +101,7 @@ const deleteUnit = async (req, res) => {
     if (error) throw error;
     res.json({ message: 'Unit deleted.' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };
