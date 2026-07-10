@@ -188,7 +188,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
         <div class="flex gap-2 flex-wrap" id="unitFilterBtns">
           <button onclick="filterUnits('all',this)"       class="uf-btn active-uf px-3 py-1.5 rounded-lg text-xs border border-orange-500/50 bg-orange-500/10 text-orange-400">All</button>
           <button onclick="filterUnits('Available',this)" class="uf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Available</button>
-          <button onclick="filterUnits('Reserved',this)"  class="uf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Reserved</button>
+          <button onclick="filterUnits('Hold',this)"      class="uf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Hold</button>
           <button onclick="filterUnits('Sold',this)"      class="uf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Sold</button>
           <input type="text" placeholder="Search units…" oninput="unitSearch=this.value.toLowerCase();renderUnits()" class="field ml-auto w-40 text-xs py-1.5">
         </div>
@@ -425,6 +425,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
     <p class="text-xs text-gray-500 mb-4">Fill in the unit's details.</p>
     <div class="space-y-3">
       <div><label class="text-xs text-gray-400 mb-1 block">Unit Photo</label><input id="uImage" type="file" accept="image/*" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Computation Image</label><input id="uCompImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Unit Name / Number *</label><input id="uName" type="text" class="field" placeholder="e.g. Tower A - Unit 501"></div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="text-xs text-gray-400 mb-1 block">Price (₱) *</label><input id="uPrice" type="number" class="field" placeholder="3500000"></div>
@@ -435,7 +436,8 @@ tr:hover td{background:rgba(255,255,255,.025)}
         <div><label class="text-xs text-gray-400 mb-1 block">Square Meters</label><input id="uSqm" type="number" step="0.1" class="field" placeholder="45"></div>
       </div>
       <div id="uLotRow" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Lot Position</label><select id="uLotType" class="field"><option value="Corner Lot">Corner Lot</option><option value="End Unit">End Unit</option><option value="Middle Unit">Middle Unit</option></select></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="uStatus" class="field"><option value="Available">Available</option><option value="Reserved">Reserved</option><option value="Sold">Sold</option></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Furnishing</label><select id="uFurnish" class="field"><option value="Fully Furnished">Fully Furnished</option><option value="Semi Furnished">Semi Furnished</option><option value="Bare Unit" selected>Bare Unit</option></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="uStatus" class="field"><option value="Available">Available</option><option value="Hold">Hold</option><option value="Sold">Sold</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Description</label><textarea id="uDesc" class="field" placeholder="Brief unit description…"></textarea></div>
       <p id="uErr" class="text-red-400 text-xs hidden">Please fill in all required fields.</p>
       <button onclick="saveUnit()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors mt-1">Save Unit</button>
@@ -451,6 +453,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
     <div class="space-y-3">
       <input id="eUI" type="hidden">
       <div><label class="text-xs text-gray-400 mb-1 block">Unit Photo (leave blank to keep current)</label><input id="eUImage" type="file" accept="image/*" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Computation Image (leave blank to keep current)</label><input id="eUCompImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Unit Name / Number</label><input id="eUName" type="text" class="field"></div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="text-xs text-gray-400 mb-1 block">Price (₱)</label><input id="eUPrice" type="number" class="field"></div>
@@ -461,7 +464,8 @@ tr:hover td{background:rgba(255,255,255,.025)}
         <div><label class="text-xs text-gray-400 mb-1 block">Square Meters</label><input id="eUSqm" type="number" step="0.1" class="field"></div>
       </div>
       <div id="eULotRow" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Lot Position</label><select id="eULotType" class="field"><option value="Corner Lot">Corner Lot</option><option value="End Unit">End Unit</option><option value="Middle Unit">Middle Unit</option></select></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="eUStatus" class="field"><option value="Available">Available</option><option value="Reserved">Reserved</option><option value="Sold">Sold</option></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Furnishing</label><select id="eUFurnish" class="field"><option value="Fully Furnished">Fully Furnished</option><option value="Semi Furnished">Semi Furnished</option><option value="Bare Unit">Bare Unit</option></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="eUStatus" class="field"><option value="Available">Available</option><option value="Hold">Hold</option><option value="Sold">Sold</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Description</label><textarea id="eUDesc" class="field"></textarea></div>
       <button onclick="updateUnit()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Unit</button>
     </div>
@@ -571,7 +575,7 @@ const saveObj = (k,d) => localStorage.setItem(k,JSON.stringify(d));
 const peso = n => '₱'+Number(n).toLocaleString('en-PH',{minimumFractionDigits:0,maximumFractionDigits:0});
 
 // ── STATUS BADGE CLASSES ──
-const SB = { Available:'bg-green', Reserved:'bg-yellow', Sold:'bg-red', approved:'bg-green', pending:'bg-yellow', rejected:'bg-red', suspended:'bg-purple' };
+const SB = { Available:'bg-green', Hold:'bg-yellow', Sold:'bg-red', approved:'bg-green', pending:'bg-yellow', rejected:'bg-red', suspended:'bg-purple' };
 
 // ── LOG ──
 function addLog(msg) {
@@ -1108,6 +1112,7 @@ async function renderUnits(){
           </div>
           <p class="text-orange-400 font-bold text-sm">${peso(u.price)}</p>
           <p class="text-gray-500 text-xs">${u.bedrooms??'—'} BR · ${u.square_meters??'—'} sqm${u.lot_type?' · '+u.lot_type:''}</p>
+          <span class="badge bg-blue text-xs">${u.furnishing||'Bare Unit'}</span>
         </div>
       </div>
     `).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No units yet for ${currentPropName} — click "+ Add Unit" to start.</p>`;
@@ -1135,11 +1140,16 @@ function viewUnit(id){
       <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Bedrooms</p><p class="text-white font-bold">${u.bedrooms??'—'}</p></div>
       <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Square Meters</p><p class="text-white font-bold">${u.square_meters??'—'}</p></div>
       <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Lot Position</p><p class="text-white font-bold">${u.lot_type||'—'}</p></div>
+      <div class="bg-white/4 rounded-lg p-3 border border-white/8 col-span-2"><p class="text-gray-500 text-xs mb-0.5">Furnishing</p><p class="text-white font-bold">${u.furnishing||'Bare Unit'}</p></div>
     </div>
     <div class="rounded-xl bg-orange-500/10 border border-orange-500/25 p-4 mb-3">
       <p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Commission (Price × ${u.commission_rate}%)</p>
       <p class="text-2xl font-bold text-orange-400">${peso(comm)}</p>
     </div>
+    ${u.computation_image_url ? `
+    <p class="text-gray-500 text-xs mb-1">Computation</p>
+    <img src="${u.computation_image_url}" class="w-full rounded-lg border border-white/8 mb-4">
+    ` : ''}
     <p class="text-gray-500 text-xs mb-1">Description</p>
     <p class="text-gray-300 text-sm mb-4">${u.description||'No description provided.'}</p>
     <div class="flex gap-2">
@@ -1156,6 +1166,7 @@ async function saveUnit(){
   document.getElementById('uErr').classList.add('hidden');
 
   const token = localStorage.getItem('token');
+  const status = document.getElementById('uStatus').value;
   const fd = new FormData();
   fd.append('property_id', currentPropId);
   fd.append('unit_name', name);
@@ -1164,10 +1175,13 @@ async function saveUnit(){
   fd.append('bedrooms', document.getElementById('uBeds').value || '');
   fd.append('square_meters', document.getElementById('uSqm').value || '');
   fd.append('lot_type', currentPropType==='House and Lot' ? document.getElementById('uLotType').value : '');
-  fd.append('status', document.getElementById('uStatus').value);
+  fd.append('furnishing', document.getElementById('uFurnish').value);
+  fd.append('status', status);
   fd.append('description', document.getElementById('uDesc').value.trim());
   const imgFile = document.getElementById('uImage').files[0];
   if(imgFile) fd.append('image', imgFile);
+  const compFile = document.getElementById('uCompImage').files[0];
+  if(compFile) fd.append('computation_image', compFile);
 
   try {
     const res = await fetch('/api/units', {
@@ -1179,13 +1193,15 @@ async function saveUnit(){
     await fetch('/api/logs', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: `Unit "${name}" added under ${currentPropName}`, actor: 'Admin', role: 'admin' })
+      body: JSON.stringify({ message: `Unit "${name}" added under ${currentPropName} — status: ${status}`, actor: 'Admin', role: 'admin' })
     });
     closeModal('addUnitModal');
     ['uName','uPrice','uBeds','uSqm','uDesc'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('uRate').value='2';
     document.getElementById('uStatus').value='Available';
+    document.getElementById('uFurnish').value='Bare Unit';
     document.getElementById('uImage').value='';
+    document.getElementById('uCompImage').value='';
     renderUnits();
   } catch(err) {
     console.error('Error saving unit:', err);
@@ -1203,15 +1219,20 @@ function openEditUnit(id){
   document.getElementById('eUSqm').value=u.square_meters??'';
   if(u.lot_type) document.getElementById('eULotType').value=u.lot_type;
   document.getElementById('eULotRow').classList.toggle('hidden', currentPropType!=='House and Lot');
+  document.getElementById('eUFurnish').value=u.furnishing||'Bare Unit';
   document.getElementById('eUStatus').value=u.status;
   document.getElementById('eUDesc').value=u.description||'';
   document.getElementById('eUImage').value='';
+  document.getElementById('eUCompImage').value='';
   openModal('editUnitModal');
 }
 async function updateUnit(){
   const id = document.getElementById('eUI').value;
   const token = localStorage.getItem('token');
   const name = document.getElementById('eUName').value.trim();
+  const newStatus = document.getElementById('eUStatus').value;
+  const oldUnit = unitCache.find(x => x.id === id);
+  const statusChanged = oldUnit && oldUnit.status !== newStatus;
 
   const fd = new FormData();
   fd.append('unit_name', name);
@@ -1220,10 +1241,13 @@ async function updateUnit(){
   fd.append('bedrooms', document.getElementById('eUBeds').value || '');
   fd.append('square_meters', document.getElementById('eUSqm').value || '');
   fd.append('lot_type', currentPropType==='House and Lot' ? document.getElementById('eULotType').value : '');
-  fd.append('status', document.getElementById('eUStatus').value);
+  fd.append('furnishing', document.getElementById('eUFurnish').value);
+  fd.append('status', newStatus);
   fd.append('description', document.getElementById('eUDesc').value.trim());
   const imgFile = document.getElementById('eUImage').files[0];
   if(imgFile) fd.append('image', imgFile);
+  const compFile = document.getElementById('eUCompImage').files[0];
+  if(compFile) fd.append('computation_image', compFile);
 
   try {
     const res = await fetch(`/api/units/${id}`, {
@@ -1232,10 +1256,13 @@ async function updateUnit(){
       body: fd
     });
     if(!res.ok) throw new Error('Failed to update unit');
+    const logMsg = statusChanged
+      ? `Unit "${name}" status changed to ${newStatus}`
+      : `Unit "${name}" updated`;
     await fetch('/api/logs', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: `Unit "${name}" updated`, actor: 'Admin', role: 'admin' })
+      body: JSON.stringify({ message: logMsg, actor: 'Admin', role: 'admin' })
     });
     closeModal('editUnitModal');
     renderUnits();

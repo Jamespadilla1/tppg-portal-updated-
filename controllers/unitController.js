@@ -26,8 +26,9 @@ const getUnits = async (req, res) => {
 // POST /api/units (admin only)
 const createUnit = async (req, res) => {
   try {
-    const { property_id, unit_name, price, commission_rate, status, bedrooms, square_meters, lot_type, description } = req.body;
-    const image_url = req.file ? `/uploads/${req.file.filename}` : null;
+    const { property_id, unit_name, price, commission_rate, status, bedrooms, square_meters, lot_type, furnishing, description } = req.body;
+    const image_url = req.files?.image?.[0] ? `/uploads/${req.files.image[0].filename}` : null;
+    const computation_image_url = req.files?.computation_image?.[0] ? `/uploads/${req.files.computation_image[0].filename}` : null;
 
     const { data: unit, error } = await supabase
       .from('units')
@@ -40,8 +41,10 @@ const createUnit = async (req, res) => {
         bedrooms: bedrooms || null,
         square_meters: square_meters || null,
         lot_type: lot_type || null,
+        furnishing: furnishing || 'Bare Unit',
         description,
         image_url,
+        computation_image_url,
       }])
       .select()
       .single();
@@ -57,7 +60,7 @@ const createUnit = async (req, res) => {
 // PUT /api/units/:id (admin only)
 const updateUnit = async (req, res) => {
   try {
-    const { unit_name, price, commission_rate, status, bedrooms, square_meters, lot_type, description } = req.body;
+    const { unit_name, price, commission_rate, status, bedrooms, square_meters, lot_type, furnishing, description } = req.body;
 
     const updateData = {
       unit_name,
@@ -67,11 +70,13 @@ const updateUnit = async (req, res) => {
       bedrooms: bedrooms || null,
       square_meters: square_meters || null,
       lot_type: lot_type || null,
+      furnishing,
       description,
       updated_at: new Date(),
     };
 
-    if (req.file) updateData.image_url = `/uploads/${req.file.filename}`;
+    if (req.files?.image?.[0]) updateData.image_url = `/uploads/${req.files.image[0].filename}`;
+    if (req.files?.computation_image?.[0]) updateData.computation_image_url = `/uploads/${req.files.computation_image[0].filename}`;
 
     const { data: unit, error } = await supabase
       .from('units')
