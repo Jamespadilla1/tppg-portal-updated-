@@ -385,6 +385,21 @@ tr:hover td{background:rgba(255,255,255,.025)}
   </div>
 </div>
 
+<!-- EDIT DEVELOPER -->
+<div id="editDevModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('editDevModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Edit Developer</h3>
+    <div class="space-y-3">
+      <input id="eDevI" type="hidden">
+      <div><label class="text-xs text-gray-400 mb-1 block">Developer Logo (leave blank to keep current)</label><input id="eDevLogo" type="file" accept="image/*" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Developer Name *</label><input id="eDevName" type="text" class="field"></div>
+      <p id="eDevErr" class="text-red-400 text-xs hidden">Developer name is required.</p>
+      <button onclick="updateDeveloper()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors mt-1">Update Developer</button>
+    </div>
+  </div>
+</div>
+
 <div id="addPropModal" class="modal-backdrop">
   <div class="modal-box">
     <button onclick="closeModal('addPropModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
@@ -864,7 +879,12 @@ async function renderDevelopers(){
     devCache = developers;
 
     document.getElementById('devGrid').innerHTML = developers.map(d => `
-      <div onclick="viewDeveloper('${d.id}','${d.name.replace(/'/g,"\\'")}')" class="card overflow-hidden cursor-pointer hover:border-orange-500/40 transition-colors text-center">
+      <div onclick="viewDeveloper('${d.id}','${d.name.replace(/'/g,"\\'")}')" class="card overflow-hidden cursor-pointer hover:border-orange-500/40 transition-colors text-center relative">
+        <button onclick="event.stopPropagation();toggleDevMenu('${d.id}')" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 hover:bg-black/70 text-white text-xs flex items-center justify-center z-10">⋯</button>
+        <div id="devMenu-${d.id}" class="hidden absolute top-8 right-1.5 z-20 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-lg overflow-hidden text-left w-28">
+          <button onclick="event.stopPropagation();closeDevMenus();openEditDeveloper('${d.id}')" class="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/5 text-left">Edit</button>
+          <button onclick="event.stopPropagation();closeDevMenus();deleteDeveloper('${d.id}','${d.name.replace(/'/g,"\\'")}')" class="w-full px-3 py-2 text-xs text-red-400 hover:bg-white/5 text-left">Delete</button>
+        </div>
         <div class="w-full h-28 bg-white/5 flex items-center justify-center overflow-hidden">
           ${d.logo_url ? `<img src="${d.logo_url}" class="w-full h-full object-cover">` : `<span class="text-gray-600 text-xs">No logo</span>`}
         </div>
@@ -875,6 +895,74 @@ async function renderDevelopers(){
     `).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No developers yet — click "+ Add Developer" to start.</p>`;
   } catch(err) {
     console.error('Error loading developers:', err);
+  }
+}
+function toggleDevMenu(id){
+  const menu = document.getElementById(`devMenu-${id}`);
+  const wasHidden = menu.classList.contains('hidden');
+  closeDevMenus();
+  if(wasHidden) menu.classList.remove('hidden');
+}
+function closeDevMenus(){
+  document.querySelectorAll('[id^="devMenu-"]').forEach(m=>m.classList.add('hidden'));
+}
+document.addEventListener('click', closeDevMenus);
+function openEditDeveloper(id){
+  const d = devCache.find(x => x.id === id);
+  if(!d) return;
+  document.getElementById('eDevI').value = d.id;
+  document.getElementById('eDevName').value = d.name;
+  document.getElementById('eDevLogo').value = '';
+  openModal('editDevModal');
+}
+async function updateDeveloper(){
+  const id = document.getElementById('eDevI').value;
+  const name = document.getElementById('eDevName').value.trim();
+  if(!name){ document.getElementById('eDevErr').classList.remove('hidden'); return; }
+  document.getElementById('eDevErr').classList.add('hidden');
+
+  const token = localStorage.getItem('token');
+  const fd = new FormData();
+  fd.append('name', name);
+  const logoFile = document.getElementById('eDevLogo').files[0];
+  if(logoFile) fd.append('logo', logoFile);
+
+  try {
+    const res = await fetch(`/api/developers/${id}`, {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: fd
+    });
+    if(!res.ok) throw new Error('Failed to update developer');
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Developer "${name}" updated`, actor: 'Admin', role: 'admin' })
+    });
+    closeModal('editDevModal');
+    renderDevelopers();
+  } catch(err) {
+    console.error('Error updating developer:', err);
+    alert('Failed to update developer.');
+  }
+}
+async function deleteDeveloper(id, name){
+  if(!confirm(`Delete "${name}"? This will also delete all of its properties and units.`)) return;
+  const token = localStorage.getItem('token');
+  try {
+    await fetch(`/api/developers/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Developer "${name}" deleted`, actor: 'Admin', role: 'admin' })
+    });
+    renderDevelopers();
+  } catch(err) {
+    console.error('Error deleting developer:', err);
+    alert('Failed to delete developer.');
   }
 }
 async function saveDeveloper(){
