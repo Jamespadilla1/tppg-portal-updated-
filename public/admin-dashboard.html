@@ -907,6 +907,16 @@ function closeDevMenus(){
   document.querySelectorAll('[id^="devMenu-"]').forEach(m=>m.classList.add('hidden'));
 }
 document.addEventListener('click', closeDevMenus);
+function togglePropMenu(id){
+  const menu = document.getElementById(`propMenu-${id}`);
+  const wasHidden = menu.classList.contains('hidden');
+  closePropMenus();
+  if(wasHidden) menu.classList.remove('hidden');
+}
+function closePropMenus(){
+  document.querySelectorAll('[id^="propMenu-"]').forEach(m=>m.classList.add('hidden'));
+}
+document.addEventListener('click', closePropMenus);
 function openEditDeveloper(id){
   const d = devCache.find(x => x.id === id);
   if(!d) return;
@@ -1027,7 +1037,12 @@ async function renderProps(){
     });
 
     document.getElementById('propGrid').innerHTML = filtered.map(p => `
-      <div onclick="viewProperty('${p.id}')" class="card overflow-hidden cursor-pointer hover:border-orange-500/40 transition-colors">
+      <div onclick="viewProperty('${p.id}')" class="card overflow-hidden cursor-pointer hover:border-orange-500/40 transition-colors relative">
+        <button onclick="event.stopPropagation();togglePropMenu('${p.id}')" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 hover:bg-black/70 text-white text-xs flex items-center justify-center z-10">⋯</button>
+        <div id="propMenu-${p.id}" class="hidden absolute top-8 right-1.5 z-20 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-lg overflow-hidden text-left w-28">
+          <button onclick="event.stopPropagation();closePropMenus();openEditProp('${p.id}')" class="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/5 text-left">Edit</button>
+          <button onclick="event.stopPropagation();closePropMenus();deleteProp('${p.id}')" class="w-full px-3 py-2 text-xs text-red-400 hover:bg-white/5 text-left">Delete</button>
+        </div>
         <div class="w-full h-36 bg-white/5 flex items-center justify-center overflow-hidden">
           ${p.image_url
             ? `<img src="${p.image_url}" class="w-full h-full object-cover">`
