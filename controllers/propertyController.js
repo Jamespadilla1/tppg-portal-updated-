@@ -1,4 +1,5 @@
 const supabase = require('../config/db');
+const uploadToStorage = require('../utils/uploadToStorage');
 
 // GET /api/properties
 const getProperties = async (req, res) => {
@@ -27,7 +28,7 @@ const getProperties = async (req, res) => {
 const createProperty = async (req, res) => {
   try {
     const { name, location, developer_id, property_type } = req.body;
-    const image_url = req.file ? `/uploads/${req.file.filename}` : null;
+    const image_url = await uploadToStorage(req.file, 'property-photos');
 
     const { data: property, error } = await supabase
       .from('properties')
@@ -63,7 +64,7 @@ const updateProperty = async (req, res) => {
     };
 
     if (developer_id) updateData.developer_id = developer_id;
-    if (req.file) updateData.image_url = `/uploads/${req.file.filename}`;
+    if (req.file) updateData.image_url = await uploadToStorage(req.file, 'property-photos');
 
     const { data: property, error } = await supabase
       .from('properties')

@@ -1,4 +1,5 @@
 const supabase = require('../config/db');
+const uploadToStorage = require('../utils/uploadToStorage');
 
 // GET /api/units?property_id=xxx
 const getUnits = async (req, res) => {
@@ -27,8 +28,8 @@ const getUnits = async (req, res) => {
 const createUnit = async (req, res) => {
   try {
     const { property_id, unit_name, price, commission_rate, status, bedrooms, square_meters, lot_type, furnishing, description } = req.body;
-    const image_url = req.files?.image?.[0] ? `/uploads/${req.files.image[0].filename}` : null;
-    const computation_image_url = req.files?.computation_image?.[0] ? `/uploads/${req.files.computation_image[0].filename}` : null;
+    const image_url = await uploadToStorage(req.files?.image?.[0], 'unit-photos');
+    const computation_image_url = await uploadToStorage(req.files?.computation_image?.[0], 'unit-computations');
 
     const { data: unit, error } = await supabase
       .from('units')
@@ -75,8 +76,8 @@ const updateUnit = async (req, res) => {
       updated_at: new Date(),
     };
 
-    if (req.files?.image?.[0]) updateData.image_url = `/uploads/${req.files.image[0].filename}`;
-    if (req.files?.computation_image?.[0]) updateData.computation_image_url = `/uploads/${req.files.computation_image[0].filename}`;
+    if (req.files?.image?.[0]) updateData.image_url = await uploadToStorage(req.files.image[0], 'unit-photos');
+    if (req.files?.computation_image?.[0]) updateData.computation_image_url = await uploadToStorage(req.files.computation_image[0], 'unit-computations');
 
     const { data: unit, error } = await supabase
       .from('units')

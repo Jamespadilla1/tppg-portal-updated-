@@ -1,4 +1,5 @@
 const supabase = require('../config/db');
+const uploadToStorage = require('../utils/uploadToStorage');
 
 // GET /api/developers
 const getDevelopers = async (req, res) => {
@@ -20,9 +21,9 @@ const getDevelopers = async (req, res) => {
 const createDeveloper = async (req, res) => {
   try {
     const { name } = req.body;
-    const logo_url = req.file ? `/uploads/${req.file.filename}` : null;
-
     if (!name) return res.status(400).json({ message: 'Developer name is required.' });
+
+    const logo_url = await uploadToStorage(req.file, 'developer-logos');
 
     const { data: developer, error } = await supabase
       .from('developers')
@@ -43,7 +44,7 @@ const updateDeveloper = async (req, res) => {
   try {
     const { name } = req.body;
     const updateData = { name };
-    if (req.file) updateData.logo_url = `/uploads/${req.file.filename}`;
+    if (req.file) updateData.logo_url = await uploadToStorage(req.file, 'developer-logos');
 
     const { data: developer, error } = await supabase
       .from('developers')

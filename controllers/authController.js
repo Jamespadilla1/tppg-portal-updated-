@@ -1,6 +1,7 @@
 const jwt      = require('jsonwebtoken');
 const bcrypt   = require('bcryptjs');
 const supabase = require('../config/db');
+const uploadToStorage = require('../utils/uploadToStorage');
 
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -87,6 +88,10 @@ const register = async (req, res) => {
     // Generate agent ID
     const agentId = 'AGT-' + String(Date.now()).slice(-5);
 
+    // Upload ID photos to Supabase Storage (permanent, unlike Railway's local disk)
+    const idFrontUrl = await uploadToStorage(req.files?.idFront?.[0], 'agent-ids');
+    const idBackUrl  = await uploadToStorage(req.files?.idBack?.[0],  'agent-ids');
+
     const { data: agent, error } = await supabase
       .from('agents')
       .insert([{
@@ -95,8 +100,8 @@ const register = async (req, res) => {
         email,
         phone,
         password: hashedPassword,
-        id_front: req.files?.idFront?.[0]?.path || '',
-        id_back:  req.files?.idBack?.[0]?.path  || '',
+        id_front: idFrontUrl || '',
+        id_back:  idBackUrl  || '',
         status:   'pending',
       }])
       .select()
