@@ -27,7 +27,7 @@ const getUnits = async (req, res) => {
 // POST /api/units (admin only)
 const createUnit = async (req, res) => {
   try {
-    const { property_id, unit_name, price, commission_rate, status, bedrooms, square_meters, lot_type, furnishing, description } = req.body;
+    const { property_id, unit_name, price, commission_rate, status, bedrooms, square_meters, lot_type, furnishing, construction_status, estimated_finish_date, description } = req.body;
     const image_url = await uploadToStorage(req.files?.image?.[0], 'unit-photos');
     const computation_image_url = await uploadToStorage(req.files?.computation_image?.[0], 'unit-computations');
 
@@ -43,6 +43,8 @@ const createUnit = async (req, res) => {
         square_meters: square_meters || null,
         lot_type: lot_type || null,
         furnishing: furnishing || 'Bare Unit',
+        construction_status: construction_status || 'RFO',
+        estimated_finish_date: estimated_finish_date || null,
         description,
         image_url,
         computation_image_url,
@@ -61,7 +63,7 @@ const createUnit = async (req, res) => {
 // PUT /api/units/:id (admin only)
 const updateUnit = async (req, res) => {
   try {
-    const { unit_name, price, commission_rate, status, bedrooms, square_meters, lot_type, furnishing, description } = req.body;
+    const { unit_name, price, commission_rate, status, bedrooms, square_meters, lot_type, furnishing, construction_status, estimated_finish_date, description } = req.body;
 
     const updateData = {
       unit_name,
@@ -72,6 +74,8 @@ const updateUnit = async (req, res) => {
       square_meters: square_meters || null,
       lot_type: lot_type || null,
       furnishing,
+      construction_status,
+      estimated_finish_date: estimated_finish_date || null,
       description,
       updated_at: new Date(),
     };
