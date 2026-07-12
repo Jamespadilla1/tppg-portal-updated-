@@ -446,9 +446,10 @@ tr:hover td{background:rgba(255,255,255,.025)}
       <div><label class="text-xs text-gray-400 mb-1 block">Unit Photo</label><input id="uImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Computation Image</label><input id="uCompImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Unit Name / Number *</label><input id="uName" type="text" class="field" placeholder="e.g. Tower A - Unit 501"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">TCP - Total Contract Price (₱) *</label><input id="uTCP" type="number" class="field" placeholder="3500000"></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="text-xs text-gray-400 mb-1 block">Price (₱) *</label><input id="uPrice" type="number" class="field" placeholder="3500000"></div>
-        <div><label class="text-xs text-gray-400 mb-1 block">Commission Rate (%)</label><input id="uRate" type="number" step="0.1" class="field" value="2"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Reservation Fee (₱)</label><input id="uResFee" type="number" class="field" placeholder="25000"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Downpayment (₱)</label><input id="uDownpayment" type="number" class="field" placeholder="350000"></div>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="text-xs text-gray-400 mb-1 block">Bedrooms</label><input id="uBeds" type="number" min="0" class="field" placeholder="2"></div>
@@ -476,9 +477,10 @@ tr:hover td{background:rgba(255,255,255,.025)}
       <div><label class="text-xs text-gray-400 mb-1 block">Unit Photo (leave blank to keep current)</label><input id="eUImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Computation Image (leave blank to keep current)</label><input id="eUCompImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Unit Name / Number</label><input id="eUName" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">TCP - Total Contract Price (₱)</label><input id="eUTCP" type="number" class="field"></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="text-xs text-gray-400 mb-1 block">Price (₱)</label><input id="eUPrice" type="number" class="field"></div>
-        <div><label class="text-xs text-gray-400 mb-1 block">Commission Rate (%)</label><input id="eURate" type="number" step="0.1" class="field"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Reservation Fee (₱)</label><input id="eUResFee" type="number" class="field"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Downpayment (₱)</label><input id="eUDownpayment" type="number" class="field"></div>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="text-xs text-gray-400 mb-1 block">Bedrooms</label><input id="eUBeds" type="number" min="0" class="field"></div>
@@ -1246,7 +1248,7 @@ async function renderUnits(){
             <p class="font-semibold text-white text-sm leading-tight">${u.unit_name}</p>
             <span class="badge ${SB[u.status]} shrink-0">${u.status}</span>
           </div>
-          <p class="text-orange-400 font-bold text-sm">${peso(u.price)}</p>
+          <p class="text-orange-400 font-bold text-sm">${peso(u.tcp)}</p>
           <p class="text-gray-500 text-xs">${u.bedrooms??'—'} BR · ${u.square_meters??'—'} sqm${u.lot_type?' · '+u.lot_type:''}</p>
           <div class="flex items-center gap-1.5 flex-wrap">
             <span class="badge bg-blue text-xs">${u.furnishing||'Bare Unit'}</span>
@@ -1265,7 +1267,6 @@ async function renderUnits(){
 function viewUnit(id){
   const u = unitCache.find(x => x.id === id);
   if(!u) return;
-  const comm = (u.price * u.commission_rate / 100) || 0;
   document.getElementById('unitDetailContent').innerHTML = `
     <div class="w-full h-48 bg-white/5 rounded-lg overflow-hidden mb-4 flex items-center justify-center">
       ${u.image_url ? `<img src="${u.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-600 text-xs">No photo</span>`}
@@ -1276,7 +1277,6 @@ function viewUnit(id){
     </div>
     <p class="text-gray-400 text-sm mb-3">${currentPropName}</p>
     <div class="grid grid-cols-2 gap-3 mb-3">
-      <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Price</p><p class="text-white font-bold">${peso(u.price)}</p></div>
       <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Bedrooms</p><p class="text-white font-bold">${u.bedrooms??'—'}</p></div>
       <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Square Meters</p><p class="text-white font-bold">${u.square_meters??'—'}</p></div>
       <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Lot Position</p><p class="text-white font-bold">${u.lot_type||'—'}</p></div>
@@ -1284,9 +1284,10 @@ function viewUnit(id){
       <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Construction Status</p><p class="text-white font-bold">${u.construction_status||'RFO'}</p></div>
       ${u.construction_status==='Under Construction' && u.estimated_finish_date ? `<div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Est. Finish Date</p><p class="text-white font-bold">${new Date(u.estimated_finish_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})}</p></div>` : ''}
     </div>
-    <div class="rounded-xl bg-orange-500/10 border border-orange-500/25 p-4 mb-3">
-      <p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Commission (Price × ${u.commission_rate}%)</p>
-      <p class="text-2xl font-bold text-orange-400">${peso(comm)}</p>
+    <div class="rounded-xl bg-orange-500/10 border border-orange-500/25 p-4 mb-3 space-y-2">
+      <div class="flex justify-between items-center"><p class="text-xs text-gray-400 uppercase tracking-wide">TCP (Total Contract Price)</p><p class="text-lg font-bold text-orange-400">${peso(u.tcp)}</p></div>
+      <div class="flex justify-between items-center"><p class="text-xs text-gray-400">Reservation Fee</p><p class="text-sm font-semibold text-white">${u.reservation_fee ? peso(u.reservation_fee) : '—'}</p></div>
+      <div class="flex justify-between items-center"><p class="text-xs text-gray-400">Downpayment</p><p class="text-sm font-semibold text-white">${u.downpayment ? peso(u.downpayment) : '—'}</p></div>
     </div>
     ${u.computation_image_url ? `
     <p class="text-gray-500 text-xs mb-1">Computation</p>
@@ -1303,8 +1304,8 @@ function viewUnit(id){
 }
 async function saveUnit(){
   const name=document.getElementById('uName').value.trim();
-  const price=parseFloat(document.getElementById('uPrice').value);
-  if(!name||!price){document.getElementById('uErr').classList.remove('hidden');return;}
+  const tcp=parseFloat(document.getElementById('uTCP').value);
+  if(!name||!tcp){document.getElementById('uErr').classList.remove('hidden');return;}
   document.getElementById('uErr').classList.add('hidden');
 
   const token = localStorage.getItem('token');
@@ -1314,8 +1315,9 @@ async function saveUnit(){
   const fd = new FormData();
   fd.append('property_id', currentPropId);
   fd.append('unit_name', name);
-  fd.append('price', price);
-  fd.append('commission_rate', document.getElementById('uRate').value || 2);
+  fd.append('tcp', tcp);
+  fd.append('reservation_fee', document.getElementById('uResFee').value || '');
+  fd.append('downpayment', document.getElementById('uDownpayment').value || '');
   fd.append('bedrooms', document.getElementById('uBeds').value || '');
   fd.append('square_meters', document.getElementById('uSqm').value || '');
   fd.append('lot_type', currentPropType==='House and Lot' ? document.getElementById('uLotType').value : '');
@@ -1345,8 +1347,7 @@ async function saveUnit(){
       body: JSON.stringify({ message: `Unit "${name}" added under ${currentPropName} — status: ${status}${constDetail}`, actor: 'Admin', role: 'admin' })
     });
     closeModal('addUnitModal');
-    ['uName','uPrice','uBeds','uSqm','uDesc','uFinishDate'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('uRate').value='2';
+    ['uName','uTCP','uResFee','uDownpayment','uBeds','uSqm','uDesc','uFinishDate'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('uStatus').value='Available';
     document.getElementById('uFurnish').value='Bare Unit';
     document.getElementById('uConstStatus').value='RFO';
@@ -1364,8 +1365,9 @@ function openEditUnit(id){
   if(!u) return;
   document.getElementById('eUI').value=u.id;
   document.getElementById('eUName').value=u.unit_name;
-  document.getElementById('eUPrice').value=u.price;
-  document.getElementById('eURate').value=u.commission_rate;
+  document.getElementById('eUTCP').value=u.tcp;
+  document.getElementById('eUResFee').value=u.reservation_fee??'';
+  document.getElementById('eUDownpayment').value=u.downpayment??'';
   document.getElementById('eUBeds').value=u.bedrooms??'';
   document.getElementById('eUSqm').value=u.square_meters??'';
   if(u.lot_type) document.getElementById('eULotType').value=u.lot_type;
@@ -1393,8 +1395,9 @@ async function updateUnit(){
 
   const fd = new FormData();
   fd.append('unit_name', name);
-  fd.append('price', parseFloat(document.getElementById('eUPrice').value));
-  fd.append('commission_rate', document.getElementById('eURate').value || 2);
+  fd.append('tcp', parseFloat(document.getElementById('eUTCP').value));
+  fd.append('reservation_fee', document.getElementById('eUResFee').value || '');
+  fd.append('downpayment', document.getElementById('eUDownpayment').value || '');
   fd.append('bedrooms', document.getElementById('eUBeds').value || '');
   fd.append('square_meters', document.getElementById('eUSqm').value || '');
   fd.append('lot_type', currentPropType==='House and Lot' ? document.getElementById('eULotType').value : '');
