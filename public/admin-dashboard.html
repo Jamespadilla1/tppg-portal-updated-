@@ -446,10 +446,16 @@ tr:hover td{background:rgba(255,255,255,.025)}
       <div><label class="text-xs text-gray-400 mb-1 block">Unit Photo</label><input id="uImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Computation Image</label><input id="uCompImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Unit Name / Number *</label><input id="uName" type="text" class="field" placeholder="e.g. Tower A - Unit 501"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">TCP - Total Contract Price (₱) *</label><input id="uTCP" type="number" class="field" placeholder="3500000"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">TCP - Total Contract Price (₱) *</label><input id="uTCP" type="text" inputmode="numeric" class="field" placeholder="3,500,000" oninput="formatMoneyInput(this);syncDPFromAmount('u')"></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="text-xs text-gray-400 mb-1 block">Reservation Fee (₱)</label><input id="uResFee" type="number" class="field" placeholder="25000"></div>
-        <div><label class="text-xs text-gray-400 mb-1 block">Downpayment (₱)</label><input id="uDownpayment" type="number" class="field" placeholder="350000"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Reservation Fee (₱)</label><input id="uResFee" type="text" inputmode="numeric" class="field" placeholder="25,000" oninput="formatMoneyInput(this)"></div>
+        <div>
+          <label class="text-xs text-gray-400 mb-1 block">Downpayment (₱)</label>
+          <div class="flex gap-1.5">
+            <input id="uDownpayment" type="text" inputmode="numeric" class="field flex-1" placeholder="350,000" oninput="formatMoneyInput(this);syncDPFromAmount('u')">
+            <input id="uDownpaymentPct" type="number" step="0.1" class="field w-16 text-center px-1" placeholder="%" oninput="syncDPFromPct('u')">
+          </div>
+        </div>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="text-xs text-gray-400 mb-1 block">Bedrooms</label><input id="uBeds" type="number" min="0" class="field" placeholder="2"></div>
@@ -477,10 +483,16 @@ tr:hover td{background:rgba(255,255,255,.025)}
       <div><label class="text-xs text-gray-400 mb-1 block">Unit Photo (leave blank to keep current)</label><input id="eUImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Computation Image (leave blank to keep current)</label><input id="eUCompImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Unit Name / Number</label><input id="eUName" type="text" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">TCP - Total Contract Price (₱)</label><input id="eUTCP" type="number" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">TCP - Total Contract Price (₱)</label><input id="eUTCP" type="text" inputmode="numeric" class="field" oninput="formatMoneyInput(this);syncDPFromAmount('eU')"></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="text-xs text-gray-400 mb-1 block">Reservation Fee (₱)</label><input id="eUResFee" type="number" class="field"></div>
-        <div><label class="text-xs text-gray-400 mb-1 block">Downpayment (₱)</label><input id="eUDownpayment" type="number" class="field"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Reservation Fee (₱)</label><input id="eUResFee" type="text" inputmode="numeric" class="field" oninput="formatMoneyInput(this)"></div>
+        <div>
+          <label class="text-xs text-gray-400 mb-1 block">Downpayment (₱)</label>
+          <div class="flex gap-1.5">
+            <input id="eUDownpayment" type="text" inputmode="numeric" class="field flex-1" oninput="formatMoneyInput(this);syncDPFromAmount('eU')">
+            <input id="eUDownpaymentPct" type="number" step="0.1" class="field w-16 text-center px-1" placeholder="%" oninput="syncDPFromPct('eU')">
+          </div>
+        </div>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="text-xs text-gray-400 mb-1 block">Bedrooms</label><input id="eUBeds" type="number" min="0" class="field"></div>
@@ -1302,9 +1314,32 @@ function viewUnit(id){
   `;
   openModal('unitDetailModal');
 }
+// ── Money formatting + downpayment % <-> amount sync ──
+function parseMoney(str){
+  return parseFloat((str||'').toString().replace(/,/g,'')) || 0;
+}
+function formatMoneyInput(el){
+  const cursorFromEnd = el.value.length - el.selectionStart;
+  const digits = el.value.replace(/[^\d]/g,'');
+  el.value = digits === '' ? '' : parseInt(digits,10).toLocaleString('en-US');
+  const pos = Math.max(0, el.value.length - cursorFromEnd);
+  el.setSelectionRange(pos, pos);
+}
+function syncDPFromAmount(prefix){
+  const tcp = parseMoney(document.getElementById(prefix+'TCP').value);
+  const dp = parseMoney(document.getElementById(prefix+'Downpayment').value);
+  const pctEl = document.getElementById(prefix+'DownpaymentPct');
+  pctEl.value = tcp > 0 ? +(dp/tcp*100).toFixed(2) : '';
+}
+function syncDPFromPct(prefix){
+  const tcp = parseMoney(document.getElementById(prefix+'TCP').value);
+  const pct = parseFloat(document.getElementById(prefix+'DownpaymentPct').value) || 0;
+  const dpEl = document.getElementById(prefix+'Downpayment');
+  dpEl.value = tcp > 0 ? Math.round(tcp * pct / 100).toLocaleString('en-US') : '';
+}
 async function saveUnit(){
   const name=document.getElementById('uName').value.trim();
-  const tcp=parseFloat(document.getElementById('uTCP').value);
+  const tcp=parseMoney(document.getElementById('uTCP').value);
   if(!name||!tcp){document.getElementById('uErr').classList.remove('hidden');return;}
   document.getElementById('uErr').classList.add('hidden');
 
@@ -1316,8 +1351,8 @@ async function saveUnit(){
   fd.append('property_id', currentPropId);
   fd.append('unit_name', name);
   fd.append('tcp', tcp);
-  fd.append('reservation_fee', document.getElementById('uResFee').value || '');
-  fd.append('downpayment', document.getElementById('uDownpayment').value || '');
+  fd.append('reservation_fee', parseMoney(document.getElementById('uResFee').value) || '');
+  fd.append('downpayment', parseMoney(document.getElementById('uDownpayment').value) || '');
   fd.append('bedrooms', document.getElementById('uBeds').value || '');
   fd.append('square_meters', document.getElementById('uSqm').value || '');
   fd.append('lot_type', currentPropType==='House and Lot' ? document.getElementById('uLotType').value : '');
@@ -1347,7 +1382,7 @@ async function saveUnit(){
       body: JSON.stringify({ message: `Unit "${name}" added under ${currentPropName} — status: ${status}${constDetail}`, actor: 'Admin', role: 'admin' })
     });
     closeModal('addUnitModal');
-    ['uName','uTCP','uResFee','uDownpayment','uBeds','uSqm','uDesc','uFinishDate'].forEach(id=>document.getElementById(id).value='');
+    ['uName','uTCP','uResFee','uDownpayment','uDownpaymentPct','uBeds','uSqm','uDesc','uFinishDate'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('uStatus').value='Available';
     document.getElementById('uFurnish').value='Bare Unit';
     document.getElementById('uConstStatus').value='RFO';
@@ -1365,9 +1400,10 @@ function openEditUnit(id){
   if(!u) return;
   document.getElementById('eUI').value=u.id;
   document.getElementById('eUName').value=u.unit_name;
-  document.getElementById('eUTCP').value=u.tcp;
-  document.getElementById('eUResFee').value=u.reservation_fee??'';
-  document.getElementById('eUDownpayment').value=u.downpayment??'';
+  document.getElementById('eUTCP').value=u.tcp ? Number(u.tcp).toLocaleString('en-US') : '';
+  document.getElementById('eUResFee').value=u.reservation_fee ? Number(u.reservation_fee).toLocaleString('en-US') : '';
+  document.getElementById('eUDownpayment').value=u.downpayment ? Number(u.downpayment).toLocaleString('en-US') : '';
+  syncDPFromAmount('eU');
   document.getElementById('eUBeds').value=u.bedrooms??'';
   document.getElementById('eUSqm').value=u.square_meters??'';
   if(u.lot_type) document.getElementById('eULotType').value=u.lot_type;
@@ -1395,9 +1431,9 @@ async function updateUnit(){
 
   const fd = new FormData();
   fd.append('unit_name', name);
-  fd.append('tcp', parseFloat(document.getElementById('eUTCP').value));
-  fd.append('reservation_fee', document.getElementById('eUResFee').value || '');
-  fd.append('downpayment', document.getElementById('eUDownpayment').value || '');
+  fd.append('tcp', parseMoney(document.getElementById('eUTCP').value));
+  fd.append('reservation_fee', parseMoney(document.getElementById('eUResFee').value) || '');
+  fd.append('downpayment', parseMoney(document.getElementById('eUDownpayment').value) || '');
   fd.append('bedrooms', document.getElementById('eUBeds').value || '');
   fd.append('square_meters', document.getElementById('eUSqm').value || '');
   fd.append('lot_type', currentPropType==='House and Lot' ? document.getElementById('eULotType').value : '');
