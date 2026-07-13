@@ -15,80 +15,83 @@
   .field { width:100%; padding:11px 14px; border:1px solid #e5e7eb; border-radius:8px; font-size:.875rem; color:#111827; transition:border-color .15s,box-shadow .15s; outline:none; }
   .field:focus { border-color:#f97316; box-shadow:0 0 0 3px rgba(249,115,22,.12); }
   .field::placeholder { color:#9ca3af; }
-  .modal-box { animation:slideUp .2s ease; }
-  @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-  .hero-content { animation:fadeIn .6s ease both; }
-  @keyframes fadeIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .panel-content { animation:fadeIn .4s ease both; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 </style>
 </head>
 <body class="bg-gray-950 overflow-x-hidden">
 
-<div class="fixed inset-0 z-0">
-  <img src="images/HOUSE.jpg" class="w-full h-full object-cover opacity-30" onerror="this.style.display='none'">
-  <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80"></div>
-</div>
+<div class="min-h-screen flex">
 
-<nav class="relative z-20 px-6 py-4">
-  <div class="max-w-6xl mx-auto flex justify-between items-center">
-    <div class="flex items-center gap-3">
-      <div class="w-9 h-9 rounded-lg bg-orange-500 overflow-hidden flex items-center justify-center border border-white/20">
-        <img src="images/TPPG.jpg" class="w-full h-full object-cover" onerror="this.style.display='none'">
+  <!-- LEFT: Background photo panel (drop your image at public/images/login-bg.jpg) -->
+  <div class="hidden lg:flex lg:w-1/2 relative">
+    <img src="images/login-bg.jpg" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
+    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10"></div>
+    <div class="relative z-10 flex flex-col justify-end p-12 text-white">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-lg bg-orange-500 overflow-hidden flex items-center justify-center border border-white/20">
+          <img src="images/TPPG.jpg" class="w-full h-full object-cover" onerror="this.style.display='none'">
+        </div>
+        <span class="font-semibold text-xl">TPPG Portal</span>
       </div>
-      <span class="text-white font-semibold text-lg">TPPG Portal</span>
-    </div>
-    <div class="flex gap-2">
-      <button onclick="openLogin()" class="px-4 py-2 border border-white/25 text-white text-sm rounded-lg hover:bg-white/10 transition-colors">Log In</button>
-      <button onclick="openRegister()" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition-colors font-medium">Register</button>
+      <h1 class="text-3xl font-bold mb-2 leading-tight">Find your next property with confidence.</h1>
+      <p class="text-white/70 text-sm max-w-md">The Premier Property Group's listing and management platform — for agents and admins alike.</p>
     </div>
   </div>
-</nav>
 
-<!-- LOGIN MODAL -->
-<div id="loginModal" class="hidden fixed inset-0 bg-black/65 z-50 flex items-center justify-center p-4">
-  <div class="modal-box bg-white rounded-2xl w-full max-w-sm p-7 relative shadow-2xl">
-    <button onclick="closeLogin()" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
-    <h2 class="text-xl font-bold text-gray-900 mb-1">Welcome back</h2>
-    <p class="text-gray-400 text-xs mb-5">Select your role to continue</p>
-    <div class="flex gap-2 mb-5">
-      <button onclick="selectRole('admin')" id="roleAdmin" class="role-btn">Admin</button>
-      <button onclick="selectRole('agent')" id="roleAgent" class="role-btn">Agent</button>
-    </div>
-    <div id="loginFields" class="hidden space-y-3">
-      <input id="loginId"  type="text"     placeholder="Admin ID / Agent ID" class="field">
-      <input id="email"    type="email"    placeholder="Email address"        class="field">
-      <input id="password" type="password" placeholder="Password"             class="field">
-      <button onclick="handleLogin()" class="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white py-3 rounded-lg font-semibold transition-colors">Log In</button>
-      <p id="loginError" class="text-red-500 text-xs text-center hidden"></p>
-    </div>
-    <p class="text-xs text-center text-gray-400 mt-4">
-      No account yet? <button onclick="closeLogin();openRegister();" class="text-orange-500 font-medium hover:underline">Register</button>
-    </p>
-  </div>
-</div>
+  <!-- RIGHT: Login / Register panel — visible immediately, no click required -->
+  <div class="w-full lg:w-1/2 flex items-center justify-center p-6 bg-gray-950 relative">
+    <!-- subtle mobile-only background so small screens aren't pure black -->
+    <img src="images/login-bg.jpg" class="lg:hidden absolute inset-0 w-full h-full object-cover opacity-20" onerror="this.style.display='none'">
+    <div class="absolute inset-0 lg:hidden bg-gradient-to-b from-black/70 to-black/90"></div>
 
-<!-- REGISTER MODAL -->
-<div id="registerModal" class="hidden fixed inset-0 bg-black/65 z-50 flex items-center justify-center p-4">
-  <div class="modal-box bg-white rounded-2xl w-full max-w-sm p-7 relative shadow-2xl max-h-[92vh] overflow-y-auto">
-    <button onclick="closeRegister()" class="absolute top-4 right-5 text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
-    <h2 class="text-xl font-bold text-gray-900 mb-1">Agent Application</h2>
-    <p class="text-xs text-gray-400 mb-5">Your application will be reviewed by the administrator.</p>
-    <div class="space-y-3">
-      <input id="regName"     type="text"     placeholder="Full Name"       class="field">
-      <input id="regEmail"    type="email"    placeholder="Email Address"   class="field">
-      <input id="regNumber"   type="text"     placeholder="Contact Number"  class="field">
-      <input id="regPassword" type="password" placeholder="Password"        class="field">
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">Valid ID — Front</label>
-        <input id="idFront" type="file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-orange-50 file:text-orange-600 file:text-xs file:font-medium hover:file:bg-orange-100 border border-gray-200 rounded-lg p-1">
+    <div class="relative z-10 w-full max-w-sm bg-white rounded-2xl p-7 shadow-2xl">
+
+      <!-- LOGIN VIEW -->
+      <div id="loginView" class="panel-content">
+        <h2 class="text-xl font-bold text-gray-900 mb-1">Welcome back</h2>
+        <p class="text-gray-400 text-xs mb-5">Select your role to continue</p>
+        <div class="flex gap-2 mb-5">
+          <button onclick="selectRole('admin')" id="roleAdmin" class="role-btn">Admin</button>
+          <button onclick="selectRole('agent')" id="roleAgent" class="role-btn">Agent</button>
+        </div>
+        <div id="loginFields" class="hidden space-y-3">
+          <input id="loginId"  type="text"     placeholder="Admin ID / Agent ID" class="field">
+          <input id="email"    type="email"    placeholder="Email address"        class="field">
+          <input id="password" type="password" placeholder="Password"             class="field">
+          <button onclick="handleLogin()" class="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white py-3 rounded-lg font-semibold transition-colors">Log In</button>
+          <p id="loginError" class="text-red-500 text-xs text-center hidden"></p>
+        </div>
+        <p class="text-xs text-center text-gray-400 mt-4">
+          No account yet? <button onclick="showRegister()" class="text-orange-500 font-medium hover:underline">Register</button>
+        </p>
       </div>
-      <div>
-        <label class="block text-xs text-gray-500 mb-1">Valid ID — Back</label>
-        <input id="idBack" type="file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-orange-50 file:text-orange-600 file:text-xs file:font-medium hover:file:bg-orange-100 border border-gray-200 rounded-lg p-1">
+
+      <!-- REGISTER VIEW -->
+      <div id="registerView" class="hidden panel-content max-h-[85vh] overflow-y-auto">
+        <h2 class="text-xl font-bold text-gray-900 mb-1">Agent Application</h2>
+        <p class="text-xs text-gray-400 mb-5">Your application will be reviewed by the administrator.</p>
+        <div class="space-y-3">
+          <input id="regName"     type="text"     placeholder="Full Name"       class="field">
+          <input id="regEmail"    type="email"    placeholder="Email Address"   class="field">
+          <input id="regNumber"   type="text"     placeholder="Contact Number"  class="field">
+          <input id="regPassword" type="password" placeholder="Password"        class="field">
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Valid ID — Front</label>
+            <input id="idFront" type="file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-orange-50 file:text-orange-600 file:text-xs file:font-medium hover:file:bg-orange-100 border border-gray-200 rounded-lg p-1">
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Valid ID — Back</label>
+            <input id="idBack" type="file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-orange-50 file:text-orange-600 file:text-xs file:font-medium hover:file:bg-orange-100 border border-gray-200 rounded-lg p-1">
+          </div>
+          <button onclick="handleRegister()" class="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white py-3 rounded-lg font-semibold transition-colors">Submit Application</button>
+          <p class="text-xs text-center text-gray-400">Already have an account? <button onclick="showLogin()" class="text-orange-500 font-medium hover:underline">Log In</button></p>
+        </div>
       </div>
-      <button onclick="handleRegister()" class="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white py-3 rounded-lg font-semibold transition-colors">Submit Application</button>
-      <p class="text-xs text-center text-gray-400">Already have an account? <button onclick="closeRegister();openLogin();" class="text-orange-500 font-medium hover:underline">Log In</button></p>
+
     </div>
   </div>
+
 </div>
 
 <script>
@@ -96,10 +99,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let selectedRole = '';
 
-window.openLogin     = () => document.getElementById('loginModal').classList.remove('hidden');
-window.closeLogin    = () => { document.getElementById('loginModal').classList.add('hidden'); resetLogin(); };
-window.openRegister  = () => document.getElementById('registerModal').classList.remove('hidden');
-window.closeRegister = () => document.getElementById('registerModal').classList.add('hidden');
+window.showLogin = () => {
+  document.getElementById('registerView').classList.add('hidden');
+  document.getElementById('loginView').classList.remove('hidden');
+};
+window.showRegister = () => {
+  document.getElementById('loginView').classList.add('hidden');
+  document.getElementById('registerView').classList.remove('hidden');
+};
 
 function resetLogin() {
   selectedRole = '';
@@ -190,7 +197,7 @@ window.handleRegister = async () => {
     if (!res.ok) return alert(data.message || 'Registration failed.');
 
     alert('Application submitted!\n\nYour Agent ID is: ' + data.agentId + '\n\nSave this ID — you will need it to log in once approved.');
-    closeRegister();
+    showLogin();
     ['regName','regEmail','regNumber','regPassword'].forEach(id => document.getElementById(id).value = '');
 
   } catch (err) {
@@ -203,10 +210,6 @@ function showError(msg) {
   el.textContent = msg;
   el.classList.remove('hidden');
 }
-
-document.getElementById('loginModal').addEventListener('click', e => { if (e.target.id === 'loginModal') closeLogin(); });
-document.getElementById('registerModal').addEventListener('click', e => { if (e.target.id === 'registerModal') closeRegister(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeLogin(); closeRegister(); } });
 
 }); // end DOMContentLoaded
 </script>
