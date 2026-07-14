@@ -5,45 +5,64 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Dashboard - TPPG</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          white: '#f2e6d3',
+          gray: { 300:'#e3d3bd', 400:'#c9a98f', 500:'#a8897a', 600:'#8a7568', 900:'#2c2027', 950:'#241a1f' },
+          orange: { 300:'#f5b98a', 400:'#f0975a', 500:'#e2733a', 600:'#c85f2c' },
+          green:  { 300:'#cdd9a0', 400:'#b7c66e', 600:'#7d8f4a', 700:'#66753b' },
+          red:    { 300:'#e3ab95', 400:'#d9764f', 500:'#c85f2c', 600:'#b04f22' },
+          yellow: { 400:'#e0aa52', 500:'#d4952e' },
+          blue:   { 300:'#b7d6d6', 400:'#8fc2c2' },
+          purple: { 300:'#dcb8c4', 400:'#c98aa0' },
+        }
+      }
+    }
+  }
+</script>
+
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * { font-family:'DM Sans',sans-serif; }
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#374151;border-radius:4px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#5a4642;border-radius:4px}
 
-.nav-link{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;color:#9ca3af;font-size:.8rem;cursor:pointer;transition:all .15s;user-select:none}
-.nav-link:hover{background:rgba(255,255,255,.06);color:#fff}
-.nav-link.active{background:rgba(249,115,22,.15);color:#f97316}
+.nav-link{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;color:#c9a98f;font-size:.8rem;cursor:pointer;transition:all .15s;user-select:none}
+.nav-link:hover{background:rgba(242,230,211,.07);color:#fff}
+.nav-link.active{background:rgba(226,115,58,.18);color:#e2733a}
 .nav-link .dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.5;flex-shrink:0}
-.nav-link.active .dot{opacity:1;background:#f97316}
-.nav-section-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:#4b5563;padding:12px 11px 4px;font-weight:600}
+.nav-link.active .dot{opacity:1;background:#e2733a}
+.nav-section-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:#8a7568;padding:12px 11px 4px;font-weight:600}
 
-.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;transition:border-color .2s}
-.card:hover{border-color:rgba(255,255,255,.14)}
+.card{background:rgba(242,230,211,.05);border:1px solid rgba(242,230,211,.09);border-radius:12px;transition:border-color .2s}
+.card:hover{border-color:rgba(242,230,211,.15)}
 
 .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:500}
-.bg-green{background:rgba(34,197,94,.12);color:#4ade80}
-.bg-yellow{background:rgba(234,179,8,.12);color:#facc15}
-.bg-red{background:rgba(239,68,68,.12);color:#f87171}
-.bg-blue{background:rgba(59,130,246,.12);color:#60a5fa}
-.bg-orange{background:rgba(249,115,22,.12);color:#fb923c}
-.bg-purple{background:rgba(168,85,247,.12);color:#c084fc}
+.bg-green{background:rgba(151,163,79,.18);color:#b7c66e}
+.bg-yellow{background:rgba(214,158,58,.18);color:#e0aa52}
+.bg-red{background:rgba(196,90,58,.18);color:#d9764f}
+.bg-blue{background:rgba(122,158,158,.18);color:#8fc2c2}
+.bg-orange{background:rgba(226,115,58,.18);color:#f0975a}
+.bg-purple{background:rgba(150,95,120,.18);color:#c98aa0}
 
 .section{display:none}.section.active{display:block}
 
-.field{width:100%;padding:9px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:.85rem;outline:none;transition:border-color .15s}
-.field:focus{border-color:#f97316}
-.field::placeholder{color:#6b7280}
-select.field option{background:#1f2937;color:#fff}
+.field{width:100%;padding:9px 12px;background:rgba(242,230,211,.07);border:1px solid rgba(242,230,211,.12);border-radius:8px;color:#fff;font-size:.85rem;outline:none;transition:border-color .15s}
+.field:focus{border-color:#e2733a}
+.field::placeholder{color:#a8897a}
+select.field option{background:#2f2329;color:#fff}
 textarea.field{resize:vertical;min-height:70px}
 
-tr:hover td{background:rgba(255,255,255,.025)}
+tr:hover td{background:rgba(242,230,211,.03)}
 
-.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;align-items:center;justify-content:center;padding:1rem}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(20,14,17,.82);z-index:50;align-items:center;justify-content:center;padding:1rem}
 .modal-backdrop.open{display:flex}
-.modal-box{background:#111827;border:1px solid rgba(255,255,255,.1);border-radius:16px;width:100%;max-width:520px;padding:28px;position:relative;max-height:92vh;overflow-y:auto}
+.modal-box{background:#2a1f24;border:1px solid rgba(242,230,211,.12);border-radius:16px;width:100%;max-width:520px;padding:28px;position:relative;max-height:92vh;overflow-y:auto}
 
-.stat-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:18px 20px;transition:border-color .2s}
-.stat-card:hover{border-color:rgba(255,255,255,.16)}
+.stat-card{background:rgba(242,230,211,.05);border:1px solid rgba(242,230,211,.09);border-radius:12px;padding:18px 20px;transition:border-color .2s}
+.stat-card:hover{border-color:rgba(242,230,211,.17)}
 
 @media(max-width:768px){
   #sidebar{position:fixed;transform:translateX(-100%);z-index:40;transition:transform .25s}
@@ -85,15 +104,29 @@ tr:hover td{background:rgba(255,255,255,.025)}
     <div class="nav-link" onclick="go('settings',this)"><span class="dot"></span>Settings</div>
   </nav>
 
-  <div class="px-4 py-3 border-t border-white/8">
-    <div class="flex items-center gap-2 mb-2">
-      <div class="w-7 h-7 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-bold">A</div>
-      <div>
-        <p class="text-xs font-semibold text-white" id="adminName">Administrator</p>
-        <p class="text-xs text-gray-500" id="adminEmail">admin@tppg.com</p>
+  <div class="relative overflow-hidden px-4 py-3 border-t border-white/8">
+    <svg viewBox="0 0 224 90" preserveAspectRatio="none" class="absolute inset-0 w-full h-full">
+      <defs>
+        <linearGradient id="fwsky-admin" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#e2733a"/>
+          <stop offset="100%" stop-color="#241a1f"/>
+        </linearGradient>
+      </defs>
+      <rect width="224" height="90" fill="url(#fwsky-admin)"/>
+      <path d="M0,90 L0,62 L10,42 L20,62 L28,47 L38,67 L48,44 L58,64 L68,40 L78,62 L88,52 L98,70 L108,46 L118,66 L128,42 L138,62 L148,54 L158,72 L168,48 L178,68 L188,44 L198,64 L208,52 L216,70 L224,57 L224,90 Z" fill="#2c2027" opacity="0.75"/>
+      <path d="M0,90 L0,70 L14,50 L26,70 L40,46 L54,70 L68,52 L82,72 L96,48 L110,70 L124,54 L138,72 L152,50 L166,70 L180,56 L194,72 L208,52 L224,70 L224,90 Z" fill="#1a1318"/>
+    </svg>
+    <div class="absolute inset-0 bg-gradient-to-t from-[#241a1f]/70 to-transparent"></div>
+    <div class="relative z-10">
+      <div class="flex items-center gap-2 mb-2">
+        <div class="w-7 h-7 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-bold">A</div>
+        <div>
+          <p class="text-xs font-semibold text-white" id="adminName">Administrator</p>
+          <p class="text-xs text-gray-500" id="adminEmail">admin@tppg.com</p>
+        </div>
       </div>
+      <button onclick="logout()" class="text-xs text-gray-500 hover:text-red-400 transition-colors">← Log out</button>
     </div>
-    <button onclick="logout()" class="text-xs text-gray-500 hover:text-red-400 transition-colors">← Log out</button>
   </div>
 </aside>
 
@@ -903,7 +936,7 @@ async function renderDevelopers(){
     document.getElementById('devGrid').innerHTML = developers.map(d => `
       <div onclick="viewDeveloper('${d.id}','${d.name.replace(/'/g,"\\'")}')" class="card overflow-hidden cursor-pointer hover:border-orange-500/40 transition-colors text-center relative">
         <button onclick="event.stopPropagation();toggleDevMenu('${d.id}')" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 hover:bg-black/70 text-white text-xs flex items-center justify-center z-10">⋯</button>
-        <div id="devMenu-${d.id}" class="hidden absolute top-8 right-1.5 z-20 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-lg overflow-hidden text-left w-28">
+        <div id="devMenu-${d.id}" class="hidden absolute top-8 right-1.5 z-20 bg-[#2a1f24] border border-white/10 rounded-lg shadow-lg overflow-hidden text-left w-28">
           <button onclick="event.stopPropagation();closeDevMenus();openEditDeveloper('${d.id}')" class="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/5 text-left">Edit</button>
           <button onclick="event.stopPropagation();closeDevMenus();deleteDeveloper('${d.id}','${d.name.replace(/'/g,"\\'")}')" class="w-full px-3 py-2 text-xs text-red-400 hover:bg-white/5 text-left">Delete</button>
         </div>
@@ -1061,7 +1094,7 @@ async function renderProps(){
     document.getElementById('propGrid').innerHTML = filtered.map(p => `
       <div onclick="viewProperty('${p.id}')" class="card overflow-hidden cursor-pointer hover:border-orange-500/40 transition-colors relative">
         <button onclick="event.stopPropagation();togglePropMenu('${p.id}')" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 hover:bg-black/70 text-white text-xs flex items-center justify-center z-10">⋯</button>
-        <div id="propMenu-${p.id}" class="hidden absolute top-8 right-1.5 z-20 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-lg overflow-hidden text-left w-28">
+        <div id="propMenu-${p.id}" class="hidden absolute top-8 right-1.5 z-20 bg-[#2a1f24] border border-white/10 rounded-lg shadow-lg overflow-hidden text-left w-28">
           <button onclick="event.stopPropagation();closePropMenus();openEditProp('${p.id}')" class="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/5 text-left">Edit</button>
           <button onclick="event.stopPropagation();closePropMenus();deleteProp('${p.id}')" class="w-full px-3 py-2 text-xs text-red-400 hover:bg-white/5 text-left">Delete</button>
         </div>
