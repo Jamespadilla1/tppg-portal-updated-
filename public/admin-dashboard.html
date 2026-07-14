@@ -71,19 +71,41 @@ tr:hover td{background:rgba(242,230,211,.03)}
 }
 </style>
 </head>
-<body class="bg-gray-950 text-white min-h-screen">
+<body class="text-white min-h-screen" style="background:linear-gradient(180deg,#e2733a 0%,#c9587a 16%,#7a4a5e 34%,#3a2c34 55%,#241a1f 78%,#1a1318 100%);background-attachment:fixed;">
 
 <!-- ═══════════════════════════════════════════════════ -->
 <!-- SIDEBAR -->
 <!-- ═══════════════════════════════════════════════════ -->
-<aside id="sidebar" class="fixed left-0 top-0 h-full w-56 bg-gray-900 border-r border-white/8 flex flex-col z-30">
+<aside id="sidebar" class="fixed left-0 top-0 h-full w-56 border-r border-white/8 flex flex-col z-30 relative overflow-hidden" style="background:#150f13">
 
-  <div class="px-4 py-4 border-b border-white/8 flex items-center gap-3">
+  <!-- Full-height treeline silhouette background -->
+  <svg class="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 224 800">
+    <defs>
+      <linearGradient id="fw-sidebar-sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3a2733"/>
+        <stop offset="100%" stop-color="#120d10"/>
+      </linearGradient>
+      <pattern id="fw-trees-back" patternUnits="userSpaceOnUse" width="112" height="620" patternTransform="translate(0,90)">
+        <path d="M0,620 L0,560 L10,530 L18,555 L26,520 L36,550 L46,515 L56,548 L66,512 L76,545 L86,522 L96,552 L104,525 L112,554 L112,620 Z" fill="#2c2027" opacity="0.55"/>
+        <path d="M0,620 L0,400 L9,368 L16,392 L25,355 L34,388 L44,350 L54,385 L63,352 L73,390 L82,360 L92,392 L101,355 L112,388 L112,620 Z" fill="#241c22" opacity="0.55"/>
+        <path d="M0,620 L0,230 L11,198 L19,222 L28,185 L38,218 L48,180 L58,215 L67,182 L77,220 L86,190 L96,222 L105,185 L112,218 L112,620 Z" fill="#1e181d" opacity="0.55"/>
+      </pattern>
+      <pattern id="fw-trees-front" patternUnits="userSpaceOnUse" width="128" height="700" patternTransform="translate(40,150)">
+        <path d="M0,700 L0,640 L12,600 L22,635 L32,592 L44,630 L56,588 L68,628 L80,590 L92,632 L104,596 L116,634 L128,600 L128,700 Z" fill="#140f12"/>
+        <path d="M0,700 L0,470 L13,430 L23,462 L34,420 L46,458 L58,415 L70,455 L82,418 L94,460 L106,425 L118,462 L128,428 L128,700 Z" fill="#0f0b0e"/>
+      </pattern>
+    </defs>
+    <rect width="224" height="800" fill="url(#fw-sidebar-sky)"/>
+    <rect width="224" height="800" fill="url(#fw-trees-back)"/>
+    <rect width="224" height="800" fill="url(#fw-trees-front)"/>
+  </svg>
+
+  <div class="relative z-10 px-4 py-4 border-b border-white/8 flex items-center gap-3">
     <div class="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center font-bold text-sm">T</div>
     <span class="font-bold text-white text-base">TPPG Admin</span>
   </div>
 
-  <nav class="flex-1 px-2 py-3 overflow-y-auto space-y-0.5">
+  <nav class="relative z-10 flex-1 px-2 py-3 overflow-y-auto space-y-0.5">
     <div class="nav-section-label">Main</div>
     <div class="nav-link active" onclick="go('overview',this)"><span class="dot"></span>Dashboard</div>
 
@@ -104,29 +126,15 @@ tr:hover td{background:rgba(242,230,211,.03)}
     <div class="nav-link" onclick="go('settings',this)"><span class="dot"></span>Settings</div>
   </nav>
 
-  <div class="relative overflow-hidden px-4 py-3 border-t border-white/8">
-    <svg viewBox="0 0 224 90" preserveAspectRatio="none" class="absolute inset-0 w-full h-full">
-      <defs>
-        <linearGradient id="fwsky-admin" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#e2733a"/>
-          <stop offset="100%" stop-color="#241a1f"/>
-        </linearGradient>
-      </defs>
-      <rect width="224" height="90" fill="url(#fwsky-admin)"/>
-      <path d="M0,90 L0,62 L10,42 L20,62 L28,47 L38,67 L48,44 L58,64 L68,40 L78,62 L88,52 L98,70 L108,46 L118,66 L128,42 L138,62 L148,54 L158,72 L168,48 L178,68 L188,44 L198,64 L208,52 L216,70 L224,57 L224,90 Z" fill="#2c2027" opacity="0.75"/>
-      <path d="M0,90 L0,70 L14,50 L26,70 L40,46 L54,70 L68,52 L82,72 L96,48 L110,70 L124,54 L138,72 L152,50 L166,70 L180,56 L194,72 L208,52 L224,70 L224,90 Z" fill="#1a1318"/>
-    </svg>
-    <div class="absolute inset-0 bg-gradient-to-t from-[#241a1f]/70 to-transparent"></div>
-    <div class="relative z-10">
-      <div class="flex items-center gap-2 mb-2">
-        <div class="w-7 h-7 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-bold">A</div>
-        <div>
-          <p class="text-xs font-semibold text-white" id="adminName">Administrator</p>
-          <p class="text-xs text-gray-500" id="adminEmail">admin@tppg.com</p>
-        </div>
+  <div class="relative z-10 px-4 py-3 border-t border-white/8 bg-black/20">
+    <div class="flex items-center gap-2 mb-2">
+      <div class="w-7 h-7 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-bold">A</div>
+      <div>
+        <p class="text-xs font-semibold text-white" id="adminName">Administrator</p>
+        <p class="text-xs text-gray-500" id="adminEmail">admin@tppg.com</p>
       </div>
-      <button onclick="logout()" class="text-xs text-gray-500 hover:text-red-400 transition-colors">← Log out</button>
     </div>
+    <button onclick="logout()" class="text-xs text-gray-500 hover:text-red-400 transition-colors">← Log out</button>
   </div>
 </aside>
 
