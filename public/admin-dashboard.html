@@ -10,14 +10,8 @@
     theme: {
       extend: {
         colors: {
-          white: '#f2e6d3',
-          gray: { 300:'#e3d3bd', 400:'#c9a98f', 500:'#a8897a', 600:'#8a7568', 900:'#2c2027', 950:'#241a1f' },
-          orange: { 300:'#f5b98a', 400:'#f0975a', 500:'#e2733a', 600:'#c85f2c' },
-          green:  { 300:'#cdd9a0', 400:'#b7c66e', 600:'#7d8f4a', 700:'#66753b' },
-          red:    { 300:'#e3ab95', 400:'#d9764f', 500:'#c85f2c', 600:'#b04f22' },
-          yellow: { 400:'#e0aa52', 500:'#d4952e' },
-          blue:   { 300:'#b7d6d6', 400:'#8fc2c2' },
-          purple: { 300:'#dcb8c4', 400:'#c98aa0' },
+          white: '#1f2937',
+          gray: { 900:'#ffffff', 950:'#f7f6f4' },
         }
       }
     }
@@ -27,42 +21,42 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * { font-family:'DM Sans',sans-serif; }
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#5a4642;border-radius:4px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px}
 
-.nav-link{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;color:#c9a98f;font-size:.8rem;cursor:pointer;transition:all .15s;user-select:none}
-.nav-link:hover{background:rgba(242,230,211,.07);color:#fff}
-.nav-link.active{background:rgba(226,115,58,.18);color:#e2733a}
+.nav-link{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;color:#6b7280;font-size:.8rem;cursor:pointer;transition:all .15s;user-select:none}
+.nav-link:hover{background:rgba(0,0,0,.045);color:#111827}
+.nav-link.active{background:rgba(249,115,22,.1);color:#ea580c}
 .nav-link .dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.5;flex-shrink:0}
-.nav-link.active .dot{opacity:1;background:#e2733a}
-.nav-section-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:#8a7568;padding:12px 11px 4px;font-weight:600}
+.nav-link.active .dot{opacity:1;background:#ea580c}
+.nav-section-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:#9ca3af;padding:12px 11px 4px;font-weight:600}
 
-.card{background:rgba(242,230,211,.05);border:1px solid rgba(242,230,211,.09);border-radius:12px;transition:border-color .2s}
-.card:hover{border-color:rgba(242,230,211,.15)}
+.card{background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;transition:border-color .2s}
+.card:hover{border-color:#ea580c66}
 
 .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:500}
-.bg-green{background:rgba(151,163,79,.18);color:#b7c66e}
-.bg-yellow{background:rgba(214,158,58,.18);color:#e0aa52}
-.bg-red{background:rgba(196,90,58,.18);color:#d9764f}
-.bg-blue{background:rgba(122,158,158,.18);color:#8fc2c2}
-.bg-orange{background:rgba(226,115,58,.18);color:#f0975a}
-.bg-purple{background:rgba(150,95,120,.18);color:#c98aa0}
+.bg-green{background:rgba(34,197,94,.1);color:#16a34a}
+.bg-yellow{background:rgba(234,179,8,.1);color:#ca8a04}
+.bg-red{background:rgba(239,68,68,.1);color:#dc2626}
+.bg-blue{background:rgba(59,130,246,.1);color:#2563eb}
+.bg-orange{background:rgba(249,115,22,.1);color:#ea580c}
+.bg-purple{background:rgba(168,85,247,.1);color:#9333ea}
 
 .section{display:none}.section.active{display:block}
 
-.field{width:100%;padding:9px 12px;background:rgba(242,230,211,.07);border:1px solid rgba(242,230,211,.12);border-radius:8px;color:#fff;font-size:.85rem;outline:none;transition:border-color .15s}
-.field:focus{border-color:#e2733a}
-.field::placeholder{color:#a8897a}
-select.field option{background:#2f2329;color:#fff}
+.field{width:100%;padding:9px 12px;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;color:#111827;font-size:.85rem;outline:none;transition:border-color .15s}
+.field:focus{border-color:#f97316}
+.field::placeholder{color:#9ca3af}
+select.field option{background:#ffffff;color:#111827}
 textarea.field{resize:vertical;min-height:70px}
 
-tr:hover td{background:rgba(242,230,211,.03)}
+tr:hover td{background:rgba(0,0,0,.02)}
 
-.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(20,14,17,.82);z-index:50;align-items:center;justify-content:center;padding:1rem}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(17,24,39,.4);z-index:50;align-items:center;justify-content:center;padding:1rem}
 .modal-backdrop.open{display:flex}
-.modal-box{background:#2a1f24;border:1px solid rgba(242,230,211,.12);border-radius:16px;width:100%;max-width:520px;padding:28px;position:relative;max-height:92vh;overflow-y:auto}
+.modal-box{background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;width:100%;max-width:520px;padding:28px;position:relative;max-height:92vh;overflow-y:auto}
 
-.stat-card{background:rgba(242,230,211,.05);border:1px solid rgba(242,230,211,.09);border-radius:12px;padding:18px 20px;transition:border-color .2s}
-.stat-card:hover{border-color:rgba(242,230,211,.17)}
+.stat-card{background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:18px 20px;transition:border-color .2s}
+.stat-card:hover{border-color:#ea580c66}
 
 @media(max-width:768px){
   #sidebar{position:fixed;transform:translateX(-100%);z-index:40;transition:transform .25s}
@@ -71,41 +65,19 @@ tr:hover td{background:rgba(242,230,211,.03)}
 }
 </style>
 </head>
-<body class="text-white min-h-screen" style="background:linear-gradient(180deg,#e2733a 0%,#c9587a 16%,#7a4a5e 34%,#3a2c34 55%,#241a1f 78%,#1a1318 100%);background-attachment:fixed;">
+<body class="bg-gray-950 text-white min-h-screen">
 
 <!-- ═══════════════════════════════════════════════════ -->
 <!-- SIDEBAR -->
 <!-- ═══════════════════════════════════════════════════ -->
-<aside id="sidebar" class="fixed left-0 top-0 h-full w-56 border-r border-white/8 flex flex-col z-30 relative overflow-hidden" style="background:#150f13">
+<aside id="sidebar" class="fixed left-0 top-0 h-full w-56 bg-gray-900 border-r border-white/8 flex flex-col z-30">
 
-  <!-- Full-height treeline silhouette background -->
-  <svg class="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 224 800">
-    <defs>
-      <linearGradient id="fw-sidebar-sky" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#3a2733"/>
-        <stop offset="100%" stop-color="#120d10"/>
-      </linearGradient>
-      <pattern id="fw-trees-back" patternUnits="userSpaceOnUse" width="112" height="620" patternTransform="translate(0,90)">
-        <path d="M0,620 L0,560 L10,530 L18,555 L26,520 L36,550 L46,515 L56,548 L66,512 L76,545 L86,522 L96,552 L104,525 L112,554 L112,620 Z" fill="#2c2027" opacity="0.55"/>
-        <path d="M0,620 L0,400 L9,368 L16,392 L25,355 L34,388 L44,350 L54,385 L63,352 L73,390 L82,360 L92,392 L101,355 L112,388 L112,620 Z" fill="#241c22" opacity="0.55"/>
-        <path d="M0,620 L0,230 L11,198 L19,222 L28,185 L38,218 L48,180 L58,215 L67,182 L77,220 L86,190 L96,222 L105,185 L112,218 L112,620 Z" fill="#1e181d" opacity="0.55"/>
-      </pattern>
-      <pattern id="fw-trees-front" patternUnits="userSpaceOnUse" width="128" height="700" patternTransform="translate(40,150)">
-        <path d="M0,700 L0,640 L12,600 L22,635 L32,592 L44,630 L56,588 L68,628 L80,590 L92,632 L104,596 L116,634 L128,600 L128,700 Z" fill="#140f12"/>
-        <path d="M0,700 L0,470 L13,430 L23,462 L34,420 L46,458 L58,415 L70,455 L82,418 L94,460 L106,425 L118,462 L128,428 L128,700 Z" fill="#0f0b0e"/>
-      </pattern>
-    </defs>
-    <rect width="224" height="800" fill="url(#fw-sidebar-sky)"/>
-    <rect width="224" height="800" fill="url(#fw-trees-back)"/>
-    <rect width="224" height="800" fill="url(#fw-trees-front)"/>
-  </svg>
-
-  <div class="relative z-10 px-4 py-4 border-b border-white/8 flex items-center gap-3">
+  <div class="px-4 py-4 border-b border-white/8 flex items-center gap-3">
     <div class="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center font-bold text-sm">T</div>
     <span class="font-bold text-white text-base">TPPG Admin</span>
   </div>
 
-  <nav class="relative z-10 flex-1 px-2 py-3 overflow-y-auto space-y-0.5">
+  <nav class="flex-1 px-2 py-3 overflow-y-auto space-y-0.5">
     <div class="nav-section-label">Main</div>
     <div class="nav-link active" onclick="go('overview',this)"><span class="dot"></span>Dashboard</div>
 
@@ -126,7 +98,7 @@ tr:hover td{background:rgba(242,230,211,.03)}
     <div class="nav-link" onclick="go('settings',this)"><span class="dot"></span>Settings</div>
   </nav>
 
-  <div class="relative z-10 px-4 py-3 border-t border-white/8 bg-black/20">
+  <div class="px-4 py-3 border-t border-white/8">
     <div class="flex items-center gap-2 mb-2">
       <div class="w-7 h-7 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-bold">A</div>
       <div>
@@ -944,7 +916,7 @@ async function renderDevelopers(){
     document.getElementById('devGrid').innerHTML = developers.map(d => `
       <div onclick="viewDeveloper('${d.id}','${d.name.replace(/'/g,"\\'")}')" class="card overflow-hidden cursor-pointer hover:border-orange-500/40 transition-colors text-center relative">
         <button onclick="event.stopPropagation();toggleDevMenu('${d.id}')" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 hover:bg-black/70 text-white text-xs flex items-center justify-center z-10">⋯</button>
-        <div id="devMenu-${d.id}" class="hidden absolute top-8 right-1.5 z-20 bg-[#2a1f24] border border-white/10 rounded-lg shadow-lg overflow-hidden text-left w-28">
+        <div id="devMenu-${d.id}" class="hidden absolute top-8 right-1.5 z-20 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-lg overflow-hidden text-left w-28">
           <button onclick="event.stopPropagation();closeDevMenus();openEditDeveloper('${d.id}')" class="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/5 text-left">Edit</button>
           <button onclick="event.stopPropagation();closeDevMenus();deleteDeveloper('${d.id}','${d.name.replace(/'/g,"\\'")}')" class="w-full px-3 py-2 text-xs text-red-400 hover:bg-white/5 text-left">Delete</button>
         </div>
@@ -1102,7 +1074,7 @@ async function renderProps(){
     document.getElementById('propGrid').innerHTML = filtered.map(p => `
       <div onclick="viewProperty('${p.id}')" class="card overflow-hidden cursor-pointer hover:border-orange-500/40 transition-colors relative">
         <button onclick="event.stopPropagation();togglePropMenu('${p.id}')" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/50 hover:bg-black/70 text-white text-xs flex items-center justify-center z-10">⋯</button>
-        <div id="propMenu-${p.id}" class="hidden absolute top-8 right-1.5 z-20 bg-[#2a1f24] border border-white/10 rounded-lg shadow-lg overflow-hidden text-left w-28">
+        <div id="propMenu-${p.id}" class="hidden absolute top-8 right-1.5 z-20 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-lg overflow-hidden text-left w-28">
           <button onclick="event.stopPropagation();closePropMenus();openEditProp('${p.id}')" class="w-full px-3 py-2 text-xs text-gray-300 hover:bg-white/5 text-left">Edit</button>
           <button onclick="event.stopPropagation();closePropMenus();deleteProp('${p.id}')" class="w-full px-3 py-2 text-xs text-red-400 hover:bg-white/5 text-left">Delete</button>
         </div>

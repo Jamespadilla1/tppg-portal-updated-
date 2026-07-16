@@ -10,14 +10,8 @@
     theme: {
       extend: {
         colors: {
-          white: '#f2e6d3',
-          gray: { 300:'#e3d3bd', 400:'#c9a98f', 500:'#a8897a', 600:'#8a7568', 900:'#2c2027', 950:'#241a1f' },
-          orange: { 300:'#f5b98a', 400:'#f0975a', 500:'#e2733a', 600:'#c85f2c' },
-          green:  { 300:'#cdd9a0', 400:'#b7c66e', 600:'#7d8f4a', 700:'#66753b' },
-          red:    { 300:'#e3ab95', 400:'#d9764f', 500:'#c85f2c', 600:'#b04f22' },
-          yellow: { 400:'#e0aa52', 500:'#d4952e' },
-          blue:   { 300:'#b7d6d6', 400:'#8fc2c2' },
-          purple: { 300:'#dcb8c4', 400:'#c98aa0' },
+          white: '#1f2937',
+          gray: { 900:'#ffffff', 950:'#f7f6f4' },
         }
       }
     }
@@ -27,24 +21,24 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   * { font-family:'DM Sans',sans-serif; }
-  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#5a4642;border-radius:4px}
-  .nav-link{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#c9a98f;font-size:.875rem;cursor:pointer;transition:all .15s;user-select:none}
-  .nav-link:hover{background:rgba(242,230,211,.07);color:#fff}
-  .nav-link.active{background:rgba(226,115,58,.18);color:#e2733a}
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px}
+  .nav-link{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#6b7280;font-size:.875rem;cursor:pointer;transition:all .15s;user-select:none}
+  .nav-link:hover{background:rgba(0,0,0,.045);color:#111827}
+  .nav-link.active{background:rgba(249,115,22,.1);color:#ea580c}
   .nav-link .dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.5;flex-shrink:0}
-  .nav-link.active .dot{opacity:1;background:#e2733a}
-  .card{background:rgba(242,230,211,.05);border:1px solid rgba(242,230,211,.09);border-radius:12px}
-  .card:hover{border-color:rgba(242,230,211,.15)}
+  .nav-link.active .dot{opacity:1;background:#ea580c}
+  .card{background:#ffffff;border:1px solid #e5e7eb;border-radius:12px}
+  .card:hover{border-color:#ea580c66}
   .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:500}
-  .badge-green{background:rgba(151,163,79,.18);color:#b7c66e}
-  .badge-yellow{background:rgba(214,158,58,.18);color:#e0aa52}
-  .badge-red{background:rgba(196,90,58,.18);color:#d9764f}
-  .badge-blue{background:rgba(122,158,158,.18);color:#8fc2c2}
+  .badge-green{background:rgba(34,197,94,.1);color:#16a34a}
+  .badge-yellow{background:rgba(234,179,8,.1);color:#ca8a04}
+  .badge-red{background:rgba(239,68,68,.1);color:#dc2626}
+  .badge-blue{background:rgba(59,130,246,.1);color:#2563eb}
   .section{display:none}.section.active{display:block}
-  .field{width:100%;padding:10px 13px;background:rgba(242,230,211,.07);border:1px solid rgba(242,230,211,.12);border-radius:8px;color:#fff;font-size:.875rem;outline:none;transition:border-color .15s}
-  .field:focus{border-color:#e2733a}
-  .field::placeholder{color:#a8897a}
-  tr:hover td{background:rgba(242,230,211,.03)}
+  .field{width:100%;padding:10px 13px;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;color:#111827;font-size:.875rem;outline:none;transition:border-color .15s}
+  .field:focus{border-color:#f97316}
+  .field::placeholder{color:#9ca3af}
+  tr:hover td{background:rgba(0,0,0,.02)}
   @media(max-width:768px){
     #sidebar{position:fixed;transform:translateX(-100%);z-index:40;transition:transform .25s}
     #sidebar.open{transform:translateX(0)}
@@ -52,37 +46,14 @@
   }
 </style>
 </head>
-<body class="text-white min-h-screen" style="background:linear-gradient(180deg,#e2733a 0%,#c9587a 16%,#7a4a5e 34%,#3a2c34 55%,#241a1f 78%,#1a1318 100%);background-attachment:fixed;">
+<body class="bg-gray-950 text-white min-h-screen">
 
-<aside id="sidebar" class="fixed left-0 top-0 h-full w-60 border-r border-white/8 flex flex-col relative overflow-hidden" style="background:#150f13">
-
-  <!-- Full-height treeline silhouette background -->
-  <svg class="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none" viewBox="0 0 240 800">
-    <defs>
-      <linearGradient id="fw-sidebar-sky-agent" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#3a2733"/>
-        <stop offset="100%" stop-color="#120d10"/>
-      </linearGradient>
-      <pattern id="fw-trees-back-agent" patternUnits="userSpaceOnUse" width="120" height="620" patternTransform="translate(0,90)">
-        <path d="M0,620 L0,560 L10,530 L18,555 L26,520 L36,550 L46,515 L56,548 L66,512 L76,545 L86,522 L96,552 L104,525 L112,554 L120,522 L120,620 Z" fill="#2c2027" opacity="0.55"/>
-        <path d="M0,620 L0,400 L9,368 L16,392 L25,355 L34,388 L44,350 L54,385 L63,352 L73,390 L82,360 L92,392 L101,355 L112,388 L120,360 L120,620 Z" fill="#241c22" opacity="0.55"/>
-        <path d="M0,620 L0,230 L11,198 L19,222 L28,185 L38,218 L48,180 L58,215 L67,182 L77,220 L86,190 L96,222 L105,185 L112,218 L120,190 L120,620 Z" fill="#1e181d" opacity="0.55"/>
-      </pattern>
-      <pattern id="fw-trees-front-agent" patternUnits="userSpaceOnUse" width="136" height="700" patternTransform="translate(40,150)">
-        <path d="M0,700 L0,640 L12,600 L22,635 L32,592 L44,630 L56,588 L68,628 L80,590 L92,632 L104,596 L116,634 L128,600 L136,630 L136,700 Z" fill="#140f12"/>
-        <path d="M0,700 L0,470 L13,430 L23,462 L34,420 L46,458 L58,415 L70,455 L82,418 L94,460 L106,425 L118,462 L128,428 L136,455 L136,700 Z" fill="#0f0b0e"/>
-      </pattern>
-    </defs>
-    <rect width="240" height="800" fill="url(#fw-sidebar-sky-agent)"/>
-    <rect width="240" height="800" fill="url(#fw-trees-back-agent)"/>
-    <rect width="240" height="800" fill="url(#fw-trees-front-agent)"/>
-  </svg>
-
-  <div class="relative z-10 px-5 py-5 border-b border-white/8 flex items-center gap-3">
+<aside id="sidebar" class="fixed left-0 top-0 h-full w-60 bg-gray-900 border-r border-white/8 flex flex-col">
+  <div class="px-5 py-5 border-b border-white/8 flex items-center gap-3">
     <div class="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center text-sm font-bold">T</div>
     <span class="font-semibold text-white">TPPG Agent</span>
   </div>
-  <nav class="relative z-10 flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+  <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
     <div class="nav-link active"  onclick="showSection('overview',  this)"><span class="dot"></span> Dashboard</div>
     <div class="nav-link"         onclick="showSection('properties',this)"><span class="dot"></span> Properties</div>
     <div class="nav-link"         onclick="showSection('commission',this)"><span class="dot"></span> Commission</div>
@@ -90,8 +61,8 @@
     <div class="nav-link"         onclick="showSection('compute',   this)"><span class="dot"></span> Computation Tool</div>
     <div class="nav-link"         onclick="showSection('profile',   this)"><span class="dot"></span> My Profile</div>
   </nav>
-  <div class="relative z-10 mx-3 mb-3 px-3 py-2 rounded-lg bg-yellow-500/8 border border-yellow-500/20 text-yellow-400 text-xs">👁 View-only access</div>
-  <div class="relative z-10 px-5 py-4 border-t border-white/8 bg-black/20">
+  <div class="mx-3 mb-3 px-3 py-2 rounded-lg bg-yellow-500/8 border border-yellow-500/20 text-yellow-400 text-xs">👁 View-only access</div>
+  <div class="px-5 py-4 border-t border-white/8">
     <div class="flex items-center gap-3">
       <div class="w-8 h-8 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-bold" id="sidebarInitials">--</div>
       <div>
