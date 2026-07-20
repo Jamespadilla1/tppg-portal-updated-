@@ -1115,6 +1115,11 @@ async function renderProps(){
           <p class="text-gray-500 text-xs">${p.location||'—'}</p>
           <p class="text-gray-500 text-xs">${p.property_type||'Condo'}</p>
           ${p.selling_status==='Pre-selling' && p.turnover_date ? `<p class="text-gray-500 text-xs">Turnover: ${new Date(p.turnover_date).toLocaleDateString('en-PH',{year:'numeric',month:'short'})}</p>` : ''}
+          ${(p.latitude && p.longitude) ? `
+          <div class="pt-1">
+            <iframe src="https://www.openstreetmap.org/export/embed.html?bbox=${(+p.longitude-0.01)}%2C${(+p.latitude-0.007)}%2C${(+p.longitude+0.01)}%2C${(+p.latitude+0.007)}&layer=mapnik&marker=${p.latitude}%2C${p.longitude}" class="w-full h-24 rounded-lg border border-white/8 pointer-events-none" loading="lazy"></iframe>
+            <button onclick="event.stopPropagation();window.open('https://www.google.com/maps?q=${p.latitude},${p.longitude}','_blank')" class="w-full mt-1.5 text-xs text-orange-400 hover:text-orange-300 border border-orange-500/30 hover:border-orange-500/50 rounded-lg py-1.5 transition-colors">📍 View Location</button>
+          </div>` : ''}
         </div>
       </div>
     `).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No properties yet for ${currentDevName} — click "+ Add Property" to start.</p>`;
