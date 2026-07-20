@@ -428,7 +428,11 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div><label class="text-xs text-gray-400 mb-1 block">Selling Status *</label><select id="pSellStatus" class="field" onchange="document.getElementById('pTurnoverRow').classList.toggle('hidden', this.value!=='Pre-selling')"><option value="RFO">RFO</option><option value="Pre-selling">Pre-selling</option></select></div>
       <div id="pTurnoverRow" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Turnover Date</label><input id="pTurnover" type="date" class="field"></div>
       <div>
-        <label class="text-xs text-gray-400 mb-1 block">Pin Location on Map (click to place pin)</label>
+        <label class="text-xs text-gray-400 mb-1 block">Pin Location on Map (click to place pin, or search below)</label>
+        <div class="flex gap-1.5 mb-1.5">
+          <input id="pMapSearch" type="text" class="field flex-1 text-xs" placeholder="Search an address or place…" onkeydown="if(event.key==='Enter'){event.preventDefault();searchPropLocation('add', null);}">
+          <button type="button" onclick="searchPropLocation('add', event)" class="px-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-xs text-gray-600 font-medium">Search</button>
+        </div>
         <div id="pMap" class="w-full h-56 rounded-lg border border-gray-200"></div>
         <p class="text-xs text-gray-400 mt-1" id="pLatLngLabel">No location pinned yet.</p>
         <input id="pLat" type="hidden">
@@ -454,7 +458,11 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div><label class="text-xs text-gray-400 mb-1 block">Selling Status</label><select id="ePSellStatus" class="field" onchange="document.getElementById('ePTurnoverRow').classList.toggle('hidden', this.value!=='Pre-selling')"><option value="RFO">RFO</option><option value="Pre-selling">Pre-selling</option></select></div>
       <div id="ePTurnoverRow" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Turnover Date</label><input id="ePTurnover" type="date" class="field"></div>
       <div>
-        <label class="text-xs text-gray-400 mb-1 block">Pin Location on Map (click to place pin)</label>
+        <label class="text-xs text-gray-400 mb-1 block">Pin Location on Map (click to place pin, or search below)</label>
+        <div class="flex gap-1.5 mb-1.5">
+          <input id="ePMapSearch" type="text" class="field flex-1 text-xs" placeholder="Search an address or place…" onkeydown="if(event.key==='Enter'){event.preventDefault();searchPropLocation('edit', null);}">
+          <button type="button" onclick="searchPropLocation('edit', event)" class="px-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-xs text-gray-600 font-medium">Search</button>
+        </div>
         <div id="ePMap" class="w-full h-56 rounded-lg border border-gray-200"></div>
         <p class="text-xs text-gray-400 mt-1" id="ePLatLngLabel">No location pinned yet.</p>
         <input id="ePLat" type="hidden">
@@ -1136,6 +1144,50 @@ function backToProperties(){
 let addPropMap, addPropMarker, editPropMap, editPropMarker;
 const DEFAULT_MAP_CENTER = [10.3157, 123.8854]; // Cebu City — adjust if your listings are elsewhere
 
+async function searchPropLocation(kind, evt){
+  const searchId = kind==='add' ? 'pMapSearch' : 'ePMapSearch';
+  const query = document.getElementById(searchId).value.trim();
+  if(!query) return;
+
+  const btn = evt?.target;
+  const originalText = btn ? btn.textContent : null;
+  if(btn){ btn.textContent = 'Searching…'; btn.disabled = true; }
+
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`, {
+      headers: { 'Accept-Language': 'en' }
+    });
+    const results = await res.json();
+
+    if(!results.length){
+      alert('No location found for that search. Try a more specific address.');
+      return;
+    }
+
+    const { lat, lon } = results[0];
+    const latNum = parseFloat(lat), lngNum = parseFloat(lon);
+
+    const map    = kind==='add' ? addPropMap    : editPropMap;
+    const latId  = kind==='add' ? 'pLat'         : 'ePLat';
+    const lngId  = kind==='add' ? 'pLng'         : 'ePLng';
+    const labelId= kind==='add' ? 'pLatLngLabel' : 'ePLatLngLabel';
+
+    map.setView([latNum, lngNum], 16);
+    if(kind==='add'){
+      if(addPropMarker) addPropMarker.setLatLng([latNum,lngNum]); else addPropMarker = L.marker([latNum,lngNum]).addTo(map);
+    } else {
+      if(editPropMarker) editPropMarker.setLatLng([latNum,lngNum]); else editPropMarker = L.marker([latNum,lngNum]).addTo(map);
+    }
+    document.getElementById(latId).value = latNum;
+    document.getElementById(lngId).value = lngNum;
+    document.getElementById(labelId).textContent = `Pinned: ${latNum.toFixed(5)}, ${lngNum.toFixed(5)}`;
+  } catch(err) {
+    console.error('Error searching location:', err);
+    alert('Search failed. Please try again.');
+  } finally {
+    if(btn){ btn.textContent = originalText; btn.disabled = false; }
+  }
+}
 function setupPropMap(kind){ // kind: 'add' or 'edit'
   const mapDivId   = kind==='add' ? 'pMap'         : 'ePMap';
   const latId      = kind==='add' ? 'pLat'         : 'ePLat';
