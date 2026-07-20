@@ -27,7 +27,7 @@ const getProperties = async (req, res) => {
 // POST /api/properties (admin only)
 const createProperty = async (req, res) => {
   try {
-    const { name, location, developer_id, property_type, selling_status, turnover_date } = req.body;
+    const { name, location, developer_id, property_type, selling_status, turnover_date, latitude, longitude } = req.body;
     const image_url = await uploadToStorage(req.file, 'property-photos');
 
     const { data: property, error } = await supabase
@@ -40,6 +40,8 @@ const createProperty = async (req, res) => {
         property_type: property_type || 'Condo',
         selling_status: selling_status || 'RFO',
         turnover_date: turnover_date || null,
+        latitude: latitude || null,
+        longitude: longitude || null,
         date: new Date(),
       }])
       .select()
@@ -56,7 +58,7 @@ const createProperty = async (req, res) => {
 // PUT /api/properties/:id (admin only)
 const updateProperty = async (req, res) => {
   try {
-    const { name, location, developer_id, property_type, selling_status, turnover_date } = req.body;
+    const { name, location, developer_id, property_type, selling_status, turnover_date, latitude, longitude } = req.body;
 
     const updateData = {
       name,
@@ -64,6 +66,8 @@ const updateProperty = async (req, res) => {
       property_type,
       selling_status,
       turnover_date: turnover_date || null,
+      latitude: latitude || null,
+      longitude: longitude || null,
       updated_at: new Date(),
     };
 

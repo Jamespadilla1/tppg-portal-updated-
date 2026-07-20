@@ -64,6 +64,8 @@ tr:hover td{background:rgba(0,0,0,.02)}
   #main{margin-left:0!important}
 }
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
 <body class="bg-gray-950 text-white min-h-screen">
 
@@ -184,7 +186,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
         <div class="flex items-center justify-between flex-wrap gap-2">
           <button onclick="backToDevelopers()" class="text-xs text-gray-400 hover:text-white flex items-center gap-1">← Back to Developers</button>
           <h3 id="devPropsTitle" class="font-semibold text-white text-sm"></h3>
-          <button onclick="openModal('addPropModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Property</button>
+          <button onclick="openAddPropModal()" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Property</button>
         </div>
         <input type="text" placeholder="Search properties…" oninput="propSearch=this.value.toLowerCase();renderProps()" class="field w-52 text-xs py-1.5">
         <div id="propGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
@@ -425,6 +427,13 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div><label class="text-xs text-gray-400 mb-1 block">Property Type *</label><select id="pType" class="field"><option value="Condo">Condo</option><option value="House and Lot">House and Lot</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Selling Status *</label><select id="pSellStatus" class="field" onchange="document.getElementById('pTurnoverRow').classList.toggle('hidden', this.value!=='Pre-selling')"><option value="RFO">RFO</option><option value="Pre-selling">Pre-selling</option></select></div>
       <div id="pTurnoverRow" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Turnover Date</label><input id="pTurnover" type="date" class="field"></div>
+      <div>
+        <label class="text-xs text-gray-400 mb-1 block">Pin Location on Map (click to place pin)</label>
+        <div id="pMap" class="w-full h-56 rounded-lg border border-gray-200"></div>
+        <p class="text-xs text-gray-400 mt-1" id="pLatLngLabel">No location pinned yet.</p>
+        <input id="pLat" type="hidden">
+        <input id="pLng" type="hidden">
+      </div>
       <p id="pErr" class="text-red-400 text-xs hidden">Please fill in all required fields.</p>
       <button onclick="saveProp()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors mt-1">Save Property</button>
     </div>
@@ -444,6 +453,13 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div><label class="text-xs text-gray-400 mb-1 block">Property Type</label><select id="ePType" class="field"><option value="Condo">Condo</option><option value="House and Lot">House and Lot</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Selling Status</label><select id="ePSellStatus" class="field" onchange="document.getElementById('ePTurnoverRow').classList.toggle('hidden', this.value!=='Pre-selling')"><option value="RFO">RFO</option><option value="Pre-selling">Pre-selling</option></select></div>
       <div id="ePTurnoverRow" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Turnover Date</label><input id="ePTurnover" type="date" class="field"></div>
+      <div>
+        <label class="text-xs text-gray-400 mb-1 block">Pin Location on Map (click to place pin)</label>
+        <div id="ePMap" class="w-full h-56 rounded-lg border border-gray-200"></div>
+        <p class="text-xs text-gray-400 mt-1" id="ePLatLngLabel">No location pinned yet.</p>
+        <input id="ePLat" type="hidden">
+        <input id="ePLng" type="hidden">
+      </div>
       <button onclick="updateProp()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Property</button>
     </div>
   </div>
@@ -1116,6 +1132,58 @@ function backToProperties(){
   document.getElementById('devPropsView').classList.remove('hidden');
   renderProps();
 }
+// ── MAP PICKER (Leaflet) ──
+let addPropMap, addPropMarker, editPropMap, editPropMarker;
+const DEFAULT_MAP_CENTER = [10.3157, 123.8854]; // Cebu City — adjust if your listings are elsewhere
+
+function setupPropMap(kind){ // kind: 'add' or 'edit'
+  const mapDivId   = kind==='add' ? 'pMap'         : 'ePMap';
+  const latId      = kind==='add' ? 'pLat'         : 'ePLat';
+  const lngId      = kind==='add' ? 'pLng'         : 'ePLng';
+  const labelId    = kind==='add' ? 'pLatLngLabel' : 'ePLatLngLabel';
+
+  // Destroy any previous instance so re-opening the modal doesn't error
+  if(kind==='add' && addPropMap){ addPropMap.remove(); addPropMap=null; addPropMarker=null; }
+  if(kind==='edit' && editPropMap){ editPropMap.remove(); editPropMap=null; editPropMarker=null; }
+
+  const existingLat = parseFloat(document.getElementById(latId).value);
+  const existingLng = parseFloat(document.getElementById(lngId).value);
+  const startCenter = (existingLat && existingLng) ? [existingLat, existingLng] : DEFAULT_MAP_CENTER;
+
+  const map = L.map(mapDivId).setView(startCenter, existingLat ? 15 : 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  let marker = null;
+  if(existingLat && existingLng){
+    marker = L.marker(startCenter).addTo(map);
+    document.getElementById(labelId).textContent = `Pinned: ${existingLat.toFixed(5)}, ${existingLng.toFixed(5)}`;
+  }
+
+  map.on('click', (e) => {
+    const { lat, lng } = e.latlng;
+    if(marker) marker.setLatLng(e.latlng); else marker = L.marker(e.latlng).addTo(map);
+    document.getElementById(latId).value = lat;
+    document.getElementById(lngId).value = lng;
+    document.getElementById(labelId).textContent = `Pinned: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    if(kind==='add') addPropMarker = marker; else editPropMarker = marker;
+  });
+
+  if(kind==='add') addPropMap = map; else editPropMap = map;
+
+  // Leaflet needs a visible container to size correctly — fix it after the modal's CSS transition
+  setTimeout(() => map.invalidateSize(), 150);
+}
+
+function openAddPropModal(){
+  document.getElementById('pLat').value = '';
+  document.getElementById('pLng').value = '';
+  document.getElementById('pLatLngLabel').textContent = 'No location pinned yet.';
+  openModal('addPropModal');
+  setupPropMap('add');
+}
+
 async function saveProp(){
   const name=document.getElementById('pName').value.trim();
   const loc=document.getElementById('pLoc').value.trim();
@@ -1131,6 +1199,8 @@ async function saveProp(){
   fd.append('property_type', document.getElementById('pType').value);
   fd.append('selling_status', sellStatus);
   fd.append('turnover_date', sellStatus==='Pre-selling' ? turnover : '');
+  fd.append('latitude', document.getElementById('pLat').value || '');
+  fd.append('longitude', document.getElementById('pLng').value || '');
   if(currentDevId) fd.append('developer_id', currentDevId);
   const imgFile = document.getElementById('pImage').files[0];
   if(imgFile) fd.append('image', imgFile);
@@ -1173,7 +1243,13 @@ function openEditProp(id){
   document.getElementById('ePTurnover').value=p.turnover_date||'';
   document.getElementById('ePTurnoverRow').classList.toggle('hidden', (p.selling_status||'RFO')!=='Pre-selling');
   document.getElementById('ePImage').value='';
+  document.getElementById('ePLat').value = p.latitude || '';
+  document.getElementById('ePLng').value = p.longitude || '';
+  document.getElementById('ePLatLngLabel').textContent = (p.latitude && p.longitude)
+    ? `Pinned: ${(+p.latitude).toFixed(5)}, ${(+p.longitude).toFixed(5)}`
+    : 'No location pinned yet.';
   openModal('editPropModal');
+  setupPropMap('edit');
 }
 async function updateProp(){
   const id = document.getElementById('ePI').value;
@@ -1190,6 +1266,8 @@ async function updateProp(){
   fd.append('property_type', document.getElementById('ePType').value);
   fd.append('selling_status', sellStatus);
   fd.append('turnover_date', sellStatus==='Pre-selling' ? turnover : '');
+  fd.append('latitude', document.getElementById('ePLat').value || '');
+  fd.append('longitude', document.getElementById('ePLng').value || '');
   const imgFile = document.getElementById('ePImage').files[0];
   if(imgFile) fd.append('image', imgFile);
 
