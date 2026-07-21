@@ -59,7 +59,7 @@
           <button onclick="selectRole('team_leader')" id="roleTeam_leader" class="role-btn">Team Leader</button>
         </div>
         <div id="loginFields" class="hidden space-y-3">
-          <input id="loginId"  type="text"     placeholder="Admin ID / Agent ID" class="field">
+          <input id="loginId"  type="text"     placeholder="Admin ID / Agent ID" class="field" autocomplete="off">
           <input id="email"    type="email"    placeholder="Email address"        class="field">
           <input id="password" type="password" placeholder="Password"             class="field">
           <button onclick="handleLogin()" class="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white py-3 rounded-lg font-semibold transition-colors">Log In</button>
@@ -139,6 +139,7 @@ window.selectRole = (role) => {
     team_leader: 'Team Leader ID (e.g. TL-00142)',
   };
   idField.placeholder = PLACEHOLDERS[role];
+  ['loginId','email','password'].forEach(id => document.getElementById(id).value = '');
 };
 
 window.handleLogin = async () => {
