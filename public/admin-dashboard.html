@@ -724,15 +724,55 @@ tr:hover td{background:rgba(0,0,0,.02)}
 <div id="approveAssignModal" class="modal-backdrop">
   <div class="modal-box">
     <button onclick="closeModal('approveAssignModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
-    <h3 class="font-bold text-lg mb-1">Approve Agent</h3>
+    <h3 class="font-bold text-lg mb-1">Approve Applicant</h3>
     <p class="text-xs text-gray-500 mb-4" id="aaAgentName"></p>
     <div class="space-y-3">
       <input id="aaAgentId" type="hidden">
-      <div><label class="text-xs text-gray-400 mb-1 block">Assign To *</label><select id="aaReportType" class="field" onchange="toggleAAReportTarget()"><option value="team_leader">Team Leader</option><option value="unit_manager">Unit Manager (no Team Leader)</option></select></div>
-      <div id="aaTLRow"><select id="aaTL" class="field"></select></div>
-      <div id="aaUMRow" class="hidden"><select id="aaUM" class="field"></select></div>
-      <p id="aaErr" class="text-red-400 text-xs hidden">Please select who this agent reports to.</p>
-      <button onclick="confirmApproveAssign()" class="w-full bg-green-600 hover:bg-green-700 py-2.5 rounded-lg font-semibold text-sm transition-colors">Approve & Assign</button>
+
+      <div><label class="text-xs text-gray-400 mb-1 block">Approve As *</label>
+        <select id="aaTargetRole" class="field" onchange="onAATargetRoleChange()">
+          <option value="agent">Agent</option>
+          <option value="unit_manager">Unit Manager</option>
+          <option value="sales_manager">Sales Manager</option>
+          <option value="team_leader">Team Leader</option>
+        </select>
+      </div>
+
+      <!-- UNIT MANAGER: no extra fields -->
+      <p id="aaUMNote" class="hidden text-xs text-gray-500">Unit Managers report directly to Admin — no further assignment needed.</p>
+
+      <!-- SALES MANAGER: optional Unit Manager, or solo -->
+      <div id="aaSMFields" class="hidden space-y-3">
+        <div><label class="text-xs text-gray-400 mb-1 block">Reports To</label>
+          <select id="aaSM_UM" class="field"><option value="">— Solo (no Unit Manager) —</option></select>
+        </div>
+      </div>
+
+      <!-- TEAM LEADER: Unit Manager (required), then optional Sales Manager under that UM -->
+      <div id="aaTLFields" class="hidden space-y-3">
+        <div><label class="text-xs text-gray-400 mb-1 block">Under Unit Manager *</label>
+          <select id="aaTL_UM" class="field" onchange="refreshAA_SM_forTL()"><option value="">— Select Unit Manager —</option></select>
+        </div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Under Sales Manager</label>
+          <select id="aaTL_SM" class="field"><option value="">— None, direct to Unit Manager —</option></select>
+        </div>
+      </div>
+
+      <!-- AGENT: Unit Manager -> Sales Manager (filter) -> Team Leader (filter) -->
+      <div id="aaAgentFields" class="space-y-3">
+        <div><label class="text-xs text-gray-400 mb-1 block">Under Unit Manager</label>
+          <select id="aaAG_UM" class="field" onchange="refreshAA_forAgent()"><option value="">— Select Unit Manager —</option></select>
+        </div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Under Sales Manager</label>
+          <select id="aaAG_SM" class="field" onchange="refreshAA_TL_forAgent()"><option value="">— Direct to Unit Manager / none —</option></select>
+        </div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Under Team Leader</label>
+          <select id="aaAG_TL" class="field"><option value="">— None —</option></select>
+        </div>
+      </div>
+
+      <p id="aaErr" class="text-red-400 text-xs hidden">Please complete the required assignment.</p>
+      <button onclick="confirmApproveAssign()" class="w-full bg-green-600 hover:bg-green-700 py-2.5 rounded-lg font-semibold text-sm transition-colors">Approve</button>
     </div>
   </div>
 </div>
@@ -988,38 +1028,119 @@ async function agentAction(id, status, extra) {
 }
 
 // ── Approve & Assign flow ──
+let aaUMCache=[], aaSMCache=[], aaTLCache=[];
+
 async function openApproveAssignModal(id, name){
   document.getElementById('aaAgentId').value = id;
-  document.getElementById('aaAgentName').textContent = `Assign ${name} to a team before approving.`;
+  document.getElementById('aaAgentName').textContent = `Approving ${name} — choose their role.`;
   document.getElementById('aaErr').classList.add('hidden');
+  document.getElementById('aaTargetRole').value = 'agent';
+
   const token = localStorage.getItem('token');
   const headers = { 'Authorization': 'Bearer ' + token };
-  const [tlRes, umRes] = await Promise.all([
-    fetch('/api/team-leaders', {headers}),
+  const [umRes, smRes, tlRes] = await Promise.all([
     fetch('/api/unit-managers', {headers}),
+    fetch('/api/sales-managers', {headers}),
+    fetch('/api/team-leaders', {headers}),
   ]);
-  const tls = await tlRes.json();
-  const ums = await umRes.json();
-  document.getElementById('aaTL').innerHTML = `<option value="">— Select Team Leader —</option>` + tls.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
-  document.getElementById('aaUM').innerHTML = `<option value="">— Select Unit Manager —</option>` + ums.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
-  document.getElementById('aaReportType').value = 'team_leader';
-  toggleAAReportTarget();
+  aaUMCache = await umRes.json();
+  aaSMCache = await smRes.json();
+  aaTLCache = await tlRes.json();
+
+  onAATargetRoleChange();
   openModal('approveAssignModal');
 }
-function toggleAAReportTarget(){
-  const type = document.getElementById('aaReportType').value;
-  document.getElementById('aaTLRow').classList.toggle('hidden', type!=='team_leader');
-  document.getElementById('aaUMRow').classList.toggle('hidden', type!=='unit_manager');
+
+function onAATargetRoleChange(){
+  const role = document.getElementById('aaTargetRole').value;
+  document.getElementById('aaUMNote').classList.toggle('hidden', role!=='unit_manager');
+  document.getElementById('aaSMFields').classList.toggle('hidden', role!=='sales_manager');
+  document.getElementById('aaTLFields').classList.toggle('hidden', role!=='team_leader');
+  document.getElementById('aaAgentFields').classList.toggle('hidden', role!=='agent');
+  document.getElementById('aaErr').classList.add('hidden');
+
+  const umOptionsHtml = aaUMCache.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+
+  if(role==='sales_manager'){
+    document.getElementById('aaSM_UM').innerHTML = `<option value="">— Solo (no Unit Manager) —</option>` + umOptionsHtml;
+  }
+  if(role==='team_leader'){
+    document.getElementById('aaTL_UM').innerHTML = `<option value="">— Select Unit Manager —</option>` + umOptionsHtml;
+    document.getElementById('aaTL_SM').innerHTML = `<option value="">— None, direct to Unit Manager —</option>`;
+  }
+  if(role==='agent'){
+    document.getElementById('aaAG_UM').innerHTML = `<option value="">— Select Unit Manager —</option>` + umOptionsHtml;
+    document.getElementById('aaAG_SM').innerHTML = `<option value="">— Direct to Unit Manager / none —</option>`;
+    document.getElementById('aaAG_TL').innerHTML = `<option value="">— None —</option>`;
+  }
 }
+function refreshAA_SM_forTL(){
+  const umId = document.getElementById('aaTL_UM').value;
+  const smUnderUM = aaSMCache.filter(sm=>sm.unit_manager_id===umId);
+  document.getElementById('aaTL_SM').innerHTML = `<option value="">— None, direct to Unit Manager —</option>` + smUnderUM.map(sm=>`<option value="${sm.id}">${sm.name}</option>`).join('');
+}
+function refreshAA_forAgent(){
+  const umId = document.getElementById('aaAG_UM').value;
+  const smUnderUM = aaSMCache.filter(sm=>sm.unit_manager_id===umId);
+  document.getElementById('aaAG_SM').innerHTML = `<option value="">— Direct to Unit Manager / none —</option>` + smUnderUM.map(sm=>`<option value="${sm.id}">${sm.name}</option>`).join('');
+  refreshAA_TL_forAgent();
+}
+function refreshAA_TL_forAgent(){
+  const umId = document.getElementById('aaAG_UM').value;
+  const smId = document.getElementById('aaAG_SM').value;
+  let tlOptions;
+  if(smId){
+    tlOptions = aaTLCache.filter(tl=>tl.sales_manager_id===smId);
+  } else if(umId){
+    tlOptions = aaTLCache.filter(tl=>tl.unit_manager_id===umId);
+  } else {
+    tlOptions = [];
+  }
+  document.getElementById('aaAG_TL').innerHTML = `<option value="">— None —</option>` + tlOptions.map(tl=>`<option value="${tl.id}">${tl.name}</option>`).join('');
+}
+
 async function confirmApproveAssign(){
   const id = document.getElementById('aaAgentId').value;
-  const type = document.getElementById('aaReportType').value;
-  const tl = type==='team_leader' ? document.getElementById('aaTL').value : '';
-  const um = type==='unit_manager' ? document.getElementById('aaUM').value : '';
-  if(!tl && !um){ document.getElementById('aaErr').classList.remove('hidden'); return; }
+  const role = document.getElementById('aaTargetRole').value;
+  const token = localStorage.getItem('token');
+
+  let payload = { target_role: role };
+
+  if(role==='sales_manager'){
+    payload.unit_manager_id = document.getElementById('aaSM_UM').value || '';
+  } else if(role==='team_leader'){
+    const um = document.getElementById('aaTL_UM').value;
+    if(!um){ document.getElementById('aaErr').classList.remove('hidden'); return; }
+    payload.unit_manager_id = um;
+    payload.sales_manager_id = document.getElementById('aaTL_SM').value || '';
+  } else if(role==='agent'){
+    const tl = document.getElementById('aaAG_TL').value;
+    const um = document.getElementById('aaAG_UM').value;
+    payload.team_leader_id = tl || '';
+    payload.unit_manager_id = tl ? '' : (um || '');
+  }
+  // unit_manager role needs nothing extra
+
   document.getElementById('aaErr').classList.add('hidden');
-  closeModal('approveAssignModal');
-  await agentAction(id, 'approved', { team_leader_id: tl, unit_manager_id: um });
+  try {
+    const res = await fetch(`/api/agents/${id}/promote`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error('Failed to approve');
+    const result = await res.json();
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: result.message, actor: 'Admin', role: 'admin' })
+    });
+    closeModal('approveAssignModal');
+    renderAgents();
+  } catch(err) {
+    console.error('Error approving applicant:', err);
+    alert('Failed to approve applicant.');
+  }
 }
 async function viewAgent(id) {
   const token = localStorage.getItem('token');
