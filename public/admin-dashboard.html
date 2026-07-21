@@ -89,6 +89,11 @@ tr:hover td{background:rgba(0,0,0,.02)}
     <div class="nav-link" onclick="go('approvedagents',this)"><span class="dot"></span>Approved Agents</div>
     <div class="nav-link" onclick="go('buyers',this)"><span class="dot"></span>Buyer Management</div>
 
+    <div class="nav-section-label">Team Structure</div>
+    <div class="nav-link" onclick="go('unitmanagers',this)"><span class="dot"></span>Unit Managers</div>
+    <div class="nav-link" onclick="go('salesmanagers',this)"><span class="dot"></span>Sales Managers</div>
+    <div class="nav-link" onclick="go('teamleaders',this)"><span class="dot"></span>Team Leaders</div>
+
     <div class="nav-section-label">Finance</div>
     <div class="nav-link" onclick="go('commission',this)"><span class="dot"></span>Commission Monitoring</div>
     <div class="nav-link" onclick="go('sales',this)"><span class="dot"></span>Sales Performance</div>
@@ -226,6 +231,33 @@ tr:hover td{background:rgba(0,0,0,.02)}
     </div>
 
     <!-- ══ BUYER MANAGEMENT ══ -->
+    <!-- ══ UNIT MANAGERS ══ -->
+    <div id="sec-unitmanagers" class="section space-y-4">
+      <div class="flex items-center justify-between">
+        <p class="text-xs text-gray-500">Unit Managers report directly to Admin.</p>
+        <button onclick="openModal('addUMModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Unit Manager</button>
+      </div>
+      <div id="umGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+    <!-- ══ SALES MANAGERS ══ -->
+    <div id="sec-salesmanagers" class="section space-y-4">
+      <div class="flex items-center justify-between">
+        <p class="text-xs text-gray-500">Sales Managers report to a Unit Manager.</p>
+        <button onclick="openModal('addSMModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Sales Manager</button>
+      </div>
+      <div id="smGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+    <!-- ══ TEAM LEADERS ══ -->
+    <div id="sec-teamleaders" class="section space-y-4">
+      <div class="flex items-center justify-between">
+        <p class="text-xs text-gray-500">Team Leaders report to a Unit Manager or a Sales Manager.</p>
+        <button onclick="openModal('addTLModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Team Leader</button>
+      </div>
+      <div id="tlGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
     <div id="sec-buyers" class="section space-y-4">
       <div class="card overflow-hidden">
         <div class="overflow-x-auto"><table class="w-full text-sm">
@@ -386,6 +418,98 @@ tr:hover td{background:rgba(0,0,0,.02)}
 
 <!-- ADD PROPERTY -->
 <!-- ADD DEVELOPER -->
+<!-- ADD UNIT MANAGER -->
+<div id="addUMModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('addUMModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Add Unit Manager</h3>
+    <div class="space-y-3">
+      <div><label class="text-xs text-gray-400 mb-1 block">Full Name *</label><input id="umName" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="umEmail" type="email" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="umPhone" type="text" class="field"></div>
+      <p id="umErr" class="text-red-400 text-xs hidden">Name is required.</p>
+      <button onclick="saveUnitManager()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Unit Manager</button>
+    </div>
+  </div>
+</div>
+<div id="editUMModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('editUMModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Edit Unit Manager</h3>
+    <div class="space-y-3">
+      <input id="eUMI" type="hidden">
+      <div><label class="text-xs text-gray-400 mb-1 block">Full Name</label><input id="eUMName" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="eUMEmail" type="email" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="eUMPhone" type="text" class="field"></div>
+      <button onclick="updateUnitManager()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Unit Manager</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SALES MANAGER -->
+<div id="addSMModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('addSMModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Add Sales Manager</h3>
+    <div class="space-y-3">
+      <div><label class="text-xs text-gray-400 mb-1 block">Full Name *</label><input id="smName" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="smEmail" type="email" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="smPhone" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Reports to (Unit Manager) *</label><select id="smUM" class="field"></select></div>
+      <p id="smErr" class="text-red-400 text-xs hidden">Name and Unit Manager are required.</p>
+      <button onclick="saveSalesManager()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Sales Manager</button>
+    </div>
+  </div>
+</div>
+<div id="editSMModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('editSMModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Edit Sales Manager</h3>
+    <div class="space-y-3">
+      <input id="eSMI" type="hidden">
+      <div><label class="text-xs text-gray-400 mb-1 block">Full Name</label><input id="eSMName" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="eSMEmail" type="email" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="eSMPhone" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Reports to (Unit Manager)</label><select id="eSMUM" class="field"></select></div>
+      <button onclick="updateSalesManager()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Sales Manager</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD TEAM LEADER -->
+<div id="addTLModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('addTLModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Add Team Leader</h3>
+    <div class="space-y-3">
+      <div><label class="text-xs text-gray-400 mb-1 block">Full Name *</label><input id="tlName" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="tlEmail" type="email" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="tlPhone" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Reports To *</label><select id="tlReportType" class="field" onchange="toggleTLReportTarget('tl')"><option value="unit_manager">Unit Manager</option><option value="sales_manager">Sales Manager</option></select></div>
+      <div id="tlUMRow"><select id="tlUM" class="field"></select></div>
+      <div id="tlSMRow" class="hidden"><select id="tlSM" class="field"></select></div>
+      <p id="tlErr" class="text-red-400 text-xs hidden">Name and a reporting manager are required.</p>
+      <button onclick="saveTeamLeader()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Team Leader</button>
+    </div>
+  </div>
+</div>
+<div id="editTLModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('editTLModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Edit Team Leader</h3>
+    <div class="space-y-3">
+      <input id="eTLI" type="hidden">
+      <div><label class="text-xs text-gray-400 mb-1 block">Full Name</label><input id="eTLName" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="eTLEmail" type="email" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="eTLPhone" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Reports To</label><select id="eTLReportType" class="field" onchange="toggleTLReportTarget('eTL')"><option value="unit_manager">Unit Manager</option><option value="sales_manager">Sales Manager</option></select></div>
+      <div id="eTLUMRow"><select id="eTLUM" class="field"></select></div>
+      <div id="eTLSMRow" class="hidden"><select id="eTLSM" class="field"></select></div>
+      <button onclick="updateTeamLeader()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Team Leader</button>
+    </div>
+  </div>
+</div>
+
 <div id="addDevModal" class="modal-backdrop">
   <div class="modal-box">
     <button onclick="closeModal('addDevModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
@@ -623,6 +747,23 @@ tr:hover td{background:rgba(0,0,0,.02)}
 </div>
 
 <!-- VIEW AGENT MODAL -->
+<!-- APPROVE & ASSIGN AGENT -->
+<div id="approveAssignModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('approveAssignModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-1">Approve Agent</h3>
+    <p class="text-xs text-gray-500 mb-4" id="aaAgentName"></p>
+    <div class="space-y-3">
+      <input id="aaAgentId" type="hidden">
+      <div><label class="text-xs text-gray-400 mb-1 block">Assign To *</label><select id="aaReportType" class="field" onchange="toggleAAReportTarget()"><option value="team_leader">Team Leader</option><option value="unit_manager">Unit Manager (no Team Leader)</option></select></div>
+      <div id="aaTLRow"><select id="aaTL" class="field"></select></div>
+      <div id="aaUMRow" class="hidden"><select id="aaUM" class="field"></select></div>
+      <p id="aaErr" class="text-red-400 text-xs hidden">Please select who this agent reports to.</p>
+      <button onclick="confirmApproveAssign()" class="w-full bg-green-600 hover:bg-green-700 py-2.5 rounded-lg font-semibold text-sm transition-colors">Approve & Assign</button>
+    </div>
+  </div>
+</div>
+
 <div id="viewAgentModal" class="modal-backdrop">
   <div class="modal-box">
     <button onclick="closeModal('viewAgentModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
@@ -713,7 +854,7 @@ function go(id, linkEl) {
   document.getElementById('addBuyerBtn').classList.toggle('hidden', id!=='buyers');
 
   // Render
-  const r = {overview:renderOverview,agents:renderAgents,properties:enterProperties,approvedagents:renderApprovedAgents,buyers:renderBuyers,commission:renderCommission,sales:renderSales,reports:renderReports,logs:renderLogs};
+  const r = {overview:renderOverview,agents:renderAgents,properties:enterProperties,approvedagents:renderApprovedAgents,buyers:renderBuyers,unitmanagers:renderUnitManagers,salesmanagers:renderSalesManagers,teamleaders:renderTeamLeaders,commission:renderCommission,sales:renderSales,reports:renderReports,logs:renderLogs};
   if(r[id]) r[id]();
 }
 
@@ -809,7 +950,7 @@ async function renderAgents(){
         <td class="px-5 py-3">
           <div class="flex gap-2 flex-wrap">
             <button onclick="viewAgent('${a.id}')" class="text-xs text-blue-400 hover:text-blue-300">View</button>
-            ${a.status==='pending'?`<button onclick="agentAction('${a.id}','approved')" class="text-xs text-green-400 hover:text-green-300">Approve</button><button onclick="agentAction('${a.id}','rejected')" class="text-xs text-red-400 hover:text-red-300">Reject</button>`:''}
+            ${a.status==='pending'?`<button onclick="openApproveAssignModal('${a.id}','${a.name.replace(/'/g,"\\'")}')" class="text-xs text-green-400 hover:text-green-300">Approve</button><button onclick="agentAction('${a.id}','rejected')" class="text-xs text-red-400 hover:text-red-300">Reject</button>`:''}
             ${a.status==='approved'?`<button onclick="agentAction('${a.id}','suspended')" class="text-xs text-purple-400 hover:text-purple-300">Suspend</button>`:''}
             ${a.status==='suspended'?`<button onclick="agentAction('${a.id}','approved')" class="text-xs text-green-400 hover:text-green-300">Reinstate</button>`:''}
             <button onclick="deleteAgent('${a.id}')" class="text-xs text-red-400 hover:text-red-300">Delete</button>
@@ -821,7 +962,7 @@ async function renderAgents(){
     console.error('Error loading agents:', err);
   }
 }
-async function agentAction(id, status) {
+async function agentAction(id, status, extra) {
   const token = localStorage.getItem('token');
 
   // Rejecting an agent deletes their record entirely instead of just flagging it
@@ -855,7 +996,7 @@ async function agentAction(id, status) {
         'Authorization': 'Bearer ' + token,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ status })
+      body: JSON.stringify({ status, ...(extra||{}) })
     });
     if (!res.ok) throw new Error('Failed to update status');
     await fetch('/api/logs', {
@@ -871,6 +1012,41 @@ async function agentAction(id, status) {
     console.error('Error updating agent status:', err);
     alert('Failed to update agent status.');
   }
+}
+
+// ── Approve & Assign flow ──
+async function openApproveAssignModal(id, name){
+  document.getElementById('aaAgentId').value = id;
+  document.getElementById('aaAgentName').textContent = `Assign ${name} to a team before approving.`;
+  document.getElementById('aaErr').classList.add('hidden');
+  const token = localStorage.getItem('token');
+  const headers = { 'Authorization': 'Bearer ' + token };
+  const [tlRes, umRes] = await Promise.all([
+    fetch('/api/team-leaders', {headers}),
+    fetch('/api/unit-managers', {headers}),
+  ]);
+  const tls = await tlRes.json();
+  const ums = await umRes.json();
+  document.getElementById('aaTL').innerHTML = `<option value="">— Select Team Leader —</option>` + tls.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  document.getElementById('aaUM').innerHTML = `<option value="">— Select Unit Manager —</option>` + ums.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+  document.getElementById('aaReportType').value = 'team_leader';
+  toggleAAReportTarget();
+  openModal('approveAssignModal');
+}
+function toggleAAReportTarget(){
+  const type = document.getElementById('aaReportType').value;
+  document.getElementById('aaTLRow').classList.toggle('hidden', type!=='team_leader');
+  document.getElementById('aaUMRow').classList.toggle('hidden', type!=='unit_manager');
+}
+async function confirmApproveAssign(){
+  const id = document.getElementById('aaAgentId').value;
+  const type = document.getElementById('aaReportType').value;
+  const tl = type==='team_leader' ? document.getElementById('aaTL').value : '';
+  const um = type==='unit_manager' ? document.getElementById('aaUM').value : '';
+  if(!tl && !um){ document.getElementById('aaErr').classList.remove('hidden'); return; }
+  document.getElementById('aaErr').classList.add('hidden');
+  closeModal('approveAssignModal');
+  await agentAction(id, 'approved', { team_leader_id: tl, unit_manager_id: um });
 }
 async function viewAgent(id) {
   const token = localStorage.getItem('token');
@@ -1699,6 +1875,289 @@ function deleteSeller(i){
 // ══════════════════════════════════════
 // BUYERS
 // ══════════════════════════════════════
+// ══════════════════════════════════════
+// TEAM STRUCTURE (Unit Managers / Sales Managers / Team Leaders)
+// ══════════════════════════════════════
+let umCache=[], smCache=[], tlCache=[], teamAgentsCache=[];
+
+async function fetchTeamStructureData(){
+  const token = localStorage.getItem('token');
+  const headers = { 'Authorization': 'Bearer ' + token };
+  const [umRes, smRes, tlRes, agRes] = await Promise.all([
+    fetch('/api/unit-managers', {headers}),
+    fetch('/api/sales-managers', {headers}),
+    fetch('/api/team-leaders', {headers}),
+    fetch('/api/agents', {headers}),
+  ]);
+  umCache = await umRes.json();
+  smCache = await smRes.json();
+  tlCache = await tlRes.json();
+  teamAgentsCache = (await agRes.json()).filter(a=>a.status==='approved');
+}
+
+function tlsUnderUM(umId){
+  const directSM = smCache.filter(sm=>sm.unit_manager_id===umId);
+  const directTL = tlCache.filter(tl=>tl.unit_manager_id===umId);
+  const indirectTL = tlCache.filter(tl=>directSM.some(sm=>sm.id===tl.sales_manager_id));
+  return [...directTL, ...indirectTL];
+}
+function agentsUnderTLs(tlIds){
+  return teamAgentsCache.filter(a=>tlIds.includes(a.team_leader_id));
+}
+
+async function renderUnitManagers(){
+  await fetchTeamStructureData();
+  document.getElementById('umGrid').innerHTML = umCache.map(um => {
+    const directSM = smCache.filter(sm=>sm.unit_manager_id===um.id);
+    const allTL = tlsUnderUM(um.id);
+    const directAgents = teamAgentsCache.filter(a=>a.unit_manager_id===um.id && !a.team_leader_id);
+    const teamAgents = agentsUnderTLs(allTL.map(t=>t.id));
+    const totalAgents = directAgents.length + teamAgents.length;
+    return `
+      <div class="card p-4 relative">
+        <button onclick="event.stopPropagation();toggleGenMenu('um-${um.id}')" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full hover:bg-black/5 text-gray-400 text-xs flex items-center justify-center">⋯</button>
+        <div id="genMenu-um-${um.id}" class="hidden absolute top-8 right-1.5 z-20 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden text-left w-28">
+          <button onclick="closeGenMenus();openEditUM('${um.id}')" class="w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 text-left">Edit</button>
+          <button onclick="closeGenMenus();deleteUnitManager('${um.id}','${um.name.replace(/'/g,"\\'")}')" class="w-full px-3 py-2 text-xs text-red-500 hover:bg-gray-50 text-left">Delete</button>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold mb-2">${um.name[0]}</div>
+        <p class="font-semibold text-white text-sm">${um.name}</p>
+        <p class="text-xs text-gray-500 mb-3">${um.email||'No email on file'}</p>
+        <div class="grid grid-cols-3 gap-2 text-center border-t border-white/8 pt-3">
+          <div><p class="text-sm font-bold text-white">${directSM.length}</p><p class="text-xs text-gray-500">Sales Mgrs</p></div>
+          <div><p class="text-sm font-bold text-white">${allTL.length}</p><p class="text-xs text-gray-500">Team Leads</p></div>
+          <div><p class="text-sm font-bold text-white">${totalAgents}</p><p class="text-xs text-gray-500">Agents</p></div>
+        </div>
+      </div>`;
+  }).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No Unit Managers yet — click "+ Add Unit Manager" to start.</p>`;
+}
+async function saveUnitManager(){
+  const name = document.getElementById('umName').value.trim();
+  if(!name){ document.getElementById('umErr').classList.remove('hidden'); return; }
+  document.getElementById('umErr').classList.add('hidden');
+  const token = localStorage.getItem('token');
+  try {
+    await fetch('/api/unit-managers', {
+      method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body: JSON.stringify({ name, email: document.getElementById('umEmail').value.trim(), phone: document.getElementById('umPhone').value.trim() })
+    });
+    await fetch('/api/logs', { method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}, body: JSON.stringify({ message:`Unit Manager "${name}" added`, actor:'Admin', role:'admin' }) });
+    closeModal('addUMModal');
+    ['umName','umEmail','umPhone'].forEach(id=>document.getElementById(id).value='');
+    renderUnitManagers();
+  } catch(err){ console.error(err); alert('Failed to save Unit Manager.'); }
+}
+function openEditUM(id){
+  const um = umCache.find(x=>x.id===id); if(!um) return;
+  document.getElementById('eUMI').value=um.id;
+  document.getElementById('eUMName').value=um.name;
+  document.getElementById('eUMEmail').value=um.email||'';
+  document.getElementById('eUMPhone').value=um.phone||'';
+  openModal('editUMModal');
+}
+async function updateUnitManager(){
+  const id = document.getElementById('eUMI').value;
+  const token = localStorage.getItem('token');
+  const name = document.getElementById('eUMName').value.trim();
+  try {
+    await fetch(`/api/unit-managers/${id}`, {
+      method:'PUT', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body: JSON.stringify({ name, email: document.getElementById('eUMEmail').value.trim(), phone: document.getElementById('eUMPhone').value.trim() })
+    });
+    closeModal('editUMModal');
+    renderUnitManagers();
+  } catch(err){ console.error(err); alert('Failed to update Unit Manager.'); }
+}
+async function deleteUnitManager(id,name){
+  if(!confirm(`Delete "${name}"? Sales Managers/Team Leaders under them will be unassigned, not deleted.`)) return;
+  const token = localStorage.getItem('token');
+  try {
+    await fetch(`/api/unit-managers/${id}`, { method:'DELETE', headers:{'Authorization':'Bearer '+token} });
+    await fetch('/api/logs', { method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}, body: JSON.stringify({ message:`Unit Manager "${name}" deleted`, actor:'Admin', role:'admin' }) });
+    renderUnitManagers();
+  } catch(err){ console.error(err); alert('Failed to delete Unit Manager.'); }
+}
+
+async function renderSalesManagers(){
+  await fetchTeamStructureData();
+  const umOptions = umCache.map(um=>`<option value="${um.id}">${um.name}</option>`).join('');
+  ['smUM','eSMUM'].forEach(id=>document.getElementById(id).innerHTML = `<option value="">— Select Unit Manager —</option>` + umOptions);
+
+  document.getElementById('smGrid').innerHTML = smCache.map(sm => {
+    const directTL = tlCache.filter(tl=>tl.sales_manager_id===sm.id);
+    const teamAgents = agentsUnderTLs(directTL.map(t=>t.id));
+    const um = umCache.find(u=>u.id===sm.unit_manager_id);
+    return `
+      <div class="card p-4 relative">
+        <button onclick="event.stopPropagation();toggleGenMenu('sm-${sm.id}')" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full hover:bg-black/5 text-gray-400 text-xs flex items-center justify-center">⋯</button>
+        <div id="genMenu-sm-${sm.id}" class="hidden absolute top-8 right-1.5 z-20 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden text-left w-28">
+          <button onclick="closeGenMenus();openEditSM('${sm.id}')" class="w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 text-left">Edit</button>
+          <button onclick="closeGenMenus();deleteSalesManager('${sm.id}','${sm.name.replace(/'/g,"\\'")}')" class="w-full px-3 py-2 text-xs text-red-500 hover:bg-gray-50 text-left">Delete</button>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold mb-2">${sm.name[0]}</div>
+        <p class="font-semibold text-white text-sm">${sm.name}</p>
+        <p class="text-xs text-gray-500 mb-1">${sm.email||'No email on file'}</p>
+        <p class="text-xs text-gray-500 mb-3">Reports to: ${um?um.name:'—'}</p>
+        <div class="grid grid-cols-2 gap-2 text-center border-t border-white/8 pt-3">
+          <div><p class="text-sm font-bold text-white">${directTL.length}</p><p class="text-xs text-gray-500">Team Leads</p></div>
+          <div><p class="text-sm font-bold text-white">${teamAgents.length}</p><p class="text-xs text-gray-500">Agents</p></div>
+        </div>
+      </div>`;
+  }).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No Sales Managers yet — click "+ Add Sales Manager" to start.</p>`;
+}
+async function saveSalesManager(){
+  const name = document.getElementById('smName').value.trim();
+  const um = document.getElementById('smUM').value;
+  if(!name || !um){ document.getElementById('smErr').classList.remove('hidden'); return; }
+  document.getElementById('smErr').classList.add('hidden');
+  const token = localStorage.getItem('token');
+  try {
+    await fetch('/api/sales-managers', {
+      method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body: JSON.stringify({ name, email: document.getElementById('smEmail').value.trim(), phone: document.getElementById('smPhone').value.trim(), unit_manager_id: um })
+    });
+    await fetch('/api/logs', { method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}, body: JSON.stringify({ message:`Sales Manager "${name}" added`, actor:'Admin', role:'admin' }) });
+    closeModal('addSMModal');
+    ['smName','smEmail','smPhone'].forEach(id=>document.getElementById(id).value='');
+    renderSalesManagers();
+  } catch(err){ console.error(err); alert('Failed to save Sales Manager.'); }
+}
+function openEditSM(id){
+  const sm = smCache.find(x=>x.id===id); if(!sm) return;
+  document.getElementById('eSMI').value=sm.id;
+  document.getElementById('eSMName').value=sm.name;
+  document.getElementById('eSMEmail').value=sm.email||'';
+  document.getElementById('eSMPhone').value=sm.phone||'';
+  document.getElementById('eSMUM').value=sm.unit_manager_id||'';
+  openModal('editSMModal');
+}
+async function updateSalesManager(){
+  const id = document.getElementById('eSMI').value;
+  const token = localStorage.getItem('token');
+  const name = document.getElementById('eSMName').value.trim();
+  try {
+    await fetch(`/api/sales-managers/${id}`, {
+      method:'PUT', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body: JSON.stringify({ name, email: document.getElementById('eSMEmail').value.trim(), phone: document.getElementById('eSMPhone').value.trim(), unit_manager_id: document.getElementById('eSMUM').value })
+    });
+    closeModal('editSMModal');
+    renderSalesManagers();
+  } catch(err){ console.error(err); alert('Failed to update Sales Manager.'); }
+}
+async function deleteSalesManager(id,name){
+  if(!confirm(`Delete "${name}"? Team Leaders under them will be unassigned, not deleted.`)) return;
+  const token = localStorage.getItem('token');
+  try {
+    await fetch(`/api/sales-managers/${id}`, { method:'DELETE', headers:{'Authorization':'Bearer '+token} });
+    await fetch('/api/logs', { method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}, body: JSON.stringify({ message:`Sales Manager "${name}" deleted`, actor:'Admin', role:'admin' }) });
+    renderSalesManagers();
+  } catch(err){ console.error(err); alert('Failed to delete Sales Manager.'); }
+}
+
+function toggleTLReportTarget(prefix){
+  const type = document.getElementById(prefix+'ReportType').value;
+  document.getElementById(prefix+'UMRow').classList.toggle('hidden', type!=='unit_manager');
+  document.getElementById(prefix+'SMRow').classList.toggle('hidden', type!=='sales_manager');
+}
+async function renderTeamLeaders(){
+  await fetchTeamStructureData();
+  const umOptions = umCache.map(um=>`<option value="${um.id}">${um.name}</option>`).join('');
+  const smOptions = smCache.map(sm=>`<option value="${sm.id}">${sm.name}</option>`).join('');
+  ['tlUM','eTLUM'].forEach(id=>document.getElementById(id).innerHTML = `<option value="">— Select Unit Manager —</option>` + umOptions);
+  ['tlSM','eTLSM'].forEach(id=>document.getElementById(id).innerHTML = `<option value="">— Select Sales Manager —</option>` + smOptions);
+
+  document.getElementById('tlGrid').innerHTML = tlCache.map(tl => {
+    const directAgents = teamAgentsCache.filter(a=>a.team_leader_id===tl.id);
+    const reportsTo = tl.unit_manager_id
+      ? (umCache.find(u=>u.id===tl.unit_manager_id)?.name || '—') + ' (Unit Manager)'
+      : (smCache.find(s=>s.id===tl.sales_manager_id)?.name || '—') + ' (Sales Manager)';
+    return `
+      <div class="card p-4 relative">
+        <button onclick="event.stopPropagation();toggleGenMenu('tl-${tl.id}')" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full hover:bg-black/5 text-gray-400 text-xs flex items-center justify-center">⋯</button>
+        <div id="genMenu-tl-${tl.id}" class="hidden absolute top-8 right-1.5 z-20 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden text-left w-28">
+          <button onclick="closeGenMenus();openEditTL('${tl.id}')" class="w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 text-left">Edit</button>
+          <button onclick="closeGenMenus();deleteTeamLeader('${tl.id}','${tl.name.replace(/'/g,"\\'")}')" class="w-full px-3 py-2 text-xs text-red-500 hover:bg-gray-50 text-left">Delete</button>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold mb-2">${tl.name[0]}</div>
+        <p class="font-semibold text-white text-sm">${tl.name}</p>
+        <p class="text-xs text-gray-500 mb-1">${tl.email||'No email on file'}</p>
+        <p class="text-xs text-gray-500 mb-3">Reports to: ${reportsTo}</p>
+        <div class="text-center border-t border-white/8 pt-3">
+          <p class="text-sm font-bold text-white">${directAgents.length}</p><p class="text-xs text-gray-500">Recruited Agents</p>
+        </div>
+      </div>`;
+  }).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No Team Leaders yet — click "+ Add Team Leader" to start.</p>`;
+}
+async function saveTeamLeader(){
+  const name = document.getElementById('tlName').value.trim();
+  const type = document.getElementById('tlReportType').value;
+  const um = type==='unit_manager' ? document.getElementById('tlUM').value : '';
+  const sm = type==='sales_manager' ? document.getElementById('tlSM').value : '';
+  if(!name || (!um && !sm)){ document.getElementById('tlErr').classList.remove('hidden'); return; }
+  document.getElementById('tlErr').classList.add('hidden');
+  const token = localStorage.getItem('token');
+  try {
+    await fetch('/api/team-leaders', {
+      method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body: JSON.stringify({ name, email: document.getElementById('tlEmail').value.trim(), phone: document.getElementById('tlPhone').value.trim(), unit_manager_id: um, sales_manager_id: sm })
+    });
+    await fetch('/api/logs', { method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}, body: JSON.stringify({ message:`Team Leader "${name}" added`, actor:'Admin', role:'admin' }) });
+    closeModal('addTLModal');
+    ['tlName','tlEmail','tlPhone'].forEach(id=>document.getElementById(id).value='');
+    renderTeamLeaders();
+  } catch(err){ console.error(err); alert('Failed to save Team Leader.'); }
+}
+function openEditTL(id){
+  const tl = tlCache.find(x=>x.id===id); if(!tl) return;
+  document.getElementById('eTLI').value=tl.id;
+  document.getElementById('eTLName').value=tl.name;
+  document.getElementById('eTLEmail').value=tl.email||'';
+  document.getElementById('eTLPhone').value=tl.phone||'';
+  const type = tl.unit_manager_id ? 'unit_manager' : 'sales_manager';
+  document.getElementById('eTLReportType').value = type;
+  toggleTLReportTarget('eTL');
+  document.getElementById('eTLUM').value = tl.unit_manager_id||'';
+  document.getElementById('eTLSM').value = tl.sales_manager_id||'';
+  openModal('editTLModal');
+}
+async function updateTeamLeader(){
+  const id = document.getElementById('eTLI').value;
+  const token = localStorage.getItem('token');
+  const name = document.getElementById('eTLName').value.trim();
+  const type = document.getElementById('eTLReportType').value;
+  const um = type==='unit_manager' ? document.getElementById('eTLUM').value : '';
+  const sm = type==='sales_manager' ? document.getElementById('eTLSM').value : '';
+  try {
+    await fetch(`/api/team-leaders/${id}`, {
+      method:'PUT', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body: JSON.stringify({ name, email: document.getElementById('eTLEmail').value.trim(), phone: document.getElementById('eTLPhone').value.trim(), unit_manager_id: um, sales_manager_id: sm })
+    });
+    closeModal('editTLModal');
+    renderTeamLeaders();
+  } catch(err){ console.error(err); alert('Failed to update Team Leader.'); }
+}
+async function deleteTeamLeader(id,name){
+  if(!confirm(`Delete "${name}"? Agents recruited by them will be unassigned, not deleted.`)) return;
+  const token = localStorage.getItem('token');
+  try {
+    await fetch(`/api/team-leaders/${id}`, { method:'DELETE', headers:{'Authorization':'Bearer '+token} });
+    await fetch('/api/logs', { method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}, body: JSON.stringify({ message:`Team Leader "${name}" deleted`, actor:'Admin', role:'admin' }) });
+    renderTeamLeaders();
+  } catch(err){ console.error(err); alert('Failed to delete Team Leader.'); }
+}
+
+// Generic "..." menu toggler shared by UM/SM/TL cards
+function toggleGenMenu(key){
+  const menu = document.getElementById(`genMenu-${key}`);
+  const wasHidden = menu.classList.contains('hidden');
+  closeGenMenus();
+  if(wasHidden) menu.classList.remove('hidden');
+}
+function closeGenMenus(){
+  document.querySelectorAll('[id^="genMenu-"]').forEach(m=>m.classList.add('hidden'));
+}
+document.addEventListener('click', closeGenMenus);
+
 function renderBuyers(){
   document.getElementById('buyersBody').innerHTML=load(K.buyers).map((b,i)=>`
     <tr>
