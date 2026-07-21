@@ -66,10 +66,12 @@ const login = async (req, res) => {
       const { data: person, error } = await supabase
         .from(tableMap[role])
         .select('*')
+        .eq(idFieldMap[role], loginId)
         .eq('email', email)
         .single();
 
-      if (error || !person || !person.password) return res.status(400).json({ message: 'Account not found or not yet set up for login. Contact the admin.' });
+      if (error || !person) return res.status(400).json({ message: 'Incorrect ID or email.' });
+      if (!person.password) return res.status(400).json({ message: 'This account is not yet set up for login. Contact the admin.' });
 
       const match = await bcrypt.compare(password, person.password);
       if (!match) return res.status(400).json({ message: 'Incorrect password.' });

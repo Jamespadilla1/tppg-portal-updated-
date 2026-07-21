@@ -112,7 +112,7 @@ window.showRegister = () => {
 };
 
 const ALL_ROLES = ['admin','agent','unit_manager','sales_manager','team_leader'];
-const ROLES_WITHOUT_ID = ['unit_manager','sales_manager','team_leader'];
+const ROLES_WITHOUT_ID = [];
 
 function resetLogin() {
   selectedRole = '';
@@ -130,12 +130,15 @@ window.selectRole = (role) => {
   document.getElementById('role' + role[0].toUpperCase() + role.slice(1)).classList.add('selected');
 
   const idField = document.getElementById('loginId');
-  if(ROLES_WITHOUT_ID.includes(role)){
-    idField.classList.add('hidden');
-  } else {
-    idField.classList.remove('hidden');
-    idField.placeholder = role === 'admin' ? 'Admin ID (ADMIN-001)' : 'Agent ID (e.g. AGT-00142)';
-  }
+  idField.classList.remove('hidden');
+  const PLACEHOLDERS = {
+    admin: 'Admin ID (ADMIN-001)',
+    agent: 'Agent ID (e.g. AGT-00142)',
+    unit_manager: 'Unit Manager ID (e.g. UM-00142)',
+    sales_manager: 'Sales Manager ID (e.g. SM-00142)',
+    team_leader: 'Team Leader ID (e.g. TL-00142)',
+  };
+  idField.placeholder = PLACEHOLDERS[role];
 };
 
 window.handleLogin = async () => {
