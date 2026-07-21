@@ -395,8 +395,9 @@ tr:hover td{background:rgba(0,0,0,.02)}
     <h3 class="font-bold text-lg mb-4">Add Unit Manager</h3>
     <div class="space-y-3">
       <div><label class="text-xs text-gray-400 mb-1 block">Full Name *</label><input id="umName" type="text" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="umEmail" type="email" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Email * (used for login)</label><input id="umEmail" type="email" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="umPhone" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Password *</label><input id="umPassword" type="password" class="field" placeholder="Set a login password"></div>
       <p id="umErr" class="text-red-400 text-xs hidden">Name is required.</p>
       <button onclick="saveUnitManager()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Unit Manager</button>
     </div>
@@ -423,8 +424,9 @@ tr:hover td{background:rgba(0,0,0,.02)}
     <h3 class="font-bold text-lg mb-4">Add Sales Manager</h3>
     <div class="space-y-3">
       <div><label class="text-xs text-gray-400 mb-1 block">Full Name *</label><input id="smName" type="text" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="smEmail" type="email" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Email * (used for login)</label><input id="smEmail" type="email" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="smPhone" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Password *</label><input id="smPassword" type="password" class="field" placeholder="Set a login password"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Reports to (Unit Manager) *</label><select id="smUM" class="field"></select></div>
       <p id="smErr" class="text-red-400 text-xs hidden">Name and Unit Manager are required.</p>
       <button onclick="saveSalesManager()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Sales Manager</button>
@@ -453,8 +455,9 @@ tr:hover td{background:rgba(0,0,0,.02)}
     <h3 class="font-bold text-lg mb-4">Add Team Leader</h3>
     <div class="space-y-3">
       <div><label class="text-xs text-gray-400 mb-1 block">Full Name *</label><input id="tlName" type="text" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="tlEmail" type="email" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Email * (used for login)</label><input id="tlEmail" type="email" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="tlPhone" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Password *</label><input id="tlPassword" type="password" class="field" placeholder="Set a login password"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Reports To *</label><select id="tlReportType" class="field" onchange="toggleTLReportTarget('tl')"><option value="unit_manager">Unit Manager</option><option value="sales_manager">Sales Manager</option></select></div>
       <div id="tlUMRow"><select id="tlUM" class="field"></select></div>
       <div id="tlSMRow" class="hidden"><select id="tlSM" class="field"></select></div>
@@ -1938,17 +1941,19 @@ async function renderUnitManagers(){
 }
 async function saveUnitManager(){
   const name = document.getElementById('umName').value.trim();
-  if(!name){ document.getElementById('umErr').classList.remove('hidden'); return; }
+  const email = document.getElementById('umEmail').value.trim();
+  const password = document.getElementById('umPassword').value;
+  if(!name || !email || !password){ document.getElementById('umErr').classList.remove('hidden'); return; }
   document.getElementById('umErr').classList.add('hidden');
   const token = localStorage.getItem('token');
   try {
     await fetch('/api/unit-managers', {
       method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-      body: JSON.stringify({ name, email: document.getElementById('umEmail').value.trim(), phone: document.getElementById('umPhone').value.trim() })
+      body: JSON.stringify({ name, email, phone: document.getElementById('umPhone').value.trim(), password })
     });
     await fetch('/api/logs', { method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}, body: JSON.stringify({ message:`Unit Manager "${name}" added`, actor:'Admin', role:'admin' }) });
     closeModal('addUMModal');
-    ['umName','umEmail','umPhone'].forEach(id=>document.getElementById(id).value='');
+    ['umName','umEmail','umPhone','umPassword'].forEach(id=>document.getElementById(id).value='');
     renderUnitManagers();
   } catch(err){ console.error(err); alert('Failed to save Unit Manager.'); }
 }
@@ -2012,18 +2017,20 @@ async function renderSalesManagers(){
 }
 async function saveSalesManager(){
   const name = document.getElementById('smName').value.trim();
+  const email = document.getElementById('smEmail').value.trim();
+  const password = document.getElementById('smPassword').value;
   const um = document.getElementById('smUM').value;
-  if(!name || !um){ document.getElementById('smErr').classList.remove('hidden'); return; }
+  if(!name || !um || !email || !password){ document.getElementById('smErr').classList.remove('hidden'); return; }
   document.getElementById('smErr').classList.add('hidden');
   const token = localStorage.getItem('token');
   try {
     await fetch('/api/sales-managers', {
       method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-      body: JSON.stringify({ name, email: document.getElementById('smEmail').value.trim(), phone: document.getElementById('smPhone').value.trim(), unit_manager_id: um })
+      body: JSON.stringify({ name, email, phone: document.getElementById('smPhone').value.trim(), unit_manager_id: um, password })
     });
     await fetch('/api/logs', { method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}, body: JSON.stringify({ message:`Sales Manager "${name}" added`, actor:'Admin', role:'admin' }) });
     closeModal('addSMModal');
-    ['smName','smEmail','smPhone'].forEach(id=>document.getElementById(id).value='');
+    ['smName','smEmail','smPhone','smPassword'].forEach(id=>document.getElementById(id).value='');
     renderSalesManagers();
   } catch(err){ console.error(err); alert('Failed to save Sales Manager.'); }
 }
@@ -2095,20 +2102,22 @@ async function renderTeamLeaders(){
 }
 async function saveTeamLeader(){
   const name = document.getElementById('tlName').value.trim();
+  const email = document.getElementById('tlEmail').value.trim();
+  const password = document.getElementById('tlPassword').value;
   const type = document.getElementById('tlReportType').value;
   const um = type==='unit_manager' ? document.getElementById('tlUM').value : '';
   const sm = type==='sales_manager' ? document.getElementById('tlSM').value : '';
-  if(!name || (!um && !sm)){ document.getElementById('tlErr').classList.remove('hidden'); return; }
+  if(!name || (!um && !sm) || !email || !password){ document.getElementById('tlErr').classList.remove('hidden'); return; }
   document.getElementById('tlErr').classList.add('hidden');
   const token = localStorage.getItem('token');
   try {
     await fetch('/api/team-leaders', {
       method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-      body: JSON.stringify({ name, email: document.getElementById('tlEmail').value.trim(), phone: document.getElementById('tlPhone').value.trim(), unit_manager_id: um, sales_manager_id: sm })
+      body: JSON.stringify({ name, email, phone: document.getElementById('tlPhone').value.trim(), unit_manager_id: um, sales_manager_id: sm, password })
     });
     await fetch('/api/logs', { method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}, body: JSON.stringify({ message:`Team Leader "${name}" added`, actor:'Admin', role:'admin' }) });
     closeModal('addTLModal');
-    ['tlName','tlEmail','tlPhone'].forEach(id=>document.getElementById(id).value='');
+    ['tlName','tlEmail','tlPhone','tlPassword'].forEach(id=>document.getElementById(id).value='');
     renderTeamLeaders();
   } catch(err){ console.error(err); alert('Failed to save Team Leader.'); }
 }

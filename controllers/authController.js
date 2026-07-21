@@ -60,6 +60,28 @@ const login = async (req, res) => {
       });
     }
 
+    if (role === 'unit_manager' || role === 'sales_manager' || role === 'team_leader') {
+      const tableMap = { unit_manager: 'unit_managers', sales_manager: 'sales_managers', team_leader: 'team_leaders' };
+      const { data: person, error } = await supabase
+        .from(tableMap[role])
+        .select('*')
+        .eq('email', email)
+        .single();
+
+      if (error || !person || !person.password) return res.status(400).json({ message: 'Account not found or not yet set up for login. Contact the admin.' });
+
+      const match = await bcrypt.compare(password, person.password);
+      if (!match) return res.status(400).json({ message: 'Incorrect password.' });
+      if (person.status === 'suspended') return res.status(403).json({ message: 'Your account has been suspended.' });
+
+      return res.json({
+        token:  generateToken(person.id, role),
+        role,
+        name:   person.name,
+        email:  person.email,
+      });
+    }
+
     return res.status(400).json({ message: 'Invalid role.' });
 
   } catch (err) {

@@ -51,9 +51,12 @@
       <div id="loginView" class="panel-content">
         <h2 class="text-xl font-bold text-gray-900 mb-1">Welcome back</h2>
         <p class="text-gray-400 text-xs mb-5">Select your role to continue</p>
-        <div class="flex gap-2 mb-5">
+        <div class="flex gap-2 mb-5 flex-wrap">
           <button onclick="selectRole('admin')" id="roleAdmin" class="role-btn">Admin</button>
           <button onclick="selectRole('agent')" id="roleAgent" class="role-btn">Agent</button>
+          <button onclick="selectRole('unit_manager')" id="roleUnit_manager" class="role-btn">Unit Manager</button>
+          <button onclick="selectRole('sales_manager')" id="roleSales_manager" class="role-btn">Sales Manager</button>
+          <button onclick="selectRole('team_leader')" id="roleTeam_leader" class="role-btn">Team Leader</button>
         </div>
         <div id="loginFields" class="hidden space-y-3">
           <input id="loginId"  type="text"     placeholder="Admin ID / Agent ID" class="field">
@@ -108,12 +111,14 @@ window.showRegister = () => {
   document.getElementById('registerView').classList.remove('hidden');
 };
 
+const ALL_ROLES = ['admin','agent','unit_manager','sales_manager','team_leader'];
+const ROLES_WITHOUT_ID = ['unit_manager','sales_manager','team_leader'];
+
 function resetLogin() {
   selectedRole = '';
   document.getElementById('loginFields').classList.add('hidden');
   document.getElementById('loginError').classList.add('hidden');
-  document.getElementById('roleAdmin').classList.remove('selected');
-  document.getElementById('roleAgent').classList.remove('selected');
+  ALL_ROLES.forEach(r => document.getElementById('role'+r[0].toUpperCase()+r.slice(1)).classList.remove('selected'));
   ['loginId','email','password'].forEach(id => document.getElementById(id).value = '');
 }
 
@@ -121,19 +126,26 @@ window.selectRole = (role) => {
   selectedRole = role;
   document.getElementById('loginFields').classList.remove('hidden');
   document.getElementById('loginError').classList.add('hidden');
-  document.getElementById('roleAdmin').classList.remove('selected');
-  document.getElementById('roleAgent').classList.remove('selected');
+  ALL_ROLES.forEach(r => document.getElementById('role'+r[0].toUpperCase()+r.slice(1)).classList.remove('selected'));
   document.getElementById('role' + role[0].toUpperCase() + role.slice(1)).classList.add('selected');
-  document.getElementById('loginId').placeholder = role === 'admin' ? 'Admin ID (ADMIN-001)' : 'Agent ID (e.g. AGT-00142)';
+
+  const idField = document.getElementById('loginId');
+  if(ROLES_WITHOUT_ID.includes(role)){
+    idField.classList.add('hidden');
+  } else {
+    idField.classList.remove('hidden');
+    idField.placeholder = role === 'admin' ? 'Admin ID (ADMIN-001)' : 'Agent ID (e.g. AGT-00142)';
+  }
 };
 
 window.handleLogin = async () => {
   const loginId  = document.getElementById('loginId').value.trim();
   const email    = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value.trim();
+  const needsId  = !ROLES_WITHOUT_ID.includes(selectedRole);
 
   if (!selectedRole) return;
-  if (!loginId || !email || !password) return showError('Please fill in all fields.');
+  if ((needsId && !loginId) || !email || !password) return showError('Please fill in all fields.');
 
   try {
     const res  = await fetch('/api/auth/login', {
@@ -155,10 +167,12 @@ window.handleLogin = async () => {
     if (data.role === 'admin') {
       localStorage.setItem('adminId', data.adminId);
       window.location.href = 'admin-dashboard.html';
-    } else {
+    } else if (data.role === 'agent') {
       localStorage.setItem('agentId',    data.agentId);
       localStorage.setItem('agentPhone', data.phone || '');
       window.location.href = 'agent-dashboard.html';
+    } else {
+      window.location.href = 'team-dashboard.html';
     }
 
   } catch (err) {
