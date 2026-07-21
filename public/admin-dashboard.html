@@ -86,13 +86,8 @@ tr:hover td{background:rgba(0,0,0,.02)}
     <div class="nav-section-label">Management</div>
     <div class="nav-link" onclick="go('agents',this)"><span class="dot"></span>Pending Agents</div>
     <div class="nav-link" onclick="go('properties',this)"><span class="dot"></span>Property Listings</div>
-    <div class="nav-link" onclick="go('approvedagents',this)"><span class="dot"></span>Approved Agents</div>
+    <div class="nav-link" onclick="go('teams',this)"><span class="dot"></span>Teams</div>
     <div class="nav-link" onclick="go('buyers',this)"><span class="dot"></span>Buyer Management</div>
-
-    <div class="nav-section-label">Team Structure</div>
-    <div class="nav-link" onclick="go('unitmanagers',this)"><span class="dot"></span>Unit Managers</div>
-    <div class="nav-link" onclick="go('salesmanagers',this)"><span class="dot"></span>Sales Managers</div>
-    <div class="nav-link" onclick="go('teamleaders',this)"><span class="dot"></span>Team Leaders</div>
 
     <div class="nav-section-label">Finance</div>
     <div class="nav-link" onclick="go('commission',this)"><span class="dot"></span>Commission Monitoring</div>
@@ -217,47 +212,22 @@ tr:hover td{background:rgba(0,0,0,.02)}
       </div>
     </div>
 
-    <!-- ══ APPROVED AGENTS ══ -->
-    <div id="sec-approvedagents" class="section space-y-4">
-      <div class="card overflow-hidden">
-        <div class="overflow-x-auto"><table class="w-full text-sm">
-          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
-            <th class="text-left px-5 py-2">Full Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Agent ID</th><th class="text-left px-5 py-2">Status</th><th class="text-left px-5 py-2">Actions</th>
-          </tr></thead>
-          <tbody id="approvedAgentsBody" class="divide-y divide-white/6 text-gray-300"></tbody>
-        </table></div>
-        <div class="px-5 py-2 border-t border-white/8 text-xs text-gray-500" id="approvedAgentCount"></div>
+    <!-- ══ TEAMS (Unit Managers / Sales Managers / Team Leaders / Agents) ══ -->
+    <div id="sec-teams" class="section space-y-4">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <select id="teamsLevel" class="field w-52" onchange="renderTeamsView()">
+          <option value="unitmanagers">Unit Managers</option>
+          <option value="salesmanagers">Sales Managers</option>
+          <option value="teamleaders">Team Leaders</option>
+          <option value="agents">Agents</option>
+        </select>
+        <button id="teamsAddBtn" onclick="openModal('addUMModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Unit Manager</button>
       </div>
+      <p class="text-xs text-gray-500" id="teamsHint">Unit Managers report directly to Admin.</p>
+      <div id="teamsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </div>
 
     <!-- ══ BUYER MANAGEMENT ══ -->
-    <!-- ══ UNIT MANAGERS ══ -->
-    <div id="sec-unitmanagers" class="section space-y-4">
-      <div class="flex items-center justify-between">
-        <p class="text-xs text-gray-500">Unit Managers report directly to Admin.</p>
-        <button onclick="openModal('addUMModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Unit Manager</button>
-      </div>
-      <div id="umGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-    </div>
-
-    <!-- ══ SALES MANAGERS ══ -->
-    <div id="sec-salesmanagers" class="section space-y-4">
-      <div class="flex items-center justify-between">
-        <p class="text-xs text-gray-500">Sales Managers report to a Unit Manager.</p>
-        <button onclick="openModal('addSMModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Sales Manager</button>
-      </div>
-      <div id="smGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-    </div>
-
-    <!-- ══ TEAM LEADERS ══ -->
-    <div id="sec-teamleaders" class="section space-y-4">
-      <div class="flex items-center justify-between">
-        <p class="text-xs text-gray-500">Team Leaders report to a Unit Manager or a Sales Manager.</p>
-        <button onclick="openModal('addTLModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Team Leader</button>
-      </div>
-      <div id="tlGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-    </div>
-
     <div id="sec-buyers" class="section space-y-4">
       <div class="card overflow-hidden">
         <div class="overflow-x-auto"><table class="w-full text-sm">
@@ -854,7 +824,7 @@ function go(id, linkEl) {
   document.getElementById('addBuyerBtn').classList.toggle('hidden', id!=='buyers');
 
   // Render
-  const r = {overview:renderOverview,agents:renderAgents,properties:enterProperties,approvedagents:renderApprovedAgents,buyers:renderBuyers,unitmanagers:renderUnitManagers,salesmanagers:renderSalesManagers,teamleaders:renderTeamLeaders,commission:renderCommission,sales:renderSales,reports:renderReports,logs:renderLogs};
+  const r = {overview:renderOverview,agents:renderAgents,properties:enterProperties,teams:renderTeamsView,buyers:renderBuyers,commission:renderCommission,sales:renderSales,reports:renderReports,logs:renderLogs};
   if(r[id]) r[id]();
 }
 
@@ -1819,32 +1789,67 @@ async function deleteUnit(id){
 // ══════════════════════════════════════
 // APPROVED AGENTS (real data — pulled from /api/agents, filtered)
 // ══════════════════════════════════════
-async function renderApprovedAgents(){
+// ── TEAMS PAGE ORCHESTRATOR ──
+function renderTeamsView(){
+  const level = document.getElementById('teamsLevel').value;
+  const hint = document.getElementById('teamsHint');
+  const addBtn = document.getElementById('teamsAddBtn');
+  if(level==='unitmanagers'){
+    hint.textContent = 'Unit Managers report directly to Admin.';
+    addBtn.textContent = '+ Add Unit Manager';
+    addBtn.style.display = '';
+    addBtn.onclick = () => openModal('addUMModal');
+    renderUnitManagers();
+  } else if(level==='salesmanagers'){
+    hint.textContent = 'Sales Managers report to a Unit Manager.';
+    addBtn.textContent = '+ Add Sales Manager';
+    addBtn.style.display = '';
+    addBtn.onclick = () => openModal('addSMModal');
+    renderSalesManagers();
+  } else if(level==='teamleaders'){
+    hint.textContent = 'Team Leaders report to a Unit Manager or a Sales Manager.';
+    addBtn.textContent = '+ Add Team Leader';
+    addBtn.style.display = '';
+    addBtn.onclick = () => openModal('addTLModal');
+    renderTeamLeaders();
+  } else {
+    hint.textContent = 'Approved agents, grouped by who they report to.';
+    addBtn.style.display = 'none';
+    renderTeamsAgents();
+  }
+}
+async function renderTeamsAgents(){
   const token = localStorage.getItem('token');
   try {
-    const res = await fetch('/api/agents', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    const allAgents = await res.json();
-    const approved = allAgents.filter(a => a.status === 'approved');
+    await fetchTeamStructureData();
+    const approved = teamAgentsCache; // already filtered to approved in fetchTeamStructureData
 
-    document.getElementById('approvedAgentsBody').innerHTML = approved.map((a) => `
-      <tr>
-        <td class="px-5 py-3 font-medium text-white text-xs">${a.name}</td>
-        <td class="px-5 py-3 text-gray-400 text-xs">${a.email}</td>
-        <td class="px-5 py-3 text-gray-400 text-xs">${a.phone||'—'}</td>
-        <td class="px-5 py-3 font-mono text-xs">${a.agent_id||'—'}</td>
-        <td class="px-5 py-3 text-xs"><span class="badge ${SB[a.status]||'bg-blue'}">${a.status.charAt(0).toUpperCase()+a.status.slice(1)}</span></td>
-        <td class="px-5 py-3 flex gap-2">
-          <button onclick="viewAgent('${a.id}')" class="text-xs text-blue-400 hover:text-blue-300">View</button>
-          <button onclick="agentAction('${a.id}','suspended')" class="text-xs text-purple-400 hover:text-purple-300">Suspend</button>
-        </td>
-      </tr>
-    `).join('') || `<tr><td colspan="6" class="px-5 py-5 text-center text-gray-500 text-xs">No approved agents yet.</td></tr>`;
-
-    document.getElementById('approvedAgentCount').textContent = `${approved.length} approved agent${approved.length===1?'':'s'}`;
+    document.getElementById('teamsGrid').innerHTML = approved.map(a => {
+      let reportsTo = 'Unassigned';
+      if(a.team_leader_id){
+        const tl = tlCache.find(t=>t.id===a.team_leader_id);
+        reportsTo = tl ? `${tl.name} (Team Leader)` : 'Unassigned';
+      } else if(a.unit_manager_id){
+        const um = umCache.find(u=>u.id===a.unit_manager_id);
+        reportsTo = um ? `${um.name} (Unit Manager)` : 'Unassigned';
+      }
+      return `
+      <div class="card p-4">
+        <div class="w-10 h-10 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold mb-2">${a.name[0]}</div>
+        <p class="font-semibold text-white text-sm">${a.name}</p>
+        <p class="text-xs text-gray-500 mb-1">${a.email}</p>
+        <p class="text-xs text-gray-500 mb-3 font-mono">${a.agent_id||'—'}</p>
+        <div class="border-t border-white/8 pt-3 flex items-center justify-between">
+          <p class="text-xs text-gray-500">Reports to: <span class="text-gray-300">${reportsTo}</span></p>
+          <div class="flex gap-2 shrink-0">
+            <button onclick="viewAgent('${a.id}')" class="text-xs text-blue-400 hover:text-blue-300">View</button>
+            <button onclick="agentAction('${a.id}','suspended')" class="text-xs text-purple-400 hover:text-purple-300">Suspend</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No approved agents yet.</p>`;
   } catch(err) {
-    console.error('Error loading approved agents:', err);
+    console.error('Error loading team agents:', err);
   }
 }
 function saveSeller(){
@@ -1907,7 +1912,7 @@ function agentsUnderTLs(tlIds){
 
 async function renderUnitManagers(){
   await fetchTeamStructureData();
-  document.getElementById('umGrid').innerHTML = umCache.map(um => {
+  document.getElementById('teamsGrid').innerHTML = umCache.map(um => {
     const directSM = smCache.filter(sm=>sm.unit_manager_id===um.id);
     const allTL = tlsUnderUM(um.id);
     const directAgents = teamAgentsCache.filter(a=>a.unit_manager_id===um.id && !a.team_leader_id);
@@ -1983,7 +1988,7 @@ async function renderSalesManagers(){
   const umOptions = umCache.map(um=>`<option value="${um.id}">${um.name}</option>`).join('');
   ['smUM','eSMUM'].forEach(id=>document.getElementById(id).innerHTML = `<option value="">— Select Unit Manager —</option>` + umOptions);
 
-  document.getElementById('smGrid').innerHTML = smCache.map(sm => {
+  document.getElementById('teamsGrid').innerHTML = smCache.map(sm => {
     const directTL = tlCache.filter(tl=>tl.sales_manager_id===sm.id);
     const teamAgents = agentsUnderTLs(directTL.map(t=>t.id));
     const um = umCache.find(u=>u.id===sm.unit_manager_id);
@@ -2066,7 +2071,7 @@ async function renderTeamLeaders(){
   ['tlUM','eTLUM'].forEach(id=>document.getElementById(id).innerHTML = `<option value="">— Select Unit Manager —</option>` + umOptions);
   ['tlSM','eTLSM'].forEach(id=>document.getElementById(id).innerHTML = `<option value="">— Select Sales Manager —</option>` + smOptions);
 
-  document.getElementById('tlGrid').innerHTML = tlCache.map(tl => {
+  document.getElementById('teamsGrid').innerHTML = tlCache.map(tl => {
     const directAgents = teamAgentsCache.filter(a=>a.team_leader_id===tl.id);
     const reportsTo = tl.unit_manager_id
       ? (umCache.find(u=>u.id===tl.unit_manager_id)?.name || '—') + ' (Unit Manager)'
