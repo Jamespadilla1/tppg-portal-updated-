@@ -1930,6 +1930,7 @@ async function renderUnitManagers(){
         </div>
         <div class="w-10 h-10 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold mb-2">${um.name[0]}</div>
         <p class="font-semibold text-white text-sm">${um.name}</p>
+        <p class="text-xs text-gray-500 font-mono">${um.um_id||'—'}</p>
         <p class="text-xs text-gray-500 mb-3">${um.email||'No email on file'}</p>
         <div class="grid grid-cols-3 gap-2 text-center border-t border-white/8 pt-3">
           <div><p class="text-sm font-bold text-white">${directSM.length}</p><p class="text-xs text-gray-500">Sales Mgrs</p></div>
@@ -2006,6 +2007,7 @@ async function renderSalesManagers(){
         </div>
         <div class="w-10 h-10 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold mb-2">${sm.name[0]}</div>
         <p class="font-semibold text-white text-sm">${sm.name}</p>
+        <p class="text-xs text-gray-500 font-mono">${sm.sm_id||'—'}</p>
         <p class="text-xs text-gray-500 mb-1">${sm.email||'No email on file'}</p>
         <p class="text-xs text-gray-500 mb-3">Reports to: ${um?um.name:'—'}</p>
         <div class="grid grid-cols-2 gap-2 text-center border-t border-white/8 pt-3">
@@ -2092,6 +2094,7 @@ async function renderTeamLeaders(){
         </div>
         <div class="w-10 h-10 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold mb-2">${tl.name[0]}</div>
         <p class="font-semibold text-white text-sm">${tl.name}</p>
+        <p class="text-xs text-gray-500 font-mono">${tl.tl_id||'—'}</p>
         <p class="text-xs text-gray-500 mb-1">${tl.email||'No email on file'}</p>
         <p class="text-xs text-gray-500 mb-3">Reports to: ${reportsTo}</p>
         <div class="text-center border-t border-white/8 pt-3">

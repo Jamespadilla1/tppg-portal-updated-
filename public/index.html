@@ -172,6 +172,7 @@ window.handleLogin = async () => {
       localStorage.setItem('agentPhone', data.phone || '');
       window.location.href = 'agent-dashboard.html';
     } else {
+      localStorage.setItem('personId', data.personId || '');
       window.location.href = 'team-dashboard.html';
     }
 

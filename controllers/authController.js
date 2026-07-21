@@ -61,7 +61,8 @@ const login = async (req, res) => {
     }
 
     if (role === 'unit_manager' || role === 'sales_manager' || role === 'team_leader') {
-      const tableMap = { unit_manager: 'unit_managers', sales_manager: 'sales_managers', team_leader: 'team_leaders' };
+      const tableMap  = { unit_manager: 'unit_managers', sales_manager: 'sales_managers', team_leader: 'team_leaders' };
+      const idFieldMap = { unit_manager: 'um_id', sales_manager: 'sm_id', team_leader: 'tl_id' };
       const { data: person, error } = await supabase
         .from(tableMap[role])
         .select('*')
@@ -75,10 +76,11 @@ const login = async (req, res) => {
       if (person.status === 'suspended') return res.status(403).json({ message: 'Your account has been suspended.' });
 
       return res.json({
-        token:  generateToken(person.id, role),
+        token:    generateToken(person.id, role),
         role,
-        name:   person.name,
-        email:  person.email,
+        name:     person.name,
+        email:    person.email,
+        personId: person[idFieldMap[role]],
       });
     }
 

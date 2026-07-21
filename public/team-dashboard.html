@@ -116,7 +116,7 @@ const ROLE_LABELS = { unit_manager: 'Unit Manager', sales_manager: 'Sales Manage
 
 document.getElementById('sidebarRoleLabel').textContent = 'TPPG ' + (ROLE_LABELS[role] || '');
 document.getElementById('sidebarName').textContent = name || '—';
-document.getElementById('sidebarRole2').textContent = ROLE_LABELS[role] || '—';
+document.getElementById('sidebarRole2').textContent = (ROLE_LABELS[role] || '—') + (localStorage.getItem('personId') ? ' · ' + localStorage.getItem('personId') : '');
 document.getElementById('sidebarInitials').textContent = (name || '?')[0].toUpperCase();
 document.getElementById('pageTitle').textContent = `${ROLE_LABELS[role]} Dashboard`;
 
