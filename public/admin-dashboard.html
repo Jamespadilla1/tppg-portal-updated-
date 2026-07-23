@@ -32,6 +32,16 @@
 
 .card{background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;transition:border-color .2s}
 .card:hover{border-color:#ea580c66}
+.org-wrap{display:flex;flex-direction:column;align-items:center;padding:20px 0 10px}
+.org-root{opacity:0;transform:translateY(-10px) scale(.95);transition:all .35s ease}
+.org-root.org-in{opacity:1;transform:translateY(0) scale(1)}
+.org-vline{width:2px;height:24px;background:#e5e7eb}
+.org-children-row{display:flex;justify-content:center;gap:28px;position:relative;padding-top:24px;flex-wrap:wrap}
+.org-children-row::before{content:'';position:absolute;top:0;left:8%;right:8%;height:2px;background:#e5e7eb}
+.org-branch{display:flex;flex-direction:column;align-items:center;position:relative;opacity:0;transform:translateY(-8px) scale(.95);transition:all .35s ease}
+.org-branch.org-in{opacity:1;transform:translateY(0) scale(1)}
+.org-branch::before{content:'';position:absolute;top:-24px;width:2px;height:24px;background:#e5e7eb;left:50%;transform:translateX(-50%)}
+.org-node{width:180px}
 
 .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:500}
 .bg-green{background:rgba(34,197,94,.1);color:#16a34a}
@@ -2412,6 +2422,34 @@ function sbCard(opts){
     </div>`;
 }
 
+// Compact node used inside the org chart tree (root + children)
+function sbOrgNode(opts, extraClass){
+  return `
+    <div class="card org-node p-3 ${opts.clickable?'cursor-pointer':''} ${extraClass||''}" ${opts.onclick?`onclick="${opts.onclick}"`:''}>
+      <div class="flex items-center gap-2 mb-1.5">
+        <div class="w-8 h-8 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold text-sm shrink-0">${opts.name[0]}</div>
+        <div class="min-w-0">
+          <p class="font-semibold text-white text-xs truncate">${opts.name}</p>
+          <p class="text-[10px] text-gray-500 font-mono truncate">${opts.roleId||'—'}</p>
+        </div>
+      </div>
+      <span class="badge bg-blue text-[10px] mb-1.5 inline-block">${opts.roleLabel}</span>
+      <div class="grid grid-cols-2 gap-1 text-center border-t border-white/8 pt-1.5">
+        <div><p class="text-[10px] text-gray-500">Personal</p><p class="text-xs font-bold text-white">${peso(opts.personal)}</p></div>
+        <div><p class="text-[10px] text-gray-500">Team</p><p class="text-xs font-bold text-orange-400">${peso(opts.team)}</p></div>
+      </div>
+    </div>`;
+}
+
+// After inserting org-chart HTML, trigger the CSS transition on the next frame
+function sbAnimateOrgIn(){
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.org-root, .org-branch').forEach(el => el.classList.add('org-in'));
+    });
+  });
+}
+
 function sbRenderDrill(){
   const grid = document.getElementById('sbCardGrid');
   const backBtn = document.getElementById('sbBackBtn');
@@ -2420,6 +2458,7 @@ function sbRenderDrill(){
   if(!sbDrillStack.length){
     backBtn.classList.add('hidden');
     titleEl.textContent = 'Unit Managers';
+    grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4';
     grid.innerHTML = umCache.map(um => {
       const directSM = smCache.filter(s=>s.unit_manager_id===um.id);
       const allTL = tlsUnderUM(um.id);
@@ -2439,53 +2478,49 @@ function sbRenderDrill(){
   backBtn.classList.remove('hidden');
   const current = sbDrillStack[sbDrillStack.length-1];
   titleEl.textContent = current.title;
+  grid.className = ''; // org chart controls its own layout now
+
+  let rootOpts, children = [];
 
   if(current.type === 'unit_manager'){
+    const um = umCache.find(u=>u.id===current.id);
     const directSM = smCache.filter(sm=>sm.unit_manager_id===current.id);
     const directTL = tlCache.filter(tl=>tl.unit_manager_id===current.id);
     const directAgents = teamAgentsCache.filter(a=>a.unit_manager_id===current.id && !a.team_leader_id && !a.sales_manager_id);
-    grid.innerHTML = [
-      ...directSM.map(sm => sbCard({
-        name: sm.name, roleId: sm.sm_id, roleLabel: 'Sales Manager',
-        personal: personalSalesValue('sales_manager', sm.id), team: teamSalesOfSM(sm.id),
-        clickable: true, onclick: `sbDrillInto('sales_manager','${sm.id}','${sm.name.replace(/'/g,"\\'")}')`
-      })),
-      ...directTL.map(tl => sbCard({
-        name: tl.name, roleId: tl.tl_id, roleLabel: 'Team Leader',
-        personal: personalSalesValue('team_leader', tl.id), team: teamSalesOfTL(tl.id),
-        clickable: true, onclick: `sbDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')`
-      })),
-      ...directAgents.map(a => sbCard({
-        name: a.name, roleId: a.agent_id, roleLabel: 'Agent',
-        personal: personalSalesValue('agent', a.id), team: personalSalesValue('agent', a.id),
-        clickable: false
-      })),
-    ].join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">Nobody under this Unit Manager yet.</p>`;
-
+    rootOpts = { name: um.name, roleId: um.um_id, roleLabel: 'Unit Manager', personal: personalSalesValue('unit_manager', um.id), team: teamSalesOfUM(um.id) };
+    children = [
+      ...directSM.map(sm => ({ opts: { name: sm.name, roleId: sm.sm_id, roleLabel: 'Sales Manager', personal: personalSalesValue('sales_manager', sm.id), team: teamSalesOfSM(sm.id), clickable: true, onclick: `sbDrillInto('sales_manager','${sm.id}','${sm.name.replace(/'/g,"\\'")}')` } })),
+      ...directTL.map(tl => ({ opts: { name: tl.name, roleId: tl.tl_id, roleLabel: 'Team Leader', personal: personalSalesValue('team_leader', tl.id), team: teamSalesOfTL(tl.id), clickable: true, onclick: `sbDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` } })),
+      ...directAgents.map(a => ({ opts: { name: a.name, roleId: a.agent_id, roleLabel: 'Agent', personal: personalSalesValue('agent', a.id), team: personalSalesValue('agent', a.id), clickable: false } })),
+    ];
   } else if(current.type === 'sales_manager'){
+    const sm = smCache.find(s=>s.id===current.id);
     const directTL = tlCache.filter(tl=>tl.sales_manager_id===current.id);
     const directAgents = teamAgentsCache.filter(a=>a.sales_manager_id===current.id);
-    grid.innerHTML = [
-      ...directTL.map(tl => sbCard({
-        name: tl.name, roleId: tl.tl_id, roleLabel: 'Team Leader',
-        personal: personalSalesValue('team_leader', tl.id), team: teamSalesOfTL(tl.id),
-        clickable: true, onclick: `sbDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')`
-      })),
-      ...directAgents.map(a => sbCard({
-        name: a.name, roleId: a.agent_id, roleLabel: 'Agent',
-        personal: personalSalesValue('agent', a.id), team: personalSalesValue('agent', a.id),
-        clickable: false
-      })),
-    ].join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">Nobody under this Sales Manager yet.</p>`;
-
+    rootOpts = { name: sm.name, roleId: sm.sm_id, roleLabel: 'Sales Manager', personal: personalSalesValue('sales_manager', sm.id), team: teamSalesOfSM(sm.id) };
+    children = [
+      ...directTL.map(tl => ({ opts: { name: tl.name, roleId: tl.tl_id, roleLabel: 'Team Leader', personal: personalSalesValue('team_leader', tl.id), team: teamSalesOfTL(tl.id), clickable: true, onclick: `sbDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` } })),
+      ...directAgents.map(a => ({ opts: { name: a.name, roleId: a.agent_id, roleLabel: 'Agent', personal: personalSalesValue('agent', a.id), team: personalSalesValue('agent', a.id), clickable: false } })),
+    ];
   } else if(current.type === 'team_leader'){
+    const tl = tlCache.find(t=>t.id===current.id);
     const directAgents = teamAgentsCache.filter(a=>a.team_leader_id===current.id);
-    grid.innerHTML = directAgents.map(a => sbCard({
-      name: a.name, roleId: a.agent_id, roleLabel: 'Agent',
-      personal: personalSalesValue('agent', a.id), team: personalSalesValue('agent', a.id),
-      clickable: false
-    })).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No agents recruited by this Team Leader yet.</p>`;
+    rootOpts = { name: tl.name, roleId: tl.tl_id, roleLabel: 'Team Leader', personal: personalSalesValue('team_leader', tl.id), team: teamSalesOfTL(tl.id) };
+    children = directAgents.map(a => ({ opts: { name: a.name, roleId: a.agent_id, roleLabel: 'Agent', personal: personalSalesValue('agent', a.id), team: personalSalesValue('agent', a.id), clickable: false } }));
   }
+
+  grid.innerHTML = `
+    <div class="org-wrap">
+      <div class="org-root">${sbOrgNode(rootOpts)}</div>
+      ${children.length ? `
+        <div class="org-vline"></div>
+        <div class="org-children-row">
+          ${children.map(c => `<div class="org-branch">${sbOrgNode(c.opts)}</div>`).join('')}
+        </div>
+      ` : `<p class="text-center text-gray-500 text-xs py-6">Nobody under this person yet.</p>`}
+    </div>
+  `;
+  sbAnimateOrgIn();
 }
 
 function sbDrillInto(type, id, title){
