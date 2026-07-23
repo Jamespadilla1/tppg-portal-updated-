@@ -234,25 +234,22 @@ tr:hover td{background:rgba(0,0,0,.02)}
         <div class="card p-4"><p class="text-gray-500 text-xs uppercase tracking-wide mb-1">Top Sale</p><p id="sbTopSale" class="text-xl font-bold">—</p></div>
       </div>
 
-      <div class="flex items-center gap-2">
-        <select id="sbLevel" class="field w-52" onchange="renderBuyers()">
-          <option value="agent">Breakdown by Agent</option>
-          <option value="team_leader">Breakdown by Team Leader</option>
-          <option value="sales_manager">Breakdown by Sales Manager</option>
-          <option value="unit_manager">Breakdown by Unit Manager</option>
-        </select>
-      </div>
-      <div class="card overflow-hidden">
-        <div class="px-5 py-3 border-b border-white/8"><h3 class="font-semibold text-sm">Sales Performance</h3></div>
-        <div class="overflow-x-auto"><table class="w-full text-sm">
-          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
-            <th class="text-left px-5 py-2">Name</th><th class="text-left px-5 py-2">ID</th><th class="text-left px-5 py-2">Clients</th><th class="text-left px-5 py-2">Sales Value</th>
-          </tr></thead>
-          <tbody id="sbBreakdownBody" class="divide-y divide-white/6 text-gray-300"></tbody>
-        </table></div>
+      <div class="flex gap-2">
+        <button id="sbTabSalesBtn" onclick="switchSBTab('sales')" class="pf-btn active-pf px-3 py-1.5 rounded-lg text-xs border border-orange-500/50 bg-orange-500/10 text-orange-400">Sales Dashboard</button>
+        <button id="sbTabBuyersBtn" onclick="switchSBTab('buyers')" class="pf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Buyer Dashboard</button>
       </div>
 
-      <div class="card overflow-hidden">
+      <!-- SALES DASHBOARD: drill-down cards -->
+      <div id="sbSalesTab" class="space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <button id="sbBackBtn" onclick="sbGoBack()" class="hidden text-xs text-gray-400 hover:text-white flex items-center gap-1">← Back</button>
+          <h3 class="font-semibold text-sm" id="sbDrillTitle">Unit Managers</h3>
+        </div>
+        <div id="sbCardGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+
+      <!-- BUYER DASHBOARD: flat all-clients list -->
+      <div id="sbBuyersTab" class="hidden card overflow-hidden">
         <div class="px-5 py-3 border-b border-white/8"><h3 class="font-semibold text-sm">All Clients</h3></div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
@@ -1073,15 +1070,18 @@ function refreshAA_forAgent(){
 function refreshAA_TL_forAgent(){
   const umId = document.getElementById('aaAG_UM').value;
   const smId = document.getElementById('aaAG_SM').value;
-  let tlOptions;
+  let tlOptions, noneLabel;
   if(smId){
     tlOptions = aaTLCache.filter(tl=>tl.sales_manager_id===smId);
+    noneLabel = '— None, direct to this Sales Manager —';
   } else if(umId){
     tlOptions = aaTLCache.filter(tl=>tl.unit_manager_id===umId);
+    noneLabel = '— None, direct to this Unit Manager —';
   } else {
     tlOptions = [];
+    noneLabel = '— None —';
   }
-  document.getElementById('aaAG_TL').innerHTML = `<option value="">— None —</option>` + tlOptions.map(tl=>`<option value="${tl.id}">${tl.name}</option>`).join('');
+  document.getElementById('aaAG_TL').innerHTML = `<option value="">${noneLabel}</option>` + tlOptions.map(tl=>`<option value="${tl.id}">${tl.name}</option>`).join('');
 }
 
 async function confirmApproveAssign(){
@@ -1100,9 +1100,11 @@ async function confirmApproveAssign(){
     payload.sales_manager_id = document.getElementById('aaTL_SM').value || '';
   } else if(role==='agent'){
     const tl = document.getElementById('aaAG_TL').value;
+    const sm = document.getElementById('aaAG_SM').value;
     const um = document.getElementById('aaAG_UM').value;
     payload.team_leader_id = tl || '';
-    payload.unit_manager_id = tl ? '' : (um || '');
+    payload.sales_manager_id = tl ? '' : (sm || '');
+    payload.unit_manager_id = (tl || sm) ? '' : (um || '');
   }
   // unit_manager role needs nothing extra
 
@@ -2022,6 +2024,9 @@ function tlsUnderUM(umId){
 function agentsUnderTLs(tlIds){
   return teamAgentsCache.filter(a=>tlIds.includes(a.team_leader_id));
 }
+function agentsUnderSMs(smIds){
+  return teamAgentsCache.filter(a=>smIds.includes(a.sales_manager_id));
+}
 
 function personRow(p, extra){
   return `
@@ -2042,21 +2047,25 @@ function viewTeamDetail(type, id){
     title = `${um.name} — Unit Manager`;
     const directSM = smCache.filter(sm=>sm.unit_manager_id===id);
     const allTL = tlsUnderUM(id);
-    const directAgents = teamAgentsCache.filter(a=>a.unit_manager_id===id && !a.team_leader_id);
-    const teamAgents = agentsUnderTLs(allTL.map(t=>t.id));
+    const directAgents = teamAgentsCache.filter(a=>a.unit_manager_id===id && !a.team_leader_id && !a.sales_manager_id);
+    const teamAgentsViaTL = agentsUnderTLs(allTL.map(t=>t.id));
+    const teamAgentsViaSM = agentsUnderSMs(directSM.map(s=>s.id));
+    const allAgents = [...directAgents, ...teamAgentsViaTL, ...teamAgentsViaSM];
     sections = [
       { label: `Sales Managers (${directSM.length})`, rows: directSM.map(sm=>personRow(sm, sm.sm_id)) },
       { label: `Team Leaders (${allTL.length})`, rows: allTL.map(tl=>personRow(tl, tl.tl_id)) },
-      { label: `Agents (${directAgents.length + teamAgents.length})`, rows: [...directAgents, ...teamAgents].map(a=>personRow(a, a.agent_id)) },
+      { label: `Agents (${allAgents.length})`, rows: allAgents.map(a=>personRow(a, a.agent_id)) },
     ];
   } else if(type==='sales_manager'){
     const sm = smCache.find(s=>s.id===id); if(!sm) return;
     title = `${sm.name} — Sales Manager`;
     const directTL = tlCache.filter(tl=>tl.sales_manager_id===id);
-    const teamAgents = agentsUnderTLs(directTL.map(t=>t.id));
+    const teamAgentsViaTL = agentsUnderTLs(directTL.map(t=>t.id));
+    const directAgents = teamAgentsCache.filter(a=>a.sales_manager_id===id);
+    const allAgents = [...directAgents, ...teamAgentsViaTL];
     sections = [
       { label: `Team Leaders (${directTL.length})`, rows: directTL.map(tl=>personRow(tl, tl.tl_id)) },
-      { label: `Agents (${teamAgents.length})`, rows: teamAgents.map(a=>personRow(a, a.agent_id)) },
+      { label: `Agents (${allAgents.length})`, rows: allAgents.map(a=>personRow(a, a.agent_id)) },
     ];
   } else if(type==='team_leader'){
     const tl = tlCache.find(t=>t.id===id); if(!tl) return;
@@ -2084,9 +2093,10 @@ async function renderUnitManagers(){
   document.getElementById('teamsGrid').innerHTML = umCache.map(um => {
     const directSM = smCache.filter(sm=>sm.unit_manager_id===um.id);
     const allTL = tlsUnderUM(um.id);
-    const directAgents = teamAgentsCache.filter(a=>a.unit_manager_id===um.id && !a.team_leader_id);
-    const teamAgents = agentsUnderTLs(allTL.map(t=>t.id));
-    const totalAgents = directAgents.length + teamAgents.length;
+    const directAgents = teamAgentsCache.filter(a=>a.unit_manager_id===um.id && !a.team_leader_id && !a.sales_manager_id);
+    const teamAgentsViaTL = agentsUnderTLs(allTL.map(t=>t.id));
+    const teamAgentsViaSM = agentsUnderSMs(directSM.map(s=>s.id));
+    const totalAgents = directAgents.length + teamAgentsViaTL.length + teamAgentsViaSM.length;
     return `
       <div class="card p-4 relative cursor-pointer" onclick="viewTeamDetail('unit_manager','${um.id}')">
         <button onclick="event.stopPropagation();toggleGenMenu('um-${um.id}')" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full hover:bg-black/5 text-gray-400 text-xs flex items-center justify-center">⋯</button>
@@ -2162,7 +2172,9 @@ async function renderSalesManagers(){
 
   document.getElementById('teamsGrid').innerHTML = smCache.map(sm => {
     const directTL = tlCache.filter(tl=>tl.sales_manager_id===sm.id);
-    const teamAgents = agentsUnderTLs(directTL.map(t=>t.id));
+    const teamAgentsViaTL = agentsUnderTLs(directTL.map(t=>t.id));
+    const directAgents = teamAgentsCache.filter(a=>a.sales_manager_id===sm.id);
+    const teamAgents = [...teamAgentsViaTL, ...directAgents];
     const um = umCache.find(u=>u.id===sm.unit_manager_id);
     return `
       <div class="card p-4 relative cursor-pointer" onclick="viewTeamDetail('sales_manager','${sm.id}')">
@@ -2343,6 +2355,148 @@ document.addEventListener('click', closeGenMenus);
 
 let sbBuyersCache=[], sbUnitsCache=[];
 
+let sbDrillStack = []; // {type:'unit_manager'|'sales_manager'|'team_leader', id, title}
+let sbCurrentTab = 'sales';
+
+function switchSBTab(tab){
+  sbCurrentTab = tab;
+  document.getElementById('sbSalesTab').classList.toggle('hidden', tab!=='sales');
+  document.getElementById('sbBuyersTab').classList.toggle('hidden', tab!=='buyers');
+  document.querySelectorAll('#sbTabSalesBtn,#sbTabBuyersBtn').forEach(b=>{
+    b.classList.remove('active-pf','border-orange-500/50','bg-orange-500/10','text-orange-400');
+    b.classList.add('border-white/10','text-gray-400');
+  });
+  const activeBtn = tab==='sales' ? document.getElementById('sbTabSalesBtn') : document.getElementById('sbTabBuyersBtn');
+  activeBtn.classList.add('active-pf','border-orange-500/50','bg-orange-500/10','text-orange-400');
+  activeBtn.classList.remove('border-white/10','text-gray-400');
+}
+
+function personalSalesValue(role, id){
+  return sbBuyersCache.filter(b=>b.input_by_role===role && b.input_by_id===id)
+    .reduce((s,b)=>{ const u = sbUnitsCache.find(x=>x.id===b.unit_id); return s + (u? Number(u.tcp)||0 : 0); }, 0);
+}
+function personalClientCount(role, id){
+  return sbBuyersCache.filter(b=>b.input_by_role===role && b.input_by_id===id).length;
+}
+function teamSalesOfAgent(agentId){ return personalSalesValue('agent', agentId); }
+function teamSalesOfTL(tlId){
+  const agents = teamAgentsCache.filter(a=>a.team_leader_id===tlId);
+  return personalSalesValue('team_leader', tlId) + agents.reduce((s,a)=>s+teamSalesOfAgent(a.id),0);
+}
+function teamSalesOfSM(smId){
+  const tls = tlCache.filter(t=>t.sales_manager_id===smId);
+  const directAgents = teamAgentsCache.filter(a=>a.sales_manager_id===smId);
+  return personalSalesValue('sales_manager', smId) + tls.reduce((s,t)=>s+teamSalesOfTL(t.id),0) + directAgents.reduce((s,a)=>s+teamSalesOfAgent(a.id),0);
+}
+function teamSalesOfUM(umId){
+  const sms = smCache.filter(s=>s.unit_manager_id===umId);
+  const directTLs = tlCache.filter(t=>t.unit_manager_id===umId);
+  const directAgents = teamAgentsCache.filter(a=>a.unit_manager_id===umId && !a.team_leader_id && !a.sales_manager_id);
+  return personalSalesValue('unit_manager', umId) + sms.reduce((s,x)=>s+teamSalesOfSM(x.id),0) + directTLs.reduce((s,t)=>s+teamSalesOfTL(t.id),0) + directAgents.reduce((s,a)=>s+teamSalesOfAgent(a.id),0);
+}
+
+function sbCard(opts){
+  return `
+    <div class="card p-4 ${opts.clickable?'cursor-pointer':''}" ${opts.onclick?`onclick="${opts.onclick}"`:''}>
+      <div class="flex items-start justify-between gap-2 mb-2">
+        <div class="w-9 h-9 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold">${opts.name[0]}</div>
+        <span class="badge bg-blue text-xs">${opts.roleLabel}</span>
+      </div>
+      <p class="font-semibold text-white text-sm">${opts.name}</p>
+      <p class="text-xs text-gray-500 font-mono mb-3">${opts.roleId||'—'}</p>
+      <div class="grid grid-cols-2 gap-2 text-center border-t border-white/8 pt-3">
+        <div><p class="text-xs text-gray-500">Personal Sales</p><p class="text-sm font-bold text-white">${peso(opts.personal)}</p></div>
+        <div><p class="text-xs text-gray-500">Team Sales</p><p class="text-sm font-bold text-orange-400">${peso(opts.team)}</p></div>
+      </div>
+      ${opts.subLabel ? `<p class="text-xs text-gray-500 mt-2 text-center">${opts.subLabel}</p>` : ''}
+    </div>`;
+}
+
+function sbRenderDrill(){
+  const grid = document.getElementById('sbCardGrid');
+  const backBtn = document.getElementById('sbBackBtn');
+  const titleEl = document.getElementById('sbDrillTitle');
+
+  if(!sbDrillStack.length){
+    backBtn.classList.add('hidden');
+    titleEl.textContent = 'Unit Managers';
+    grid.innerHTML = umCache.map(um => {
+      const directSM = smCache.filter(s=>s.unit_manager_id===um.id);
+      const allTL = tlsUnderUM(um.id);
+      const directAgents = teamAgentsCache.filter(a=>a.unit_manager_id===um.id && !a.team_leader_id && !a.sales_manager_id);
+      const agCount = directAgents.length + agentsUnderTLs(allTL.map(t=>t.id)).length + agentsUnderSMs(directSM.map(s=>s.id)).length;
+      return sbCard({
+        name: um.name, roleId: um.um_id, roleLabel: 'Unit Manager',
+        personal: personalSalesValue('unit_manager', um.id),
+        team: teamSalesOfUM(um.id),
+        subLabel: `${directSM.length} Sales Mgrs · ${allTL.length} Team Leads · ${agCount} Agents`,
+        clickable: true, onclick: `sbDrillInto('unit_manager','${um.id}','${um.name.replace(/'/g,"\\'")}')`
+      });
+    }).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No Unit Managers yet.</p>`;
+    return;
+  }
+
+  backBtn.classList.remove('hidden');
+  const current = sbDrillStack[sbDrillStack.length-1];
+  titleEl.textContent = current.title;
+
+  if(current.type === 'unit_manager'){
+    const directSM = smCache.filter(sm=>sm.unit_manager_id===current.id);
+    const directTL = tlCache.filter(tl=>tl.unit_manager_id===current.id);
+    const directAgents = teamAgentsCache.filter(a=>a.unit_manager_id===current.id && !a.team_leader_id && !a.sales_manager_id);
+    grid.innerHTML = [
+      ...directSM.map(sm => sbCard({
+        name: sm.name, roleId: sm.sm_id, roleLabel: 'Sales Manager',
+        personal: personalSalesValue('sales_manager', sm.id), team: teamSalesOfSM(sm.id),
+        clickable: true, onclick: `sbDrillInto('sales_manager','${sm.id}','${sm.name.replace(/'/g,"\\'")}')`
+      })),
+      ...directTL.map(tl => sbCard({
+        name: tl.name, roleId: tl.tl_id, roleLabel: 'Team Leader',
+        personal: personalSalesValue('team_leader', tl.id), team: teamSalesOfTL(tl.id),
+        clickable: true, onclick: `sbDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')`
+      })),
+      ...directAgents.map(a => sbCard({
+        name: a.name, roleId: a.agent_id, roleLabel: 'Agent',
+        personal: personalSalesValue('agent', a.id), team: personalSalesValue('agent', a.id),
+        clickable: false
+      })),
+    ].join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">Nobody under this Unit Manager yet.</p>`;
+
+  } else if(current.type === 'sales_manager'){
+    const directTL = tlCache.filter(tl=>tl.sales_manager_id===current.id);
+    const directAgents = teamAgentsCache.filter(a=>a.sales_manager_id===current.id);
+    grid.innerHTML = [
+      ...directTL.map(tl => sbCard({
+        name: tl.name, roleId: tl.tl_id, roleLabel: 'Team Leader',
+        personal: personalSalesValue('team_leader', tl.id), team: teamSalesOfTL(tl.id),
+        clickable: true, onclick: `sbDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')`
+      })),
+      ...directAgents.map(a => sbCard({
+        name: a.name, roleId: a.agent_id, roleLabel: 'Agent',
+        personal: personalSalesValue('agent', a.id), team: personalSalesValue('agent', a.id),
+        clickable: false
+      })),
+    ].join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">Nobody under this Sales Manager yet.</p>`;
+
+  } else if(current.type === 'team_leader'){
+    const directAgents = teamAgentsCache.filter(a=>a.team_leader_id===current.id);
+    grid.innerHTML = directAgents.map(a => sbCard({
+      name: a.name, roleId: a.agent_id, roleLabel: 'Agent',
+      personal: personalSalesValue('agent', a.id), team: personalSalesValue('agent', a.id),
+      clickable: false
+    })).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No agents recruited by this Team Leader yet.</p>`;
+  }
+}
+
+function sbDrillInto(type, id, title){
+  sbDrillStack.push({ type, id, title });
+  sbRenderDrill();
+}
+function sbGoBack(){
+  sbDrillStack.pop();
+  sbRenderDrill();
+}
+
 async function renderBuyers(){
   const token = localStorage.getItem('token');
   try {
@@ -2371,7 +2525,7 @@ async function renderBuyers(){
     }
     const ROLE_LABEL = { agent:'Agent', team_leader:'Team Leader', sales_manager:'Sales Manager', unit_manager:'Unit Manager' };
 
-    // Raw client list
+    // Raw client list (Buyer Dashboard tab)
     document.getElementById('buyersBody').innerHTML = withUnit.map(b => {
       const person = b.input_by_role ? resolvePerson(b.input_by_role, b.input_by_id) : null;
       const addedBy = person ? `${person.name} (${ROLE_LABEL[b.input_by_role]})` : '—';
@@ -2386,29 +2540,9 @@ async function renderBuyers(){
       </tr>`;
     }).join('') || `<tr><td colspan="6" class="px-5 py-5 text-center text-gray-500 text-xs">No clients yet.</td></tr>`;
 
-    // Breakdown by selected level
-    const level = document.getElementById('sbLevel').value;
-    const byPerson = {};
-    withUnit.forEach(b => {
-      if(b.input_by_role !== level) return;
-      if(!byPerson[b.input_by_id]) byPerson[b.input_by_id] = { count:0, value:0 };
-      byPerson[b.input_by_id].count++;
-      byPerson[b.input_by_id].value += b.unit ? Number(b.unit.tcp)||0 : 0;
-    });
-    const levelListMap = { agent: teamAgentsCache, team_leader: tlCache, sales_manager: smCache, unit_manager: umCache };
-    const idFieldMap2 = { agent: 'agent_id', team_leader: 'tl_id', sales_manager: 'sm_id', unit_manager: 'um_id' };
-    const levelList = levelListMap[level] || [];
-
-    document.getElementById('sbBreakdownBody').innerHTML = levelList.map(p => {
-      const stats = byPerson[p.id] || { count:0, value:0 };
-      return `
-      <tr>
-        <td class="px-5 py-3 font-medium text-white text-xs">${p.name}</td>
-        <td class="px-5 py-3 font-mono text-xs text-gray-400">${p[idFieldMap2[level]]||'—'}</td>
-        <td class="px-5 py-3 text-xs">${stats.count}</td>
-        <td class="px-5 py-3 text-orange-400 text-xs">${peso(stats.value)}</td>
-      </tr>`;
-    }).join('') || `<tr><td colspan="4" class="px-5 py-5 text-center text-gray-500 text-xs">No ${level.replace('_',' ')}s yet.</td></tr>`;
+    // Sales Dashboard tab (card drill-down)
+    sbDrillStack = [];
+    sbRenderDrill();
 
   } catch(err) {
     console.error('Error loading sales & buyers:', err);

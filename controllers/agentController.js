@@ -5,7 +5,7 @@ const getAgents = async (req, res) => {
   try {
     const { data: agents, error } = await supabase
       .from('agents')
-      .select('id, agent_id, name, email, phone, status, id_front, id_back, team_leader_id, unit_manager_id, created_at, updated_at');
+      .select('id, agent_id, name, email, phone, status, id_front, id_back, team_leader_id, sales_manager_id, unit_manager_id, created_at, updated_at');
 
     if (error) throw error;
     res.json(agents);
@@ -33,7 +33,7 @@ const updateStatus = async (req, res) => {
       .from('agents')
       .update(updateData)
       .eq('id', req.params.id)
-      .select('id, agent_id, name, email, phone, status, team_leader_id, unit_manager_id, created_at, updated_at')
+      .select('id, agent_id, name, email, phone, status, team_leader_id, sales_manager_id, unit_manager_id, created_at, updated_at')
       .single();
 
     if (error) throw error;
@@ -79,11 +79,13 @@ const promoteAgent = async (req, res) => {
 
     // Approving as a plain Agent — same as before, just update status + assignment
     if (target_role === 'agent') {
+      const { sales_manager_id } = req.body;
       const updateData = {
         status: 'approved',
         updated_at: new Date(),
         team_leader_id: team_leader_id || null,
-        unit_manager_id: team_leader_id ? null : (unit_manager_id || null),
+        sales_manager_id: team_leader_id ? null : (sales_manager_id || null),
+        unit_manager_id: (team_leader_id || sales_manager_id) ? null : (unit_manager_id || null),
       };
       const { data: agent, error } = await supabase
         .from('agents')

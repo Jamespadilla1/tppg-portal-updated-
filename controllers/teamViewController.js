@@ -23,16 +23,16 @@ const getMyTeam = async (req, res) => {
       if (tlErr) throw tlErr;
 
       const tlIds = teamLeaders.map(t => t.id);
-      let agents = [];
-      if (tlIds.length) {
-        const { data, error } = await supabase
-          .from('agents')
-          .select('id, name, email, phone, agent_id, status, team_leader_id, created_at')
-          .in('team_leader_id', tlIds)
-          .eq('status', 'approved');
-        if (error) throw error;
-        agents = data;
-      }
+      const orFilters = [`sales_manager_id.eq.${id}`];
+      if (tlIds.length) orFilters.push(`team_leader_id.in.(${tlIds.join(',')})`);
+
+      const { data: agents, error } = await supabase
+        .from('agents')
+        .select('id, name, email, phone, agent_id, status, team_leader_id, sales_manager_id, created_at')
+        .or(orFilters.join(','))
+        .eq('status', 'approved');
+      if (error) throw error;
+
       return res.json({ salesManagers: [], teamLeaders, agents });
     }
 
@@ -64,17 +64,16 @@ const getMyTeam = async (req, res) => {
       const teamLeaders = [...directTL, ...indirectTL];
       const tlIds = teamLeaders.map(t => t.id);
 
-      let agents = [];
-      const orFilters = [];
+      const orFilters = [`unit_manager_id.eq.${id}`];
       if (tlIds.length) orFilters.push(`team_leader_id.in.(${tlIds.join(',')})`);
-      orFilters.push(`unit_manager_id.eq.${id}`);
-      const { data, error } = await supabase
+      if (smIds.length) orFilters.push(`sales_manager_id.in.(${smIds.join(',')})`);
+
+      const { data: agents, error } = await supabase
         .from('agents')
-        .select('id, name, email, phone, agent_id, status, team_leader_id, unit_manager_id, created_at')
+        .select('id, name, email, phone, agent_id, status, team_leader_id, sales_manager_id, unit_manager_id, created_at')
         .or(orFilters.join(','))
         .eq('status', 'approved');
       if (error) throw error;
-      agents = data;
 
       return res.json({ salesManagers, teamLeaders, agents });
     }
