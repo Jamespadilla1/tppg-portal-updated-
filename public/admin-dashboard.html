@@ -265,7 +265,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
         <div class="px-5 py-3 border-b border-white/8"><h3 class="font-semibold text-sm">All Clients</h3></div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
-            <th class="text-left px-5 py-2">Client Name</th><th class="text-left px-5 py-2">Contact</th><th class="text-left px-5 py-2">Unit Purchased</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Added By</th><th class="text-left px-5 py-2">Actions</th>
+            <th class="text-left px-5 py-2">Client Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Developer</th><th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Type</th><th class="text-left px-5 py-2">Unit</th><th class="text-left px-5 py-2">Bedrooms</th><th class="text-left px-5 py-2">Furnishing</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Added By</th><th class="text-left px-5 py-2">Reports To</th><th class="text-left px-5 py-2">Actions</th>
           </tr></thead>
           <tbody id="buyersBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
@@ -2581,15 +2581,24 @@ function sbGoBack(){
 async function renderBuyers(){
   const token = localStorage.getItem('token');
   try {
-    const [buyersRes, unitsRes] = await Promise.all([
+    const [buyersRes, unitsRes, propsRes, devsRes] = await Promise.all([
       fetch('/api/buyers', { headers: { 'Authorization': 'Bearer ' + token } }),
       fetch('/api/units',  { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch('/api/properties', { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch('/api/developers', { headers: { 'Authorization': 'Bearer ' + token } }),
     ]);
     sbBuyersCache = await buyersRes.json();
     sbUnitsCache  = await unitsRes.json();
+    const sbPropsCache = await propsRes.json();
+    const sbDevsCache  = await devsRes.json();
     await fetchTeamStructureData(); // loads umCache, smCache, tlCache, teamAgentsCache
 
-    const withUnit = sbBuyersCache.map(b => ({ ...b, unit: sbUnitsCache.find(u=>u.id===b.unit_id) }));
+    const withUnit = sbBuyersCache.map(b => {
+      const unit = sbUnitsCache.find(u=>u.id===b.unit_id);
+      const property = unit ? sbPropsCache.find(p=>p.id===unit.property_id) : null;
+      const developer = property ? sbDevsCache.find(d=>d.id===property.developer_id) : null;
+      return { ...b, unit, property, developer };
+    });
     const totalValue = withUnit.reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
     const best = withUnit.length ? withUnit.reduce((a,b)=> (b.unit && (!a.unit || Number(b.unit.tcp)>Number(a.unit.tcp))) ? b : a) : null;
 
@@ -2606,20 +2615,55 @@ async function renderBuyers(){
     }
     const ROLE_LABEL = { agent:'Agent', team_leader:'Team Leader', sales_manager:'Sales Manager', unit_manager:'Unit Manager' };
 
+    // Who does this person (role/id) directly report to?
+    function resolveReportsTo(role, id){
+      if(role === 'agent'){
+        const a = teamAgentsCache.find(x=>x.id===id);
+        if(!a) return '—';
+        if(a.team_leader_id){ const tl = tlCache.find(t=>t.id===a.team_leader_id); return tl ? `${tl.name} (Team Leader)` : '—'; }
+        if(a.sales_manager_id){ const sm = smCache.find(s=>s.id===a.sales_manager_id); return sm ? `${sm.name} (Sales Manager)` : '—'; }
+        if(a.unit_manager_id){ const um = umCache.find(u=>u.id===a.unit_manager_id); return um ? `${um.name} (Unit Manager)` : '—'; }
+        return 'Unassigned';
+      }
+      if(role === 'team_leader'){
+        const tl = tlCache.find(x=>x.id===id);
+        if(!tl) return '—';
+        if(tl.sales_manager_id){ const sm = smCache.find(s=>s.id===tl.sales_manager_id); return sm ? `${sm.name} (Sales Manager)` : '—'; }
+        if(tl.unit_manager_id){ const um = umCache.find(u=>u.id===tl.unit_manager_id); return um ? `${um.name} (Unit Manager)` : '—'; }
+        return 'Unassigned';
+      }
+      if(role === 'sales_manager'){
+        const sm = smCache.find(x=>x.id===id);
+        if(!sm) return '—';
+        if(sm.unit_manager_id){ const um = umCache.find(u=>u.id===sm.unit_manager_id); return um ? `${um.name} (Unit Manager)` : '—'; }
+        return 'Solo (no Unit Manager)';
+      }
+      if(role === 'unit_manager') return 'Admin';
+      return '—';
+    }
+
     // Raw client list (Buyer Dashboard tab)
     document.getElementById('buyersBody').innerHTML = withUnit.map(b => {
       const person = b.input_by_role ? resolvePerson(b.input_by_role, b.input_by_id) : null;
       const addedBy = person ? `${person.name} (${ROLE_LABEL[b.input_by_role]})` : '—';
+      const reportsTo = b.input_by_role ? resolveReportsTo(b.input_by_role, b.input_by_id) : '—';
       return `
       <tr>
         <td class="px-5 py-3 font-medium text-white text-xs">${b.name}</td>
-        <td class="px-5 py-3 text-gray-400 text-xs">${b.email||''} ${b.phone?'· '+b.phone:''}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${b.email||'—'}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${b.phone||'—'}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${b.developer ? b.developer.name : '—'}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${b.property ? b.property.name : '—'}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${b.property ? b.property.property_type : '—'}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${b.unit ? b.unit.unit_name : '—'}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${b.unit ? (b.unit.bedrooms ?? '—') : '—'}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${b.unit ? (b.unit.furnishing||'—') : '—'}</td>
         <td class="px-5 py-3 text-orange-400 text-xs">${b.unit ? peso(b.unit.tcp) : '—'}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${addedBy}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${reportsTo}</td>
         <td class="px-5 py-3"><button onclick="deleteBuyerAdmin('${b.id}')" class="text-xs text-red-400 hover:text-red-300">Delete</button></td>
       </tr>`;
-    }).join('') || `<tr><td colspan="6" class="px-5 py-5 text-center text-gray-500 text-xs">No clients yet.</td></tr>`;
+    }).join('') || `<tr><td colspan="13" class="px-5 py-5 text-center text-gray-500 text-xs">No clients yet.</td></tr>`;
 
     // Sales Dashboard tab (card drill-down)
     sbDrillStack = [];

@@ -163,7 +163,7 @@
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase tracking-wide border-b border-white/8">
-            <th class="text-left px-4 py-3">Client Name</th><th class="text-left px-4 py-3">Contact</th><th class="text-left px-4 py-3">Unit Purchased</th><th class="text-left px-4 py-3">TCP</th>
+            <th class="text-left px-4 py-3">Client Name</th><th class="text-left px-4 py-3">Email</th><th class="text-left px-4 py-3">Phone</th><th class="text-left px-4 py-3">Developer</th><th class="text-left px-4 py-3">Property</th><th class="text-left px-4 py-3">Type</th><th class="text-left px-4 py-3">Unit</th><th class="text-left px-4 py-3">Bedrooms</th><th class="text-left px-4 py-3">Furnishing</th><th class="text-left px-4 py-3">TCP</th><th class="text-left px-4 py-3">Added By</th><th class="text-left px-4 py-3">Reports To</th>
           </tr></thead>
           <tbody id="salesBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
@@ -346,14 +346,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function renderSales() {
     try {
-      const [buyersRes, unitsRes] = await Promise.all([
+      const [buyersRes, unitsRes, propsRes, devsRes, tlRes, smRes, umRes] = await Promise.all([
         fetch('/api/buyers', { headers: { 'Authorization': 'Bearer ' + token } }),
         fetch('/api/units',  { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch('/api/properties', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch('/api/developers', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch('/api/team-leaders', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch('/api/sales-managers', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch('/api/unit-managers', { headers: { 'Authorization': 'Bearer ' + token } }),
       ]);
       const buyers = await buyersRes.json();
       myUnitsCache = await unitsRes.json();
+      const propsCache = await propsRes.json();
+      const devsCache  = await devsRes.json();
+      const tlCache = await tlRes.json();
+      const smCache = await smRes.json();
+      const umCache = await umRes.json();
 
-      const withUnit = buyers.map(b => ({ ...b, unit: myUnitsCache.find(u=>u.id===b.unit_id) }));
+      // Resolve who this agent reports to (Team Leader > Sales Manager > Unit Manager)
+      let reportsTo = 'Unassigned';
+      const myTLId = localStorage.getItem('teamLeaderId');
+      const mySMId = localStorage.getItem('salesManagerId');
+      const myUMId = localStorage.getItem('unitManagerId');
+      if(myTLId){ const tl = tlCache.find(t=>t.id===myTLId); if(tl) reportsTo = `${tl.name} (Team Leader)`; }
+      else if(mySMId){ const sm = smCache.find(s=>s.id===mySMId); if(sm) reportsTo = `${sm.name} (Sales Manager)`; }
+      else if(myUMId){ const um = umCache.find(u=>u.id===myUMId); if(um) reportsTo = `${um.name} (Unit Manager)`; }
+
+      const withUnit = buyers.map(b => {
+        const unit = myUnitsCache.find(u=>u.id===b.unit_id);
+        const property = unit ? propsCache.find(p=>p.id===unit.property_id) : null;
+        const developer = property ? devsCache.find(d=>d.id===property.developer_id) : null;
+        return { ...b, unit, property, developer };
+      });
       const totalValue = withUnit.reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
       const best = withUnit.length ? withUnit.reduce((a,b)=> (b.unit && (!a.unit || Number(b.unit.tcp)>Number(a.unit.tcp))) ? b : a) : null;
 
@@ -364,10 +388,18 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('salesBody').innerHTML = withUnit.map(b => `
         <tr>
           <td class="px-4 py-4 font-medium text-white">${b.name}</td>
-          <td class="px-4 py-4 text-gray-400">${b.email||''} ${b.phone?'· '+b.phone:''}</td>
-          <td class="px-4 py-4">${b.unit ? b.unit.unit_name : '—'}</td>
+          <td class="px-4 py-4 text-gray-400">${b.email||'—'}</td>
+          <td class="px-4 py-4 text-gray-400">${b.phone||'—'}</td>
+          <td class="px-4 py-4 text-gray-400">${b.developer ? b.developer.name : '—'}</td>
+          <td class="px-4 py-4 text-gray-400">${b.property ? b.property.name : '—'}</td>
+          <td class="px-4 py-4 text-gray-400">${b.property ? b.property.property_type : '—'}</td>
+          <td class="px-4 py-4 text-gray-400">${b.unit ? b.unit.unit_name : '—'}</td>
+          <td class="px-4 py-4 text-gray-400">${b.unit ? (b.unit.bedrooms ?? '—') : '—'}</td>
+          <td class="px-4 py-4 text-gray-400">${b.unit ? (b.unit.furnishing||'—') : '—'}</td>
           <td class="px-4 py-4 text-orange-400">${b.unit ? peso(b.unit.tcp) : '—'}</td>
-        </tr>`).join('') || `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500 text-sm">No clients added yet.</td></tr>`;
+          <td class="px-4 py-4 text-gray-400">${agentName} (Agent)</td>
+          <td class="px-4 py-4 text-gray-400">${reportsTo}</td>
+        </tr>`).join('') || `<tr><td colspan="12" class="px-4 py-6 text-center text-gray-500 text-sm">No clients added yet.</td></tr>`;
 
       document.getElementById('bUnit').innerHTML = `<option value="">— None selected —</option>` +
         myUnitsCache.map(u=>`<option value="${u.id}">${u.unit_name} (${peso(u.tcp)})</option>`).join('');

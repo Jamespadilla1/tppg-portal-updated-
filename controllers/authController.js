@@ -57,6 +57,9 @@ const login = async (req, res) => {
         email:   agent.email,
         agentId: agent.agent_id,
         phone:   agent.phone,
+        teamLeaderId:  agent.team_leader_id  || '',
+        salesManagerId: agent.sales_manager_id || '',
+        unitManagerId: agent.unit_manager_id || '',
       });
     }
 
@@ -83,6 +86,8 @@ const login = async (req, res) => {
         name:     person.name,
         email:    person.email,
         personId: person[idFieldMap[role]],
+        unitManagerId: person.unit_manager_id || '',
+        salesManagerId: person.sales_manager_id || '',
       });
     }
 

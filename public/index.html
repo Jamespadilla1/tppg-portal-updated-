@@ -174,9 +174,14 @@ window.handleLogin = async () => {
     } else if (data.role === 'agent') {
       localStorage.setItem('agentId',    data.agentId);
       localStorage.setItem('agentPhone', data.phone || '');
+      localStorage.setItem('teamLeaderId', data.teamLeaderId || '');
+      localStorage.setItem('salesManagerId', data.salesManagerId || '');
+      localStorage.setItem('unitManagerId', data.unitManagerId || '');
       window.location.href = 'agent-dashboard.html';
     } else {
       localStorage.setItem('personId', data.personId || '');
+      localStorage.setItem('unitManagerId', data.unitManagerId || '');
+      localStorage.setItem('salesManagerId', data.salesManagerId || '');
       window.location.href = 'team-dashboard.html';
     }
 
