@@ -36,6 +36,9 @@
   .badge-blue{background:rgba(59,130,246,.1);color:#2563eb}
   .section{display:none}.section.active{display:block}
   .field{width:100%;padding:10px 13px;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;color:#111827;font-size:.875rem;outline:none;transition:border-color .15s}
+  .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(17,24,39,.4);z-index:50;align-items:center;justify-content:center;padding:1rem}
+  .modal-backdrop.open{display:flex}
+  .modal-box{background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;width:100%;max-width:480px;padding:28px;position:relative;max-height:92vh;overflow-y:auto;color:#111827}
   .field:focus{border-color:#f97316}
   .field::placeholder{color:#9ca3af}
   tr:hover td{background:rgba(0,0,0,.02)}
@@ -57,7 +60,7 @@
     <div class="nav-link active"  onclick="showSection('overview',  this)"><span class="dot"></span> Dashboard</div>
     <div class="nav-link"         onclick="showSection('properties',this)"><span class="dot"></span> Properties</div>
     <div class="nav-link"         onclick="showSection('commission',this)"><span class="dot"></span> Commission</div>
-    <div class="nav-link"         onclick="showSection('sales',     this)"><span class="dot"></span> Sales Performance</div>
+    <div class="nav-link"         onclick="showSection('sales',     this)"><span class="dot"></span> My Sales & Clients</div>
     <div class="nav-link"         onclick="showSection('compute',   this)"><span class="dot"></span> Computation Tool</div>
     <div class="nav-link"         onclick="showSection('profile',   this)"><span class="dot"></span> My Profile</div>
   </nav>
@@ -149,18 +152,38 @@
     <!-- SALES PERFORMANCE -->
     <div id="sec-sales" class="section space-y-5">
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="card p-5"><p class="text-gray-400 text-xs uppercase tracking-wide mb-2">Total Sales</p><p id="salesCount" class="text-3xl font-bold">0</p></div>
-        <div class="card p-5"><p class="text-gray-400 text-xs uppercase tracking-wide mb-2">Total Revenue</p><p id="salesRev" class="text-3xl font-bold text-orange-400">₱0</p></div>
-        <div class="card p-5"><p class="text-gray-400 text-xs uppercase tracking-wide mb-2">Best Property</p><p id="salesBest" class="text-xl font-bold text-white">—</p></div>
+        <div class="card p-5"><p class="text-gray-400 text-xs uppercase tracking-wide mb-2">Total Clients</p><p id="salesCount" class="text-3xl font-bold">0</p></div>
+        <div class="card p-5"><p class="text-gray-400 text-xs uppercase tracking-wide mb-2">Total Sales Value</p><p id="salesRev" class="text-3xl font-bold text-orange-400">₱0</p></div>
+        <div class="card p-5"><p class="text-gray-400 text-xs uppercase tracking-wide mb-2">Top Sale</p><p id="salesBest" class="text-xl font-bold text-white">—</p></div>
       </div>
       <div class="card p-6">
-        <h3 class="font-semibold mb-4">Sold Properties</h3>
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold">My Clients</h3>
+          <button onclick="openModal('addBuyerModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Client</button>
+        </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase tracking-wide border-b border-white/8">
-            <th class="text-left px-4 py-3">Property</th><th class="text-left px-4 py-3">Location</th><th class="text-left px-4 py-3">Price</th><th class="text-left px-4 py-3">Commission</th>
+            <th class="text-left px-4 py-3">Client Name</th><th class="text-left px-4 py-3">Contact</th><th class="text-left px-4 py-3">Unit Purchased</th><th class="text-left px-4 py-3">TCP</th>
           </tr></thead>
           <tbody id="salesBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
+      </div>
+    </div>
+
+    <!-- ADD BUYER -->
+    <div id="addBuyerModal" class="modal-backdrop">
+      <div class="modal-box">
+        <button onclick="closeModal('addBuyerModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+        <h3 class="font-bold text-lg mb-4">Add Client</h3>
+        <div class="space-y-3">
+          <div><label class="text-xs text-gray-400 mb-1 block">Full Name *</label><input id="bName" type="text" class="field"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="bEmail" type="email" class="field"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="bPhone" type="text" class="field"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Address</label><input id="bAddr" type="text" class="field"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Unit Purchased</label><select id="bUnit" class="field"><option value="">— None selected —</option></select></div>
+          <p id="bErr" class="text-red-400 text-xs hidden">Name is required.</p>
+          <button onclick="saveBuyer()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Client</button>
+        </div>
       </div>
     </div>
 
@@ -234,9 +257,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const peso = n => '₱' + Number(n).toLocaleString('en-PH', {minimumFractionDigits:0,maximumFractionDigits:0});
   const SB = { Available:'badge-green', Reserved:'badge-yellow', Sold:'badge-red' };
 
-  const agentName  = localStorage.getItem('agentName')  || 'Agent';
-  const agentEmail = localStorage.getItem('agentEmail') || '—';
+  const agentName  = localStorage.getItem('agentName')  || localStorage.getItem('name') || 'Agent';
+  const agentEmail = localStorage.getItem('agentEmail') || localStorage.getItem('email') || '—';
   const agentPhone = localStorage.getItem('agentPhone') || '—';
+  const token = localStorage.getItem('token');
 
   function initials(name) { return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
 
@@ -317,22 +341,71 @@ document.addEventListener('DOMContentLoaded', () => {
       </tr>`).join('') || `<tr><td colspan="5" class="px-6 py-6 text-center text-gray-500 text-sm">No sold properties yet.</td></tr>`;
   }
 
-  // ── SALES ──
-  function renderSales() {
-    const sold = getProps().filter(p=>p.status==='Sold');
-    const rev  = sold.reduce((s,p)=>s+p.price,0);
-    const best = sold.length ? sold.reduce((a,b)=>b.price>a.price?b:a) : null;
-    document.getElementById('salesCount').textContent = sold.length;
-    document.getElementById('salesRev').textContent   = peso(rev);
-    document.getElementById('salesBest').textContent  = best ? best.name : '—';
-    document.getElementById('salesBody').innerHTML = sold.map(p=>`
-      <tr>
-        <td class="px-4 py-4 font-medium text-white">${p.name}</td>
-        <td class="px-4 py-4 text-gray-400">${p.loc}</td>
-        <td class="px-4 py-4">${peso(p.price)}</td>
-        <td class="px-4 py-4 text-orange-400">${peso(p.price*p.rate/100)}</td>
-      </tr>`).join('') || `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500 text-sm">No sold properties yet.</td></tr>`;
+  // ── SALES / MY CLIENTS (real data) ──
+  let myUnitsCache = [];
+
+  async function renderSales() {
+    try {
+      const [buyersRes, unitsRes] = await Promise.all([
+        fetch('/api/buyers', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch('/api/units',  { headers: { 'Authorization': 'Bearer ' + token } }),
+      ]);
+      const buyers = await buyersRes.json();
+      myUnitsCache = await unitsRes.json();
+
+      const withUnit = buyers.map(b => ({ ...b, unit: myUnitsCache.find(u=>u.id===b.unit_id) }));
+      const totalValue = withUnit.reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
+      const best = withUnit.length ? withUnit.reduce((a,b)=> (b.unit && (!a.unit || Number(b.unit.tcp)>Number(a.unit.tcp))) ? b : a) : null;
+
+      document.getElementById('salesCount').textContent = buyers.length;
+      document.getElementById('salesRev').textContent   = peso(totalValue);
+      document.getElementById('salesBest').textContent  = best && best.unit ? best.unit.unit_name : '—';
+
+      document.getElementById('salesBody').innerHTML = withUnit.map(b => `
+        <tr>
+          <td class="px-4 py-4 font-medium text-white">${b.name}</td>
+          <td class="px-4 py-4 text-gray-400">${b.email||''} ${b.phone?'· '+b.phone:''}</td>
+          <td class="px-4 py-4">${b.unit ? b.unit.unit_name : '—'}</td>
+          <td class="px-4 py-4 text-orange-400">${b.unit ? peso(b.unit.tcp) : '—'}</td>
+        </tr>`).join('') || `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500 text-sm">No clients added yet.</td></tr>`;
+
+      document.getElementById('bUnit').innerHTML = `<option value="">— None selected —</option>` +
+        myUnitsCache.map(u=>`<option value="${u.id}">${u.unit_name} (${peso(u.tcp)})</option>`).join('');
+    } catch(err) {
+      console.error('Error loading sales/clients:', err);
+    }
   }
+
+  window.openModal  = (id) => document.getElementById(id).classList.add('open');
+  window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+  document.querySelectorAll('.modal-backdrop').forEach(m => {
+    m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); });
+  });
+
+  window.saveBuyer = async () => {
+    const name = document.getElementById('bName').value.trim();
+    if(!name){ document.getElementById('bErr').classList.remove('hidden'); return; }
+    document.getElementById('bErr').classList.add('hidden');
+    try {
+      await fetch('/api/buyers', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          email: document.getElementById('bEmail').value.trim(),
+          phone: document.getElementById('bPhone').value.trim(),
+          address: document.getElementById('bAddr').value.trim(),
+          unit_id: document.getElementById('bUnit').value || '',
+        })
+      });
+      closeModal('addBuyerModal');
+      ['bName','bEmail','bPhone','bAddr'].forEach(id=>document.getElementById(id).value='');
+      renderSales();
+    } catch(err) {
+      console.error('Error saving client:', err);
+      alert('Failed to save client.');
+    }
+  };
 
   // ── SECTION SWITCHING ──
   const renderers = { overview:renderOverview, properties:renderProps, commission:renderCommission, sales:renderSales };

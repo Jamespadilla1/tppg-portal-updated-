@@ -3,9 +3,10 @@ const router     = express.Router();
 const { protect, adminOnly } = require('../middleware/auth');
 const { getBuyers, createBuyer, updateBuyer, deleteBuyer } = require('../controllers/buyerController');
 
-router.get('/',       protect, adminOnly, getBuyers);
-router.post('/',      protect, adminOnly, createBuyer);
-router.put('/:id',    protect, adminOnly, updateBuyer);
+// Any logged-in role can view (scoped to their own) and add buyers
+router.get('/',       protect, getBuyers);
+router.post('/',      protect, createBuyer);
+router.put('/:id',    protect, updateBuyer);
 router.delete('/:id', protect, adminOnly, deleteBuyer);
 
 module.exports = router;

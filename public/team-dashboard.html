@@ -34,6 +34,10 @@
   .badge-yellow{background:rgba(234,179,8,.1);color:#ca8a04}
   .badge-red{background:rgba(239,68,68,.1);color:#dc2626}
   .badge-blue{background:rgba(59,130,246,.1);color:#2563eb}
+  .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(17,24,39,.4);z-index:50;align-items:center;justify-content:center;padding:1rem}
+  .modal-backdrop.open{display:flex}
+  .modal-box{background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;width:100%;max-width:480px;padding:28px;position:relative;max-height:92vh;overflow-y:auto;color:#111827}
+  .field{width:100%;padding:10px 13px;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;color:#111827;font-size:.875rem;outline:none;transition:border-color .15s}
   @media(max-width:768px){
     #sidebar{position:fixed;transform:translateX(-100%);z-index:40;transition:transform .25s}
     #sidebar.open{transform:translateX(0)}
@@ -49,7 +53,8 @@
     <span class="font-semibold text-white" id="sidebarRoleLabel">TPPG</span>
   </div>
   <nav class="flex-1 px-3 py-4 space-y-0.5">
-    <div class="nav-link active"><span class="dot"></span> My Team</div>
+    <div class="nav-link active" id="navTeam" onclick="switchTab('team',this)"><span class="dot"></span> My Team</div>
+    <div class="nav-link" id="navClients" onclick="switchTab('clients',this)"><span class="dot"></span> My Clients</div>
   </nav>
   <div class="mx-3 mb-3 px-3 py-2 rounded-lg bg-yellow-500/8 border border-yellow-500/20 text-yellow-400 text-xs">👁 View-only access</div>
   <div class="px-5 py-4 border-t border-white/8">
@@ -72,33 +77,72 @@
 
   <main class="flex-1 p-6 space-y-6">
 
-    <!-- Unit Manager only: Sales Managers -->
-    <div id="smSection" class="hidden space-y-3">
-      <h2 class="font-semibold text-sm text-gray-500 uppercase tracking-wide">Sales Managers</h2>
-      <div id="smGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    <div id="tab-team" class="space-y-6">
+      <!-- Unit Manager only: Sales Managers -->
+      <div id="smSection" class="hidden space-y-3">
+        <h2 class="font-semibold text-sm text-gray-500 uppercase tracking-wide">Sales Managers</h2>
+        <div id="smGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+
+      <!-- Unit Manager + Sales Manager: Team Leaders -->
+      <div id="tlSection" class="hidden space-y-3">
+        <h2 class="font-semibold text-sm text-gray-500 uppercase tracking-wide">Team Leaders</h2>
+        <div id="tlGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+
+      <!-- Everyone: Agents -->
+      <div class="space-y-3">
+        <h2 class="font-semibold text-sm text-gray-500 uppercase tracking-wide">Agents</h2>
+        <div class="card overflow-hidden">
+          <div class="overflow-x-auto"><table class="w-full text-sm">
+            <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
+              <th class="text-left px-5 py-2">Full Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Agent ID</th><th class="text-left px-5 py-2">Status</th>
+            </tr></thead>
+            <tbody id="agentsBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
+          </table></div>
+          <div class="px-5 py-2 border-t border-gray-200 text-xs text-gray-500" id="agentCount"></div>
+        </div>
+      </div>
     </div>
 
-    <!-- Unit Manager + Sales Manager: Team Leaders -->
-    <div id="tlSection" class="hidden space-y-3">
-      <h2 class="font-semibold text-sm text-gray-500 uppercase tracking-wide">Team Leaders</h2>
-      <div id="tlGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-    </div>
-
-    <!-- Everyone: Agents -->
-    <div class="space-y-3">
-      <h2 class="font-semibold text-sm text-gray-500 uppercase tracking-wide">Agents</h2>
+    <div id="tab-clients" class="hidden space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="card p-5"><p class="text-gray-500 text-xs uppercase tracking-wide mb-2">Total Clients</p><p id="clientCount" class="text-3xl font-bold">0</p></div>
+        <div class="card p-5"><p class="text-gray-500 text-xs uppercase tracking-wide mb-2">Total Sales Value</p><p id="clientRev" class="text-3xl font-bold text-orange-600">₱0</p></div>
+        <div class="card p-5"><p class="text-gray-500 text-xs uppercase tracking-wide mb-2">Top Sale</p><p id="clientBest" class="text-xl font-bold">—</p></div>
+      </div>
       <div class="card overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200">
+          <h3 class="font-semibold text-sm">My Clients</h3>
+          <button onclick="openModal('addBuyerModal')" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Client</button>
+        </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
-            <th class="text-left px-5 py-2">Full Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Agent ID</th><th class="text-left px-5 py-2">Status</th>
+            <th class="text-left px-5 py-2">Client Name</th><th class="text-left px-5 py-2">Contact</th><th class="text-left px-5 py-2">Unit Purchased</th><th class="text-left px-5 py-2">TCP</th>
           </tr></thead>
-          <tbody id="agentsBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
+          <tbody id="clientsBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
         </table></div>
-        <div class="px-5 py-2 border-t border-gray-200 text-xs text-gray-500" id="agentCount"></div>
       </div>
     </div>
 
   </main>
+</div>
+
+<!-- ADD BUYER -->
+<div id="addBuyerModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('addBuyerModal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-700 text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Add Client</h3>
+    <div class="space-y-3">
+      <div><label class="text-xs text-gray-500 mb-1 block">Full Name *</label><input id="bName" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Email</label><input id="bEmail" type="email" class="field"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Phone</label><input id="bPhone" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Address</label><input id="bAddr" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Unit Purchased</label><select id="bUnit" class="field"><option value="">— None selected —</option></select></div>
+      <p id="bErr" class="text-red-500 text-xs hidden">Name is required.</p>
+      <button onclick="saveBuyer()" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Client</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -181,6 +225,80 @@ async function loadMyTeam(){
 window.logout = () => {
   localStorage.clear();
   window.location.href = 'index.html';
+};
+
+const peso = n => '₱' + Number(n||0).toLocaleString('en-PH', {maximumFractionDigits:0});
+
+window.switchTab = (tab, linkEl) => {
+  document.getElementById('tab-team').classList.toggle('hidden', tab!=='team');
+  document.getElementById('tab-clients').classList.toggle('hidden', tab!=='clients');
+  document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+  linkEl.classList.add('active');
+  if(tab==='clients') loadMyClients();
+};
+
+window.openModal  = (id) => document.getElementById(id).classList.add('open');
+window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+document.querySelectorAll('.modal-backdrop').forEach(m => {
+  m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); });
+});
+
+let myUnitsCache = [];
+async function loadMyClients(){
+  try {
+    const [buyersRes, unitsRes] = await Promise.all([
+      fetch('/api/buyers', { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch('/api/units',  { headers: { 'Authorization': 'Bearer ' + token } }),
+    ]);
+    const buyers = await buyersRes.json();
+    myUnitsCache = await unitsRes.json();
+
+    const withUnit = buyers.map(b => ({ ...b, unit: myUnitsCache.find(u=>u.id===b.unit_id) }));
+    const totalValue = withUnit.reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
+    const best = withUnit.length ? withUnit.reduce((a,b)=> (b.unit && (!a.unit || Number(b.unit.tcp)>Number(a.unit.tcp))) ? b : a) : null;
+
+    document.getElementById('clientCount').textContent = buyers.length;
+    document.getElementById('clientRev').textContent   = peso(totalValue);
+    document.getElementById('clientBest').textContent  = best && best.unit ? best.unit.unit_name : '—';
+
+    document.getElementById('clientsBody').innerHTML = withUnit.map(b => `
+      <tr>
+        <td class="px-5 py-3 font-medium text-xs">${b.name}</td>
+        <td class="px-5 py-3 text-gray-500 text-xs">${b.email||''} ${b.phone?'· '+b.phone:''}</td>
+        <td class="px-5 py-3 text-xs">${b.unit ? b.unit.unit_name : '—'}</td>
+        <td class="px-5 py-3 text-orange-600 text-xs">${b.unit ? peso(b.unit.tcp) : '—'}</td>
+      </tr>`).join('') || `<tr><td colspan="4" class="px-5 py-5 text-center text-gray-500 text-xs">No clients added yet.</td></tr>`;
+
+    document.getElementById('bUnit').innerHTML = `<option value="">— None selected —</option>` +
+      myUnitsCache.map(u=>`<option value="${u.id}">${u.unit_name} (${peso(u.tcp)})</option>`).join('');
+  } catch(err) {
+    console.error('Error loading clients:', err);
+  }
+}
+
+window.saveBuyer = async () => {
+  const name = document.getElementById('bName').value.trim();
+  if(!name){ document.getElementById('bErr').classList.remove('hidden'); return; }
+  document.getElementById('bErr').classList.add('hidden');
+  try {
+    await fetch('/api/buyers', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        email: document.getElementById('bEmail').value.trim(),
+        phone: document.getElementById('bPhone').value.trim(),
+        address: document.getElementById('bAddr').value.trim(),
+        unit_id: document.getElementById('bUnit').value || '',
+      })
+    });
+    closeModal('addBuyerModal');
+    ['bName','bEmail','bPhone','bAddr'].forEach(id=>document.getElementById(id).value='');
+    loadMyClients();
+  } catch(err) {
+    console.error('Error saving client:', err);
+    alert('Failed to save client.');
+  }
 };
 
 loadMyTeam();

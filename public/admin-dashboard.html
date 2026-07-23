@@ -87,11 +87,10 @@ tr:hover td{background:rgba(0,0,0,.02)}
     <div class="nav-link" onclick="go('agents',this)"><span class="dot"></span>Pending Agents</div>
     <div class="nav-link" onclick="go('properties',this)"><span class="dot"></span>Property Listings</div>
     <div class="nav-link" onclick="go('teams',this)"><span class="dot"></span>Teams</div>
-    <div class="nav-link" onclick="go('buyers',this)"><span class="dot"></span>Buyer Management</div>
+    <div class="nav-link" onclick="go('buyers',this)"><span class="dot"></span>Sales &amp; Buyers</div>
 
     <div class="nav-section-label">Finance</div>
     <div class="nav-link" onclick="go('commission',this)"><span class="dot"></span>Commission Monitoring</div>
-    <div class="nav-link" onclick="go('sales',this)"><span class="dot"></span>Sales Performance</div>
     <div class="nav-link" onclick="go('compute',this)"><span class="dot"></span>Property Computation</div>
 
     <div class="nav-section-label">System</div>
@@ -124,7 +123,6 @@ tr:hover td{background:rgba(0,0,0,.02)}
     </div>
     <div class="flex items-center gap-2">
       <span id="pendingAlert" class="hidden badge bg-yellow text-xs cursor-pointer" onclick="go('agents',document.querySelectorAll('.nav-link')[1])">⚠ Pending Agents</span>
-      <button id="addBuyerBtn" onclick="openModal('addBuyerModal')" class="hidden bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">+ Add Buyer</button>
     </div>
   </header>
 
@@ -228,11 +226,37 @@ tr:hover td{background:rgba(0,0,0,.02)}
     </div>
 
     <!-- ══ BUYER MANAGEMENT ══ -->
+    <!-- ══ SALES & BUYERS (merged) ══ -->
     <div id="sec-buyers" class="section space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="card p-4"><p class="text-gray-500 text-xs uppercase tracking-wide mb-1">Total Clients</p><p id="sbClientCount" class="text-2xl font-bold">0</p></div>
+        <div class="card p-4"><p class="text-gray-500 text-xs uppercase tracking-wide mb-1">Total Sales Value</p><p id="sbTotalValue" class="text-2xl font-bold text-orange-400">₱0</p></div>
+        <div class="card p-4"><p class="text-gray-500 text-xs uppercase tracking-wide mb-1">Top Sale</p><p id="sbTopSale" class="text-xl font-bold">—</p></div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <select id="sbLevel" class="field w-52" onchange="renderBuyers()">
+          <option value="agent">Breakdown by Agent</option>
+          <option value="team_leader">Breakdown by Team Leader</option>
+          <option value="sales_manager">Breakdown by Sales Manager</option>
+          <option value="unit_manager">Breakdown by Unit Manager</option>
+        </select>
+      </div>
       <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-white/8"><h3 class="font-semibold text-sm">Sales Performance</h3></div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
-            <th class="text-left px-5 py-2">Full Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Address</th><th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Actions</th>
+            <th class="text-left px-5 py-2">Name</th><th class="text-left px-5 py-2">ID</th><th class="text-left px-5 py-2">Clients</th><th class="text-left px-5 py-2">Sales Value</th>
+          </tr></thead>
+          <tbody id="sbBreakdownBody" class="divide-y divide-white/6 text-gray-300"></tbody>
+        </table></div>
+      </div>
+
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-white/8"><h3 class="font-semibold text-sm">All Clients</h3></div>
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
+            <th class="text-left px-5 py-2">Client Name</th><th class="text-left px-5 py-2">Contact</th><th class="text-left px-5 py-2">Unit Purchased</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Added By</th><th class="text-left px-5 py-2">Actions</th>
           </tr></thead>
           <tbody id="buyersBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
@@ -249,29 +273,6 @@ tr:hover td{background:rgba(0,0,0,.02)}
             <th class="text-left px-5 py-2">Agent</th><th class="text-left px-5 py-2">Property Sold</th><th class="text-left px-5 py-2">Property Price</th><th class="text-left px-5 py-2">Rate</th><th class="text-left px-5 py-2">Commission</th>
           </tr></thead>
           <tbody id="commBody" class="divide-y divide-white/6 text-gray-300"></tbody>
-        </table></div>
-      </div>
-    </div>
-
-    <!-- ══ SALES PERFORMANCE ══ -->
-    <div id="sec-sales" class="section space-y-4">
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="salesCards"></div>
-      <div class="card overflow-hidden">
-        <div class="px-5 py-3 border-b border-white/8"><h3 class="font-semibold text-sm">Top Performing Agents</h3></div>
-        <div class="overflow-x-auto"><table class="w-full text-sm">
-          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
-            <th class="text-left px-5 py-2">Agent</th><th class="text-left px-5 py-2">No. of Sales</th><th class="text-left px-5 py-2">Sales Amount</th><th class="text-left px-5 py-2">Commission Earned</th>
-          </tr></thead>
-          <tbody id="salesBody" class="divide-y divide-white/6 text-gray-300"></tbody>
-        </table></div>
-      </div>
-      <div class="card overflow-hidden">
-        <div class="px-5 py-3 border-b border-white/8"><h3 class="font-semibold text-sm">Completed Transactions</h3></div>
-        <div class="overflow-x-auto"><table class="w-full text-sm">
-          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
-            <th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Location</th><th class="text-left px-5 py-2">Price</th><th class="text-left px-5 py-2">Commission</th>
-          </tr></thead>
-          <tbody id="transBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
       </div>
     </div>
@@ -686,39 +687,6 @@ tr:hover td{background:rgba(0,0,0,.02)}
 </div>
 
 <!-- ADD BUYER -->
-<div id="addBuyerModal" class="modal-backdrop">
-  <div class="modal-box">
-    <button onclick="closeModal('addBuyerModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
-    <h3 class="font-bold text-lg mb-4">Add Buyer</h3>
-    <div class="space-y-3">
-      <div><label class="text-xs text-gray-400 mb-1 block">Full Name *</label><input id="bName" type="text" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Email *</label><input id="bEmail" type="email" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Phone *</label><input id="bPhone" type="text" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Address</label><input id="bAddr" type="text" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Property Purchased</label><input id="bProp" type="text" class="field"></div>
-      <p id="bErr" class="text-red-400 text-xs hidden">Please fill required fields.</p>
-      <button onclick="saveBuyer()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Buyer</button>
-    </div>
-  </div>
-</div>
-
-<!-- EDIT BUYER -->
-<div id="editBuyerModal" class="modal-backdrop">
-  <div class="modal-box">
-    <button onclick="closeModal('editBuyerModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
-    <h3 class="font-bold text-lg mb-4">Edit Buyer</h3>
-    <div class="space-y-3">
-      <input id="eBI" type="hidden">
-      <div><label class="text-xs text-gray-400 mb-1 block">Full Name</label><input id="eBName" type="text" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="eBEmail" type="email" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="eBPhone" type="text" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Address</label><input id="eBAddr" type="text" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Property Purchased</label><input id="eBProp" type="text" class="field"></div>
-      <button onclick="updateBuyer()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Buyer</button>
-    </div>
-  </div>
-</div>
-
 <!-- VIEW AGENT MODAL -->
 <!-- APPROVE & ASSIGN AGENT -->
 <!-- SUCCESS POPUP -->
@@ -882,10 +850,9 @@ function go(id, linkEl) {
   document.getElementById('sidebar').classList.remove('open');
 
   // Header buttons
-  document.getElementById('addBuyerBtn').classList.toggle('hidden', id!=='buyers');
 
   // Render
-  const r = {overview:renderOverview,agents:renderAgents,properties:enterProperties,teams:renderTeamsView,buyers:renderBuyers,commission:renderCommission,sales:renderSales,reports:renderReports,logs:renderLogs};
+  const r = {overview:renderOverview,agents:renderAgents,properties:enterProperties,teams:renderTeamsView,buyers:renderBuyers,commission:renderCommission,reports:renderReports,logs:renderLogs};
   if(r[id]) r[id]();
 }
 
@@ -2374,44 +2341,93 @@ function closeGenMenus(){
 }
 document.addEventListener('click', closeGenMenus);
 
-function renderBuyers(){
-  document.getElementById('buyersBody').innerHTML=load(K.buyers).map((b,i)=>`
-    <tr>
-      <td class="px-5 py-3 font-medium text-white text-xs">${b.name}</td>
-      <td class="px-5 py-3 text-gray-400 text-xs">${b.email}</td>
-      <td class="px-5 py-3 text-gray-400 text-xs">${b.phone}</td>
-      <td class="px-5 py-3 text-gray-400 text-xs">${b.addr||'—'}</td>
-      <td class="px-5 py-3 text-gray-400 text-xs">${b.prop||'—'}</td>
-      <td class="px-5 py-3 flex gap-2">
-        <button onclick="openEditBuyer(${i})" class="text-xs text-orange-400 hover:text-orange-300">Edit</button>
-        <button onclick="deleteBuyer(${i})" class="text-xs text-red-400 hover:text-red-300">Delete</button>
-      </td>
-    </tr>
-  `).join('')||`<tr><td colspan="6" class="px-5 py-5 text-center text-gray-500 text-xs">No buyers yet.</td></tr>`;
+let sbBuyersCache=[], sbUnitsCache=[];
+
+async function renderBuyers(){
+  const token = localStorage.getItem('token');
+  try {
+    const [buyersRes, unitsRes] = await Promise.all([
+      fetch('/api/buyers', { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch('/api/units',  { headers: { 'Authorization': 'Bearer ' + token } }),
+    ]);
+    sbBuyersCache = await buyersRes.json();
+    sbUnitsCache  = await unitsRes.json();
+    await fetchTeamStructureData(); // loads umCache, smCache, tlCache, teamAgentsCache
+
+    const withUnit = sbBuyersCache.map(b => ({ ...b, unit: sbUnitsCache.find(u=>u.id===b.unit_id) }));
+    const totalValue = withUnit.reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
+    const best = withUnit.length ? withUnit.reduce((a,b)=> (b.unit && (!a.unit || Number(b.unit.tcp)>Number(a.unit.tcp))) ? b : a) : null;
+
+    document.getElementById('sbClientCount').textContent = withUnit.length;
+    document.getElementById('sbTotalValue').textContent  = peso(totalValue);
+    document.getElementById('sbTopSale').textContent     = best && best.unit ? best.unit.unit_name : '—';
+
+    function resolvePerson(role, id){
+      const map = { agent: teamAgentsCache, team_leader: tlCache, sales_manager: smCache, unit_manager: umCache };
+      const idFieldMap = { agent: 'agent_id', team_leader: 'tl_id', sales_manager: 'sm_id', unit_manager: 'um_id' };
+      const list = map[role] || [];
+      const person = list.find(p=>p.id===id);
+      return person ? { name: person.name, roleId: person[idFieldMap[role]] } : null;
+    }
+    const ROLE_LABEL = { agent:'Agent', team_leader:'Team Leader', sales_manager:'Sales Manager', unit_manager:'Unit Manager' };
+
+    // Raw client list
+    document.getElementById('buyersBody').innerHTML = withUnit.map(b => {
+      const person = b.input_by_role ? resolvePerson(b.input_by_role, b.input_by_id) : null;
+      const addedBy = person ? `${person.name} (${ROLE_LABEL[b.input_by_role]})` : '—';
+      return `
+      <tr>
+        <td class="px-5 py-3 font-medium text-white text-xs">${b.name}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${b.email||''} ${b.phone?'· '+b.phone:''}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${b.unit ? b.unit.unit_name : '—'}</td>
+        <td class="px-5 py-3 text-orange-400 text-xs">${b.unit ? peso(b.unit.tcp) : '—'}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${addedBy}</td>
+        <td class="px-5 py-3"><button onclick="deleteBuyerAdmin('${b.id}')" class="text-xs text-red-400 hover:text-red-300">Delete</button></td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="6" class="px-5 py-5 text-center text-gray-500 text-xs">No clients yet.</td></tr>`;
+
+    // Breakdown by selected level
+    const level = document.getElementById('sbLevel').value;
+    const byPerson = {};
+    withUnit.forEach(b => {
+      if(b.input_by_role !== level) return;
+      if(!byPerson[b.input_by_id]) byPerson[b.input_by_id] = { count:0, value:0 };
+      byPerson[b.input_by_id].count++;
+      byPerson[b.input_by_id].value += b.unit ? Number(b.unit.tcp)||0 : 0;
+    });
+    const levelListMap = { agent: teamAgentsCache, team_leader: tlCache, sales_manager: smCache, unit_manager: umCache };
+    const idFieldMap2 = { agent: 'agent_id', team_leader: 'tl_id', sales_manager: 'sm_id', unit_manager: 'um_id' };
+    const levelList = levelListMap[level] || [];
+
+    document.getElementById('sbBreakdownBody').innerHTML = levelList.map(p => {
+      const stats = byPerson[p.id] || { count:0, value:0 };
+      return `
+      <tr>
+        <td class="px-5 py-3 font-medium text-white text-xs">${p.name}</td>
+        <td class="px-5 py-3 font-mono text-xs text-gray-400">${p[idFieldMap2[level]]||'—'}</td>
+        <td class="px-5 py-3 text-xs">${stats.count}</td>
+        <td class="px-5 py-3 text-orange-400 text-xs">${peso(stats.value)}</td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="4" class="px-5 py-5 text-center text-gray-500 text-xs">No ${level.replace('_',' ')}s yet.</td></tr>`;
+
+  } catch(err) {
+    console.error('Error loading sales & buyers:', err);
+  }
 }
-function saveBuyer(){
-  const name=document.getElementById('bName').value.trim(),email=document.getElementById('bEmail').value.trim(),phone=document.getElementById('bPhone').value.trim();
-  if(!name||!email||!phone){document.getElementById('bErr').classList.remove('hidden');return;}
-  document.getElementById('bErr').classList.add('hidden');
-  const b=load(K.buyers);
-  b.push({name,email,phone,addr:document.getElementById('bAddr').value.trim(),prop:document.getElementById('bProp').value.trim()});
-  save(K.buyers,b); addLog(`Buyer "${name}" added`);
-  closeModal('addBuyerModal');['bName','bEmail','bPhone','bAddr','bProp'].forEach(id=>document.getElementById(id).value='');
-  renderBuyers();
-}
-function openEditBuyer(i){
-  const b=load(K.buyers)[i];
-  document.getElementById('eBI').value=i;['Name','Email','Phone','Addr','Prop'].forEach(f=>document.getElementById('eB'+f).value=b[f.toLowerCase()]||'');
-  openModal('editBuyerModal');
-}
-function updateBuyer(){
-  const i=parseInt(document.getElementById('eBI').value),b=load(K.buyers);
-  b[i]={name:document.getElementById('eBName').value.trim(),email:document.getElementById('eBEmail').value.trim(),phone:document.getElementById('eBPhone').value.trim(),addr:document.getElementById('eBAddr').value.trim(),prop:document.getElementById('eBProp').value.trim()};
-  save(K.buyers,b); addLog(`Buyer "${b[i].name}" updated`); closeModal('editBuyerModal'); renderBuyers();
-}
-function deleteBuyer(i){
-  if(!confirm('Delete this buyer?'))return;
-  const b=load(K.buyers); addLog(`Buyer "${b[i].name}" deleted`); b.splice(i,1); save(K.buyers,b); renderBuyers();
+async function deleteBuyerAdmin(id){
+  if(!confirm('Delete this client record?')) return;
+  const token = localStorage.getItem('token');
+  try {
+    await fetch(`/api/buyers/${id}`, { method:'DELETE', headers:{ 'Authorization':'Bearer '+token } });
+    await fetch('/api/logs', {
+      method:'POST', headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
+      body: JSON.stringify({ message:`Client record deleted`, actor:'Admin', role:'admin' })
+    });
+    renderBuyers();
+  } catch(err) {
+    console.error('Error deleting client:', err);
+    alert('Failed to delete client.');
+  }
 }
 
 // ══════════════════════════════════════
@@ -2440,45 +2456,6 @@ function renderCommission(){
 // ══════════════════════════════════════
 // SALES PERFORMANCE
 // ══════════════════════════════════════
-function renderSales(){
-  const sold=load(K.props).filter(p=>p.status==='Sold');
-  const rev=sold.reduce((s,p)=>s+p.price,0);
-  const best=sold.length?sold.reduce((a,b)=>b.price>a.price?b:a):null;
-
-  document.getElementById('salesCards').innerHTML=`
-    <div class="stat-card"><p class="text-gray-400 text-xs uppercase tracking-wide mb-1">Total Sales</p><p class="text-2xl font-bold">${sold.length}</p></div>
-    <div class="stat-card"><p class="text-gray-400 text-xs uppercase tracking-wide mb-1">Total Revenue</p><p class="text-2xl font-bold text-orange-400">${peso(rev)}</p></div>
-    <div class="stat-card"><p class="text-gray-400 text-xs uppercase tracking-wide mb-1">Best Property</p><p class="text-lg font-bold text-white">${best?best.name:'—'}</p></div>
-  `;
-
-  // Agent performance
-  const agentMap={};
-  sold.forEach(p=>{
-    const a=p.agent||'Unassigned';
-    if(!agentMap[a]) agentMap[a]={sales:0,amount:0,comm:0};
-    agentMap[a].sales++;
-    agentMap[a].amount+=p.price;
-    agentMap[a].comm+=p.price*p.rate/100;
-  });
-  document.getElementById('salesBody').innerHTML=Object.entries(agentMap).sort((a,b)=>b[1].amount-a[1].amount).map(([name,d])=>`
-    <tr>
-      <td class="px-5 py-3 font-medium text-white text-xs">${name}</td>
-      <td class="px-5 py-3 text-xs">${d.sales}</td>
-      <td class="px-5 py-3 text-xs">${peso(d.amount)}</td>
-      <td class="px-5 py-3 text-xs text-orange-400">${peso(d.comm)}</td>
-    </tr>
-  `).join('')||`<tr><td colspan="4" class="px-5 py-5 text-center text-gray-500 text-xs">No data yet.</td></tr>`;
-
-  document.getElementById('transBody').innerHTML=sold.map(p=>`
-    <tr>
-      <td class="px-5 py-3 font-medium text-white text-xs">${p.name}</td>
-      <td class="px-5 py-3 text-gray-400 text-xs">${p.loc}</td>
-      <td class="px-5 py-3 text-xs">${peso(p.price)}</td>
-      <td class="px-5 py-3 text-xs text-orange-400">${peso(p.price*p.rate/100)}</td>
-    </tr>
-  `).join('')||`<tr><td colspan="4" class="px-5 py-5 text-center text-gray-500 text-xs">No transactions yet.</td></tr>`;
-}
-
 // ══════════════════════════════════════
 // COMPUTATION
 // ══════════════════════════════════════
