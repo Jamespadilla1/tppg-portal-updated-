@@ -230,9 +230,11 @@ tr:hover td{background:rgba(0,0,0,.02)}
           <option value="agents">Agents</option>
         </select>
         <button id="teamsAddBtn" onclick="openModal('addUMModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Unit Manager</button>
+        <button id="teamsBackBtn" onclick="teamsGoBack()" class="hidden text-xs text-gray-400 hover:text-white flex items-center gap-1">← Back to List</button>
       </div>
       <p class="text-xs text-gray-500" id="teamsHint">Unit Managers report directly to Admin.</p>
       <div id="teamsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      <div id="teamsChart" class="hidden"></div>
     </div>
 
     <!-- ══ BUYER MANAGEMENT ══ -->
@@ -1916,6 +1918,12 @@ async function deleteUnit(id){
 // ══════════════════════════════════════
 // ── TEAMS PAGE ORCHESTRATOR ──
 function renderTeamsView(){
+  teamsDrillStack = [];
+  document.getElementById('teamsChart').classList.add('hidden');
+  document.getElementById('teamsGrid').classList.remove('hidden');
+  document.getElementById('teamsBackBtn').classList.add('hidden');
+  document.getElementById('teamsLevel').disabled = false;
+
   const level = document.getElementById('teamsLevel').value;
   const hint = document.getElementById('teamsHint');
   const addBtn = document.getElementById('teamsAddBtn');
@@ -2049,53 +2057,91 @@ function personRow(p, extra){
     </div>`;
 }
 
-function viewTeamDetail(type, id){
-  let title, sections = [];
+let teamsDrillStack = [];
 
-  if(type==='unit_manager'){
-    const um = umCache.find(u=>u.id===id); if(!um) return;
-    title = `${um.name} — Unit Manager`;
-    const directSM = smCache.filter(sm=>sm.unit_manager_id===id);
-    const allTL = tlsUnderUM(id);
-    const directAgents = teamAgentsCache.filter(a=>a.unit_manager_id===id && !a.team_leader_id && !a.sales_manager_id);
+// Compact org-chart node for the Teams page (shows role + direct report count, no sales figures)
+function teamsOrgNode(opts){
+  return `
+    <div class="card org-node p-3 ${opts.clickable?'cursor-pointer':''}" ${opts.onclick?`onclick="${opts.onclick}"`:''}>
+      <div class="flex items-center gap-2 mb-1.5">
+        <div class="w-8 h-8 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold text-sm shrink-0">${opts.name[0]}</div>
+        <div class="min-w-0">
+          <p class="font-semibold text-white text-xs truncate">${opts.name}</p>
+          <p class="text-[10px] text-gray-500 font-mono truncate">${opts.roleId||'—'}</p>
+        </div>
+      </div>
+      <span class="badge bg-blue text-[10px] mb-1.5 inline-block">${opts.roleLabel}</span>
+      ${opts.subLabel ? `<p class="text-[10px] text-gray-500 border-t border-white/8 pt-1.5 text-center">${opts.subLabel}</p>` : ''}
+    </div>`;
+}
+
+function teamsDrillInto(type, id, name){
+  teamsDrillStack.push({ type, id, name });
+  teamsRenderChart();
+}
+function teamsGoBack(){
+  teamsDrillStack.pop();
+  if(!teamsDrillStack.length){
+    document.getElementById('teamsChart').classList.add('hidden');
+    document.getElementById('teamsGrid').classList.remove('hidden');
+    document.getElementById('teamsBackBtn').classList.add('hidden');
+    document.getElementById('teamsLevel').disabled = false;
+  } else {
+    teamsRenderChart();
+  }
+}
+
+function teamsRenderChart(){
+  document.getElementById('teamsGrid').classList.add('hidden');
+  document.getElementById('teamsChart').classList.remove('hidden');
+  document.getElementById('teamsBackBtn').classList.remove('hidden');
+  document.getElementById('teamsLevel').disabled = true;
+
+  const current = teamsDrillStack[teamsDrillStack.length-1];
+  let rootOpts, children = [];
+
+  if(current.type === 'unit_manager'){
+    const um = umCache.find(u=>u.id===current.id); if(!um) return;
+    const directSM = smCache.filter(sm=>sm.unit_manager_id===current.id);
+    const allTL = tlsUnderUM(current.id);
+    const directAgents = teamAgentsCache.filter(a=>a.unit_manager_id===current.id && !a.team_leader_id && !a.sales_manager_id);
     const teamAgentsViaTL = agentsUnderTLs(allTL.map(t=>t.id));
     const teamAgentsViaSM = agentsUnderSMs(directSM.map(s=>s.id));
-    const allAgents = [...directAgents, ...teamAgentsViaTL, ...teamAgentsViaSM];
-    sections = [
-      { label: `Sales Managers (${directSM.length})`, rows: directSM.map(sm=>personRow(sm, sm.sm_id)) },
-      { label: `Team Leaders (${allTL.length})`, rows: allTL.map(tl=>personRow(tl, tl.tl_id)) },
-      { label: `Agents (${allAgents.length})`, rows: allAgents.map(a=>personRow(a, a.agent_id)) },
+    const totalAgents = directAgents.length + teamAgentsViaTL.length + teamAgentsViaSM.length;
+    rootOpts = { name: um.name, roleId: um.um_id, roleLabel: 'Unit Manager', subLabel: `${directSM.length} Sales Mgrs · ${allTL.length} Team Leads · ${totalAgents} Agents` };
+    children = [
+      ...directSM.map(sm => ({ name: sm.name, roleId: sm.sm_id, roleLabel: 'Sales Manager', clickable: true, onclick: `teamsDrillInto('sales_manager','${sm.id}','${sm.name.replace(/'/g,"\\'")}')` })),
+      ...tlCache.filter(tl=>tl.unit_manager_id===current.id).map(tl => ({ name: tl.name, roleId: tl.tl_id, roleLabel: 'Team Leader', clickable: true, onclick: `teamsDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` })),
+      ...directAgents.map(a => ({ name: a.name, roleId: a.agent_id, roleLabel: 'Agent', clickable: false })),
     ];
-  } else if(type==='sales_manager'){
-    const sm = smCache.find(s=>s.id===id); if(!sm) return;
-    title = `${sm.name} — Sales Manager`;
-    const directTL = tlCache.filter(tl=>tl.sales_manager_id===id);
-    const teamAgentsViaTL = agentsUnderTLs(directTL.map(t=>t.id));
-    const directAgents = teamAgentsCache.filter(a=>a.sales_manager_id===id);
-    const allAgents = [...directAgents, ...teamAgentsViaTL];
-    sections = [
-      { label: `Team Leaders (${directTL.length})`, rows: directTL.map(tl=>personRow(tl, tl.tl_id)) },
-      { label: `Agents (${allAgents.length})`, rows: allAgents.map(a=>personRow(a, a.agent_id)) },
+  } else if(current.type === 'sales_manager'){
+    const sm = smCache.find(s=>s.id===current.id); if(!sm) return;
+    const directTL = tlCache.filter(tl=>tl.sales_manager_id===current.id);
+    const directAgents = teamAgentsCache.filter(a=>a.sales_manager_id===current.id);
+    rootOpts = { name: sm.name, roleId: sm.sm_id, roleLabel: 'Sales Manager', subLabel: `${directTL.length} Team Leads · ${directAgents.length + agentsUnderTLs(directTL.map(t=>t.id)).length} Agents` };
+    children = [
+      ...directTL.map(tl => ({ name: tl.name, roleId: tl.tl_id, roleLabel: 'Team Leader', clickable: true, onclick: `teamsDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` })),
+      ...directAgents.map(a => ({ name: a.name, roleId: a.agent_id, roleLabel: 'Agent', clickable: false })),
     ];
-  } else if(type==='team_leader'){
-    const tl = tlCache.find(t=>t.id===id); if(!tl) return;
-    title = `${tl.name} — Team Leader`;
-    const directAgents = teamAgentsCache.filter(a=>a.team_leader_id===id);
-    sections = [
-      { label: `Agents (${directAgents.length})`, rows: directAgents.map(a=>personRow(a, a.agent_id)) },
-    ];
+  } else if(current.type === 'team_leader'){
+    const tl = tlCache.find(t=>t.id===current.id); if(!tl) return;
+    const directAgents = teamAgentsCache.filter(a=>a.team_leader_id===current.id);
+    rootOpts = { name: tl.name, roleId: tl.tl_id, roleLabel: 'Team Leader', subLabel: `${directAgents.length} Recruited Agents` };
+    children = directAgents.map(a => ({ name: a.name, roleId: a.agent_id, roleLabel: 'Agent', clickable: false }));
   }
 
-  document.getElementById('teamDetailContent').innerHTML = `
-    <h3 class="font-bold text-lg mb-4">${title}</h3>
-    ${sections.map(s => `
-      <div class="mb-4">
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">${s.label}</p>
-        ${s.rows.join('') || '<p class="text-xs text-gray-400 py-2">None yet.</p>'}
-      </div>
-    `).join('')}
+  document.getElementById('teamsChart').innerHTML = `
+    <div class="org-wrap">
+      <div class="org-root">${teamsOrgNode(rootOpts)}</div>
+      ${children.length ? `
+        <div class="org-vline"></div>
+        <div class="org-children-row">
+          ${children.map(c => `<div class="org-branch">${teamsOrgNode(c)}</div>`).join('')}
+        </div>
+      ` : `<p class="text-center text-gray-500 text-xs py-6">Nobody under this person yet.</p>`}
+    </div>
   `;
-  openModal('teamDetailModal');
+  sbAnimateOrgIn();
 }
 
 async function renderUnitManagers(){
@@ -2108,7 +2154,7 @@ async function renderUnitManagers(){
     const teamAgentsViaSM = agentsUnderSMs(directSM.map(s=>s.id));
     const totalAgents = directAgents.length + teamAgentsViaTL.length + teamAgentsViaSM.length;
     return `
-      <div class="card p-4 relative cursor-pointer" onclick="viewTeamDetail('unit_manager','${um.id}')">
+      <div class="card p-4 relative cursor-pointer" onclick="teamsDrillInto('unit_manager','${um.id}','${um.name.replace(/'/g,"\\'")}')">
         <button onclick="event.stopPropagation();toggleGenMenu('um-${um.id}')" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full hover:bg-black/5 text-gray-400 text-xs flex items-center justify-center">⋯</button>
         <div id="genMenu-um-${um.id}" class="hidden absolute top-8 right-1.5 z-20 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden text-left w-28">
           <button onclick="event.stopPropagation();closeGenMenus();openEditUM('${um.id}')" class="w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 text-left">Edit</button>
@@ -2187,7 +2233,7 @@ async function renderSalesManagers(){
     const teamAgents = [...teamAgentsViaTL, ...directAgents];
     const um = umCache.find(u=>u.id===sm.unit_manager_id);
     return `
-      <div class="card p-4 relative cursor-pointer" onclick="viewTeamDetail('sales_manager','${sm.id}')">
+      <div class="card p-4 relative cursor-pointer" onclick="teamsDrillInto('sales_manager','${sm.id}','${sm.name.replace(/'/g,"\\'")}')">
         <button onclick="event.stopPropagation();toggleGenMenu('sm-${sm.id}')" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full hover:bg-black/5 text-gray-400 text-xs flex items-center justify-center">⋯</button>
         <div id="genMenu-sm-${sm.id}" class="hidden absolute top-8 right-1.5 z-20 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden text-left w-28">
           <button onclick="event.stopPropagation();closeGenMenus();openEditSM('${sm.id}')" class="w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 text-left">Edit</button>
@@ -2274,7 +2320,7 @@ async function renderTeamLeaders(){
       ? (umCache.find(u=>u.id===tl.unit_manager_id)?.name || '—') + ' (Unit Manager)'
       : (smCache.find(s=>s.id===tl.sales_manager_id)?.name || '—') + ' (Sales Manager)';
     return `
-      <div class="card p-4 relative cursor-pointer" onclick="viewTeamDetail('team_leader','${tl.id}')">
+      <div class="card p-4 relative cursor-pointer" onclick="teamsDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')">
         <button onclick="event.stopPropagation();toggleGenMenu('tl-${tl.id}')" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full hover:bg-black/5 text-gray-400 text-xs flex items-center justify-center">⋯</button>
         <div id="genMenu-tl-${tl.id}" class="hidden absolute top-8 right-1.5 z-20 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden text-left w-28">
           <button onclick="event.stopPropagation();closeGenMenus();openEditTL('${tl.id}')" class="w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 text-left">Edit</button>
