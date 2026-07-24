@@ -363,15 +363,20 @@ tr:hover td{background:rgba(0,0,0,.02)}
             </div>
           </div>
           <div id="cResult" class="hidden rounded-xl bg-orange-500/10 border border-orange-500/25 p-5 space-y-3">
-            <div><p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Commission Amount</p><p id="cAmount" class="text-3xl font-bold text-orange-400"></p></div>
+            <div><p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Gross Commission Amount</p><p id="cAmount" class="text-3xl font-bold text-orange-400"></p></div>
             <div id="cIncRow" class="hidden"><p class="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Incentive Amount</p><p id="cIncAmount" class="text-xl font-bold text-purple-400"></p></div>
+            <div class="pt-3 border-t border-orange-500/20 space-y-1.5">
+              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Withholding Tax (10%)</span><span class="text-red-400" id="cWithholding"></span></div>
+              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Percentage Tax (3%)</span><span class="text-red-400" id="cPercTax"></span></div>
+              <div class="flex justify-between text-sm font-semibold pt-1.5 border-t border-orange-500/20"><span class="text-white">Net Commission</span><span class="text-orange-400" id="cNetCommission"></span></div>
+            </div>
             <div class="pt-3 border-t border-orange-500/20 grid grid-cols-3 gap-2 text-xs text-gray-400">
               <div>Price<br><span class="text-white" id="cSP"></span></div>
               <div>Comm. Rate<br><span class="text-white" id="cSR"></span></div>
               <div id="cSIRow">Inc. Rate<br><span class="text-white" id="cSI"></span></div>
             </div>
           </div>
-          <p class="text-xs text-gray-600 italic">Commission = Price × Rate ÷ 100</p>
+          <p class="text-xs text-gray-600 italic">Gross Commission = Price × Rate ÷ 100. Net Commission deducts 10% withholding tax + 3% percentage tax.</p>
         </div>
       </div>
     </div>
@@ -2968,7 +2973,13 @@ function doCompute(){
   if(!price||!rate){r.classList.add('hidden');return;}
   const comm=price*rate/100;
   const incAmt=price*inc/100;
+  const withholding = comm*0.10;
+  const percTax = comm*0.03;
+  const netComm = comm - withholding - percTax;
   document.getElementById('cAmount').textContent=peso(comm);
+  document.getElementById('cWithholding').textContent='-'+peso(withholding);
+  document.getElementById('cPercTax').textContent='-'+peso(percTax);
+  document.getElementById('cNetCommission').textContent=peso(netComm);
   document.getElementById('cSP').textContent=peso(price);
   document.getElementById('cSR').textContent=rate+'%';
   document.getElementById('cSI').textContent=inc?inc+'%':'—';

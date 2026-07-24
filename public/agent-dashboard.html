@@ -197,14 +197,19 @@
             <div><label class="text-xs text-gray-400 mb-1 block">Commission Rate (%)</label><input id="calcRate" type="number" placeholder="e.g. 3" class="field" oninput="compute()"></div>
           </div>
           <div id="calcResult" class="hidden rounded-xl bg-orange-500/10 border border-orange-500/25 p-5">
-            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Your Commission</p>
+            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Gross Commission</p>
             <p id="calcAmount" class="text-3xl font-bold text-orange-400">₱0</p>
+            <div class="mt-3 pt-3 border-t border-orange-500/20 space-y-1.5">
+              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Withholding Tax (10%)</span><span class="text-red-400" id="calcWithholding">-₱0</span></div>
+              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Percentage Tax (3%)</span><span class="text-red-400" id="calcPercTax">-₱0</span></div>
+              <div class="flex justify-between text-sm font-semibold pt-1.5 border-t border-orange-500/20"><span class="text-white">Net Commission</span><span class="text-orange-400" id="calcNetCommission">₱0</span></div>
+            </div>
             <div class="mt-3 pt-3 border-t border-orange-500/20 grid grid-cols-2 gap-2 text-xs text-gray-400">
               <div>Price: <span id="calcShowPrice" class="text-white">—</span></div>
               <div>Rate: <span id="calcShowRate" class="text-white">—</span></div>
             </div>
           </div>
-          <p class="text-xs text-gray-600 italic">Formula: Commission = Price × Rate ÷ 100</p>
+          <p class="text-xs text-gray-600 italic">Gross Commission = Price × Rate ÷ 100. Net Commission deducts 10% withholding tax + 3% percentage tax.</p>
         </div>
       </div>
     </div>
@@ -459,7 +464,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const rate  = parseFloat(document.getElementById('calcRate').value);
     const result = document.getElementById('calcResult');
     if (!price || !rate) { result.classList.add('hidden'); return; }
-    document.getElementById('calcAmount').textContent    = peso(price*rate/100);
+    const comm = price*rate/100;
+    const withholding = comm*0.10;
+    const percTax = comm*0.03;
+    const netComm = comm - withholding - percTax;
+    document.getElementById('calcAmount').textContent    = peso(comm);
+    document.getElementById('calcWithholding').textContent  = '-'+peso(withholding);
+    document.getElementById('calcPercTax').textContent      = '-'+peso(percTax);
+    document.getElementById('calcNetCommission').textContent = peso(netComm);
     document.getElementById('calcShowPrice').textContent = peso(price);
     document.getElementById('calcShowRate').textContent  = rate+'%';
     result.classList.remove('hidden');
