@@ -25,6 +25,7 @@ app.use('/api/unit-managers',  require('./routes/unitManagers'));
 app.use('/api/sales-managers', require('./routes/salesManagers'));
 app.use('/api/team-leaders',   require('./routes/teamLeaders'));
 app.use('/api/my-team',    require('./routes/myTeam'));
+app.use('/api/commission-settings', require('./routes/commissionSettings'));
 app.use('/api/sellers',    require('./routes/sellers'));
 app.use('/api/buyers',     require('./routes/buyers'));
 app.use('/api/logs',       require('./routes/logs'));

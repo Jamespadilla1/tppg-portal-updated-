@@ -307,12 +307,36 @@ tr:hover td{background:rgba(0,0,0,.02)}
 
     <!-- ══ COMMISSION MONITORING ══ -->
     <div id="sec-commission" class="section space-y-4">
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="commCards"></div>
+      <div class="card p-5">
+        <h3 class="font-semibold text-sm mb-1">Commission Rates</h3>
+        <p class="text-xs text-gray-500 mb-4">Base % of TCP per role. Net commission also deducts 10% withholding tax and 3% percentage tax.</p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div><label class="text-xs text-gray-400 mb-1 block">Agent %</label><input id="crAgent" type="number" step="0.1" class="field"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Team Leader %</label><input id="crTL" type="number" step="0.1" class="field"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Sales Manager %</label><input id="crSM" type="number" step="0.1" class="field"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Unit Manager %</label><input id="crUM" type="number" step="0.1" class="field"></div>
+        </div>
+        <button onclick="saveCommissionRates()" class="mt-3 bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-lg text-xs font-medium transition-colors">Save Rates</button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="card p-4"><p class="text-gray-500 text-xs uppercase tracking-wide mb-1">Total Gross Commission</p><p id="commGross" class="text-2xl font-bold">₱0</p></div>
+        <div class="card p-4"><p class="text-gray-500 text-xs uppercase tracking-wide mb-1">Total Taxes Withheld</p><p id="commTax" class="text-2xl font-bold text-red-400">₱0</p></div>
+        <div class="card p-4"><p class="text-gray-500 text-xs uppercase tracking-wide mb-1">Total Net Commission</p><p id="commNet" class="text-2xl font-bold text-orange-400">₱0</p></div>
+      </div>
+
+      <select id="commLevel" class="field w-52" onchange="renderCommission()">
+        <option value="agent">Agent</option>
+        <option value="team_leader">Team Leader</option>
+        <option value="sales_manager">Sales Manager</option>
+        <option value="unit_manager">Unit Manager</option>
+      </select>
+
       <div class="card overflow-hidden">
         <div class="px-5 py-3 border-b border-white/8"><h3 class="font-semibold text-sm">Commission Records</h3></div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
-            <th class="text-left px-5 py-2">Agent</th><th class="text-left px-5 py-2">Property Sold</th><th class="text-left px-5 py-2">Property Price</th><th class="text-left px-5 py-2">Rate</th><th class="text-left px-5 py-2">Commission</th>
+            <th class="text-left px-5 py-2">Name</th><th class="text-left px-5 py-2">ID</th><th class="text-left px-5 py-2">No. of Sales</th><th class="text-left px-5 py-2">Total TCP</th><th class="text-left px-5 py-2">Rate</th><th class="text-left px-5 py-2">Gross Commission</th><th class="text-left px-5 py-2">Withholding (10%)</th><th class="text-left px-5 py-2">Percentage Tax (3%)</th><th class="text-left px-5 py-2">Net Commission</th>
           </tr></thead>
           <tbody id="commBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
@@ -2824,29 +2848,115 @@ async function deleteBuyerAdmin(id){
 // ══════════════════════════════════════
 // COMMISSION
 // ══════════════════════════════════════
-function renderCommission(){
-  const sold=load(K.props).filter(p=>p.status==='Sold');
-  const total=sold.reduce((s,p)=>s+p.price*p.rate/100,0);
-  const avg=sold.length?total/sold.length:0;
-  document.getElementById('commCards').innerHTML=`
-    <div class="stat-card"><p class="text-gray-400 text-xs uppercase tracking-wide mb-1">Total Commissions</p><p class="text-2xl font-bold text-orange-400">${peso(total)}</p></div>
-    <div class="stat-card"><p class="text-gray-400 text-xs uppercase tracking-wide mb-1">Deals Closed</p><p class="text-2xl font-bold">${sold.length}</p></div>
-    <div class="stat-card"><p class="text-gray-400 text-xs uppercase tracking-wide mb-1">Avg. Commission</p><p class="text-2xl font-bold">${peso(avg)}</p></div>
-  `;
-  document.getElementById('commBody').innerHTML=sold.map(p=>`
-    <tr>
-      <td class="px-5 py-3 text-xs text-gray-400">${p.agent||'Unassigned'}</td>
-      <td class="px-5 py-3 font-medium text-white text-xs">${p.name}</td>
-      <td class="px-5 py-3 text-xs">${peso(p.price)}</td>
-      <td class="px-5 py-3 text-xs">${p.rate}%</td>
-      <td class="px-5 py-3 text-xs text-orange-400 font-semibold">${peso(p.price*p.rate/100)}</td>
-    </tr>
-  `).join('')||`<tr><td colspan="5" class="px-5 py-5 text-center text-gray-500 text-xs">No sold properties yet.</td></tr>`;
+let commRatesCache = { agent_rate: 3, team_leader_rate: 1, sales_manager_rate: 0.5, unit_manager_rate: 0.25 };
+
+async function loadCommissionRatesIntoForm(){
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch('/api/commission-settings', { headers: { 'Authorization': 'Bearer ' + token } });
+    commRatesCache = await res.json();
+  } catch(err) { console.error('Error loading commission rates:', err); }
+  document.getElementById('crAgent').value = commRatesCache.agent_rate;
+  document.getElementById('crTL').value    = commRatesCache.team_leader_rate;
+  document.getElementById('crSM').value    = commRatesCache.sales_manager_rate;
+  document.getElementById('crUM').value    = commRatesCache.unit_manager_rate;
+}
+async function saveCommissionRates(){
+  const token = localStorage.getItem('token');
+  const payload = {
+    agent_rate: parseFloat(document.getElementById('crAgent').value) || 0,
+    team_leader_rate: parseFloat(document.getElementById('crTL').value) || 0,
+    sales_manager_rate: parseFloat(document.getElementById('crSM').value) || 0,
+    unit_manager_rate: parseFloat(document.getElementById('crUM').value) || 0,
+  };
+  try {
+    await fetch('/api/commission-settings', {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Commission rates updated', actor: 'Admin', role: 'admin' })
+    });
+    commRatesCache = payload;
+    renderCommission();
+  } catch(err) { console.error('Error saving commission rates:', err); alert('Failed to save rates.'); }
 }
 
-// ══════════════════════════════════════
-// SALES PERFORMANCE
-// ══════════════════════════════════════
+async function renderCommission(){
+  const token = localStorage.getItem('token');
+  const headers = { 'Authorization': 'Bearer ' + token };
+  await loadCommissionRatesIntoForm();
+
+  try {
+    const [buyersRes, unitsRes, agentsRes, tlRes, smRes, umRes] = await Promise.all([
+      fetch('/api/buyers', {headers}),
+      fetch('/api/units', {headers}),
+      fetch('/api/agents', {headers}),
+      fetch('/api/team-leaders', {headers}),
+      fetch('/api/sales-managers', {headers}),
+      fetch('/api/unit-managers', {headers}),
+    ]);
+    const buyers = await buyersRes.json();
+    const units  = await unitsRes.json();
+    const agents = (await agentsRes.json()).filter(a=>a.status==='approved');
+    const tls    = await tlRes.json();
+    const sms    = await smRes.json();
+    const ums    = await umRes.json();
+
+    const RATE_MAP = { agent: commRatesCache.agent_rate, team_leader: commRatesCache.team_leader_rate, sales_manager: commRatesCache.sales_manager_rate, unit_manager: commRatesCache.unit_manager_rate };
+    const LIST_MAP = { agent: agents, team_leader: tls, sales_manager: sms, unit_manager: ums };
+    const ID_FIELD_MAP = { agent: 'agent_id', team_leader: 'tl_id', sales_manager: 'sm_id', unit_manager: 'um_id' };
+
+    function personalTCP(role, id){
+      return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id)
+        .reduce((s,b)=>{ const u = units.find(x=>x.id===b.unit_id); return s + (u ? Number(u.tcp)||0 : 0); }, 0);
+    }
+    function personalCount(role, id){
+      return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id).length;
+    }
+
+    const level = document.getElementById('commLevel').value;
+    const rate = RATE_MAP[level] || 0;
+    const list = LIST_MAP[level] || [];
+
+    let totalGross=0, totalTax=0, totalNet=0;
+    const rows = list.map(p => {
+      const tcp = personalTCP(level, p.id);
+      const count = personalCount(level, p.id);
+      const gross = tcp * rate / 100;
+      const withholding = gross * 0.10;
+      const percentageTax = gross * 0.03;
+      const net = gross - withholding - percentageTax;
+      totalGross += gross; totalTax += (withholding+percentageTax); totalNet += net;
+      return { name: p.name, roleId: p[ID_FIELD_MAP[level]], count, tcp, gross, withholding, percentageTax, net };
+    });
+
+    document.getElementById('commGross').textContent = peso(totalGross);
+    document.getElementById('commTax').textContent   = peso(totalTax);
+    document.getElementById('commNet').textContent   = peso(totalNet);
+
+    document.getElementById('commBody').innerHTML = rows.map(r => `
+      <tr>
+        <td class="px-5 py-3 font-medium text-white text-xs">${r.name}</td>
+        <td class="px-5 py-3 font-mono text-xs text-gray-400">${r.roleId||'—'}</td>
+        <td class="px-5 py-3 text-xs">${r.count}</td>
+        <td class="px-5 py-3 text-xs">${peso(r.tcp)}</td>
+        <td class="px-5 py-3 text-xs">${rate}%</td>
+        <td class="px-5 py-3 text-xs">${peso(r.gross)}</td>
+        <td class="px-5 py-3 text-xs text-red-400">-${peso(r.withholding)}</td>
+        <td class="px-5 py-3 text-xs text-red-400">-${peso(r.percentageTax)}</td>
+        <td class="px-5 py-3 text-xs text-orange-400 font-semibold">${peso(r.net)}</td>
+      </tr>
+    `).join('') || `<tr><td colspan="9" class="px-5 py-5 text-center text-gray-500 text-xs">No ${level.replace('_',' ')}s yet.</td></tr>`;
+
+  } catch(err) {
+    console.error('Error loading commission data:', err);
+  }
+}
+
 // ══════════════════════════════════════
 // COMPUTATION
 // ══════════════════════════════════════
