@@ -531,7 +531,7 @@ async function enterPropDevelopers(){
     </div>`).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No developers yet.</p>`;
 }
 
-function propViewDeveloper(id, name){
+window.propViewDeveloper = function(id, name){
   propCurrentDevId = id; propCurrentDevName = name;
   document.getElementById('propDevListView').classList.add('hidden');
   document.getElementById('propListView').classList.remove('hidden');
@@ -549,9 +549,9 @@ function propViewDeveloper(id, name){
       </div>
     </div>`).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No properties yet for ${name}.</p>`;
 }
-function propBackToDevelopers(){ enterPropDevelopers(); }
+window.propBackToDevelopers = function(){ enterPropDevelopers(); }
 
-function propViewProperty(id, name){
+window.propViewProperty = function(id, name){
   propCurrentPropId = id; propCurrentPropName = name;
   document.getElementById('propListView').classList.add('hidden');
   document.getElementById('propUnitsView').classList.remove('hidden');
@@ -559,7 +559,7 @@ function propViewProperty(id, name){
   unitsListFilter = 'all'; unitsListSearch = '';
   renderUnitsList();
 }
-function propBackToProperties(){
+window.propBackToProperties = function(){
   document.getElementById('propUnitsView').classList.add('hidden');
   document.getElementById('propListView').classList.remove('hidden');
 }
@@ -595,7 +595,7 @@ window.filterUnitsList = (val, btn) => {
 };
 window.searchUnitsList = val => { unitsListSearch = val.toLowerCase(); renderUnitsList(); };
 
-function viewUnitDetail(id){
+window.viewUnitDetail = function(id){
   const u = propAllUnits.find(x=>x.id===id);
   if(!u) return;
   document.getElementById('unitDetailContent').innerHTML = `
@@ -620,7 +620,7 @@ function viewUnitDetail(id){
 }
 
 // Global property search across all developers (from Level 1)
-async function searchPropsGlobal(){
+window.searchPropsGlobal = async function(){
   const type = document.getElementById('propSearchType').value;
   const loc = document.getElementById('propSearchLoc').value.trim().toLowerCase();
   const resultsEl = document.getElementById('propSearchResults');
