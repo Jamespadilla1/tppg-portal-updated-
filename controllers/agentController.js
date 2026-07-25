@@ -5,7 +5,7 @@ const getAgents = async (req, res) => {
   try {
     const { data: agents, error } = await supabase
       .from('agents')
-      .select('id, agent_id, name, email, phone, status, id_front, id_back, team_leader_id, sales_manager_id, unit_manager_id, created_at, updated_at');
+      .select('id, agent_id, name, email, phone, status, id_front, id_back, team_leader_id, sales_manager_id, unit_manager_id, commission_rank, commission_rate, created_at, updated_at');
 
     if (error) throw error;
     res.json(agents);
@@ -79,19 +79,21 @@ const promoteAgent = async (req, res) => {
 
     // Approving as a plain Agent — same as before, just update status + assignment
     if (target_role === 'agent') {
-      const { sales_manager_id } = req.body;
+      const { sales_manager_id, commission_rank, commission_rate } = req.body;
       const updateData = {
         status: 'approved',
         updated_at: new Date(),
         team_leader_id: team_leader_id || null,
         sales_manager_id: team_leader_id ? null : (sales_manager_id || null),
         unit_manager_id: (team_leader_id || sales_manager_id) ? null : (unit_manager_id || null),
+        commission_rank: commission_rank || 'Property Specialist',
+        commission_rate: commission_rate || 2.0,
       };
       const { data: agent, error } = await supabase
         .from('agents')
         .update(updateData)
         .eq('id', req.params.id)
-        .select('id, agent_id, name, email, phone, status')
+        .select('id, agent_id, name, email, phone, status, commission_rank, commission_rate')
         .single();
       if (error) throw error;
       return res.json({ message: 'Approved as Agent.', record: agent });
@@ -137,4 +139,23 @@ const promoteAgent = async (req, res) => {
   }
 };
 
-module.exports = { getAgents, updateStatus, deleteAgent, promoteAgent };
+// PATCH /api/agents/:id/rank — set an approved agent's commission rank/rate (admin only)
+const setAgentRank = async (req, res) => {
+  try {
+    const { commission_rank, commission_rate } = req.body;
+    const { data: agent, error } = await supabase
+      .from('agents')
+      .update({ commission_rank, commission_rate, updated_at: new Date() })
+      .eq('id', req.params.id)
+      .select('id, agent_id, name, commission_rank, commission_rate')
+      .single();
+    if (error) throw error;
+    if (!agent) return res.status(404).json({ message: 'Agent not found.' });
+    res.json({ message: 'Commission rank updated.', agent });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getAgents, updateStatus, deleteAgent, promoteAgent, setAgentRank };

@@ -307,17 +307,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
 
     <!-- ══ COMMISSION MONITORING ══ -->
     <div id="sec-commission" class="section space-y-4">
-      <div class="card p-5">
-        <h3 class="font-semibold text-sm mb-1">Commission Rates</h3>
-        <p class="text-xs text-gray-500 mb-4">Base % of TCP per role. Net commission also deducts 10% withholding tax and 3% percentage tax.</p>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div><label class="text-xs text-gray-400 mb-1 block">Agent %</label><input id="crAgent" type="number" step="0.1" class="field"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Team Leader %</label><input id="crTL" type="number" step="0.1" class="field"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Sales Manager %</label><input id="crSM" type="number" step="0.1" class="field"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Unit Manager %</label><input id="crUM" type="number" step="0.1" class="field"></div>
-        </div>
-        <button onclick="saveCommissionRates()" class="mt-3 bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-lg text-xs font-medium transition-colors">Save Rates</button>
-      </div>
+      <p class="text-xs text-gray-500">Commission rates are set per person based on their rank — assign or update a rank from Teams (Sales Managers) or Pending/Approved Agents.</p>
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div class="card p-4"><p class="text-gray-500 text-xs uppercase tracking-wide mb-1">Total Gross Commission</p><p id="commGross" class="text-2xl font-bold">₱0</p></div>
@@ -336,7 +326,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
         <div class="px-5 py-3 border-b border-white/8"><h3 class="font-semibold text-sm">Commission Records</h3></div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
-            <th class="text-left px-5 py-2">Name</th><th class="text-left px-5 py-2">ID</th><th class="text-left px-5 py-2">No. of Sales</th><th class="text-left px-5 py-2">Total TCP</th><th class="text-left px-5 py-2">Rate</th><th class="text-left px-5 py-2">Gross Commission</th><th class="text-left px-5 py-2">Withholding (10%)</th><th class="text-left px-5 py-2">Percentage Tax (3%)</th><th class="text-left px-5 py-2">Net Commission</th>
+            <th class="text-left px-5 py-2">Name</th><th class="text-left px-5 py-2">ID</th><th class="text-left px-5 py-2">Rank</th><th class="text-left px-5 py-2">No. of Sales</th><th class="text-left px-5 py-2" title="Total Net Price">TCN</th><th class="text-left px-5 py-2">Rate</th><th class="text-left px-5 py-2">Gross Commission</th><th class="text-left px-5 py-2">Withholding (10%)</th><th class="text-left px-5 py-2">Percentage Tax (3%)</th><th class="text-left px-5 py-2">Net Commission</th>
           </tr></thead>
           <tbody id="commBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
@@ -500,6 +490,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="smPhone" type="text" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Password *</label><input id="smPassword" type="password" class="field" placeholder="Set a login password"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Reports to (Unit Manager) *</label><select id="smUM" class="field"></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Commission Rank</label><select id="smRank" class="field"><option value="Sales Manager" data-rate="3.25">Sales Manager (3.25%)</option><option value="Junior SM" data-rate="3.5">Junior SM (3.5%)</option><option value="Senior SM" data-rate="3.7">Senior SM (3.7%)</option></select></div>
       <p id="smErr" class="text-red-400 text-xs hidden">Name and Unit Manager are required.</p>
       <button onclick="saveSalesManager()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Sales Manager</button>
     </div>
@@ -515,6 +506,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="eSMEmail" type="email" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="eSMPhone" type="text" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Reports to (Unit Manager)</label><select id="eSMUM" class="field"></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Commission Rank</label><select id="eSMRank" class="field"><option value="Sales Manager" data-rate="3.25">Sales Manager (3.25%)</option><option value="Junior SM" data-rate="3.5">Junior SM (3.5%)</option><option value="Senior SM" data-rate="3.7">Senior SM (3.7%)</option></select></div>
       <button onclick="updateSalesManager()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Sales Manager</button>
     </div>
   </div>
@@ -825,6 +817,9 @@ tr:hover td{background:rgba(0,0,0,.02)}
         </div>
         <div><label class="text-xs text-gray-400 mb-1 block">Under Team Leader</label>
           <select id="aaAG_TL" class="field"><option value="">— None —</option></select>
+        </div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Commission Rank</label>
+          <select id="aaAG_Rank" class="field"><option value="Property Specialist" data-rate="2.0">Property Specialist (2.0%)</option><option value="Junior PS" data-rate="2.5">Junior PS (2.5%)</option><option value="Senior PS" data-rate="2.75">Senior PS (2.75%)</option></select>
         </div>
       </div>
 
@@ -1278,6 +1273,9 @@ async function confirmApproveAssign(){
     payload.team_leader_id = tl || '';
     payload.sales_manager_id = tl ? '' : (sm || '');
     payload.unit_manager_id = (tl || sm) ? '' : (um || '');
+    const rankSelect = document.getElementById('aaAG_Rank');
+    payload.commission_rank = rankSelect.value;
+    payload.commission_rate = parseFloat(rankSelect.selectedOptions[0].dataset.rate);
   }
   // unit_manager role needs nothing extra
 
@@ -1327,10 +1325,44 @@ async function viewAgent(id) {
         ${a.id_front?`<div><p class="text-xs text-gray-400 mb-1">Front</p><img src="${a.id_front}" class="w-32 h-20 object-cover rounded border border-white/10"></div>`:''}
         ${a.id_back?`<div><p class="text-xs text-gray-400 mb-1">Back</p><img src="${a.id_back}" class="w-32 h-20 object-cover rounded border border-white/10"></div>`:''}
       </div></div>`:''}
+      ${a.status==='approved' ? `
+      <div class="border-t border-white/8 pt-3 mt-3">
+        <p class="text-gray-500 text-xs mb-1">Commission Rank</p>
+        <div class="flex gap-2">
+          <select id="vaRank" class="field flex-1">
+            <option value="Property Specialist" data-rate="2.0" ${a.commission_rank==='Property Specialist'?'selected':''}>Property Specialist (2.0%)</option>
+            <option value="Junior PS" data-rate="2.5" ${a.commission_rank==='Junior PS'?'selected':''}>Junior PS (2.5%)</option>
+            <option value="Senior PS" data-rate="2.75" ${a.commission_rank==='Senior PS'?'selected':''}>Senior PS (2.75%)</option>
+          </select>
+          <button onclick="saveAgentRank('${a.id}')" class="bg-orange-500 hover:bg-orange-600 px-4 rounded-lg text-xs font-medium transition-colors">Save</button>
+        </div>
+      </div>` : ''}
     `;
     openModal('viewAgentModal');
   } catch(err) {
     console.error('Error viewing agent:', err);
+  }
+}
+async function saveAgentRank(id){
+  const select = document.getElementById('vaRank');
+  const rank = select.value;
+  const rate = parseFloat(select.selectedOptions[0].dataset.rate);
+  const token = localStorage.getItem('token');
+  try {
+    await fetch(`/api/agents/${id}/rank`, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ commission_rank: rank, commission_rate: rate })
+    });
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Agent commission rank updated to ${rank}`, actor: 'Admin', role: 'admin' })
+    });
+    closeModal('viewAgentModal');
+  } catch(err) {
+    console.error('Error saving agent rank:', err);
+    alert('Failed to save commission rank.');
   }
 }
 async function deleteAgent(id) {
@@ -2420,10 +2452,13 @@ async function saveSalesManager(){
   if(!name || !um || !email || !password){ document.getElementById('smErr').classList.remove('hidden'); return; }
   document.getElementById('smErr').classList.add('hidden');
   const token = localStorage.getItem('token');
+  const rankSelect = document.getElementById('smRank');
+  const rank = rankSelect.value;
+  const rate = parseFloat(rankSelect.selectedOptions[0].dataset.rate);
   try {
     await fetch('/api/sales-managers', {
       method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-      body: JSON.stringify({ name, email, phone: document.getElementById('smPhone').value.trim(), unit_manager_id: um, password })
+      body: JSON.stringify({ name, email, phone: document.getElementById('smPhone').value.trim(), unit_manager_id: um, password, commission_rank: rank, commission_rate: rate })
     });
     await fetch('/api/logs', { method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}, body: JSON.stringify({ message:`Sales Manager "${name}" added`, actor:'Admin', role:'admin' }) });
     closeModal('addSMModal');
@@ -2438,16 +2473,20 @@ function openEditSM(id){
   document.getElementById('eSMEmail').value=sm.email||'';
   document.getElementById('eSMPhone').value=sm.phone||'';
   document.getElementById('eSMUM').value=sm.unit_manager_id||'';
+  document.getElementById('eSMRank').value=sm.commission_rank||'Sales Manager';
   openModal('editSMModal');
 }
 async function updateSalesManager(){
   const id = document.getElementById('eSMI').value;
   const token = localStorage.getItem('token');
   const name = document.getElementById('eSMName').value.trim();
+  const rankSelect = document.getElementById('eSMRank');
+  const rank = rankSelect.value;
+  const rate = parseFloat(rankSelect.selectedOptions[0].dataset.rate);
   try {
     await fetch(`/api/sales-managers/${id}`, {
       method:'PUT', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-      body: JSON.stringify({ name, email: document.getElementById('eSMEmail').value.trim(), phone: document.getElementById('eSMPhone').value.trim(), unit_manager_id: document.getElementById('eSMUM').value })
+      body: JSON.stringify({ name, email: document.getElementById('eSMEmail').value.trim(), phone: document.getElementById('eSMPhone').value.trim(), unit_manager_id: document.getElementById('eSMUM').value, commission_rank: rank, commission_rate: rate })
     });
     closeModal('editSMModal');
     renderSalesManagers();
@@ -2853,47 +2892,9 @@ async function deleteBuyerAdmin(id){
 // ══════════════════════════════════════
 // COMMISSION
 // ══════════════════════════════════════
-let commRatesCache = { agent_rate: 3, team_leader_rate: 1, sales_manager_rate: 0.5, unit_manager_rate: 0.25 };
-
-async function loadCommissionRatesIntoForm(){
-  const token = localStorage.getItem('token');
-  try {
-    const res = await fetch('/api/commission-settings', { headers: { 'Authorization': 'Bearer ' + token } });
-    commRatesCache = await res.json();
-  } catch(err) { console.error('Error loading commission rates:', err); }
-  document.getElementById('crAgent').value = commRatesCache.agent_rate;
-  document.getElementById('crTL').value    = commRatesCache.team_leader_rate;
-  document.getElementById('crSM').value    = commRatesCache.sales_manager_rate;
-  document.getElementById('crUM').value    = commRatesCache.unit_manager_rate;
-}
-async function saveCommissionRates(){
-  const token = localStorage.getItem('token');
-  const payload = {
-    agent_rate: parseFloat(document.getElementById('crAgent').value) || 0,
-    team_leader_rate: parseFloat(document.getElementById('crTL').value) || 0,
-    sales_manager_rate: parseFloat(document.getElementById('crSM').value) || 0,
-    unit_manager_rate: parseFloat(document.getElementById('crUM').value) || 0,
-  };
-  try {
-    await fetch('/api/commission-settings', {
-      method: 'PUT',
-      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    await fetch('/api/logs', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: 'Commission rates updated', actor: 'Admin', role: 'admin' })
-    });
-    commRatesCache = payload;
-    renderCommission();
-  } catch(err) { console.error('Error saving commission rates:', err); alert('Failed to save rates.'); }
-}
-
 async function renderCommission(){
   const token = localStorage.getItem('token');
   const headers = { 'Authorization': 'Bearer ' + token };
-  await loadCommissionRatesIntoForm();
 
   try {
     const [buyersRes, unitsRes, agentsRes, tlRes, smRes, umRes] = await Promise.all([
@@ -2911,11 +2912,12 @@ async function renderCommission(){
     const sms    = await smRes.json();
     const ums    = await umRes.json();
 
-    const RATE_MAP = { agent: commRatesCache.agent_rate, team_leader: commRatesCache.team_leader_rate, sales_manager: commRatesCache.sales_manager_rate, unit_manager: commRatesCache.unit_manager_rate };
     const LIST_MAP = { agent: agents, team_leader: tls, sales_manager: sms, unit_manager: ums };
     const ID_FIELD_MAP = { agent: 'agent_id', team_leader: 'tl_id', sales_manager: 'sm_id', unit_manager: 'um_id' };
+    const DEFAULT_RANK = { agent: 'Property Specialist', team_leader: 'Team Leader', sales_manager: 'Sales Manager', unit_manager: 'Unit Manager' };
+    const DEFAULT_RATE = { agent: 2.0, team_leader: 3.0, sales_manager: 3.25, unit_manager: 4.0 };
 
-    function personalTCP(role, id){
+    function personalTCN(role, id){
       return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id)
         .reduce((s,b)=>{ const u = units.find(x=>x.id===b.unit_id); return s + (u ? Number(u.tcp)||0 : 0); }, 0);
     }
@@ -2924,19 +2926,20 @@ async function renderCommission(){
     }
 
     const level = document.getElementById('commLevel').value;
-    const rate = RATE_MAP[level] || 0;
     const list = LIST_MAP[level] || [];
 
     let totalGross=0, totalTax=0, totalNet=0;
     const rows = list.map(p => {
-      const tcp = personalTCP(level, p.id);
+      const tcn = personalTCN(level, p.id);
       const count = personalCount(level, p.id);
-      const gross = tcp * rate / 100;
+      const rank = p.commission_rank || DEFAULT_RANK[level];
+      const rate = p.commission_rate || DEFAULT_RATE[level];
+      const gross = tcn * rate / 100;
       const withholding = gross * 0.10;
       const percentageTax = gross * 0.03;
       const net = gross - withholding - percentageTax;
       totalGross += gross; totalTax += (withholding+percentageTax); totalNet += net;
-      return { name: p.name, roleId: p[ID_FIELD_MAP[level]], count, tcp, gross, withholding, percentageTax, net };
+      return { name: p.name, roleId: p[ID_FIELD_MAP[level]], rank, rate, count, tcn, gross, withholding, percentageTax, net };
     });
 
     document.getElementById('commGross').textContent = peso(totalGross);
@@ -2947,15 +2950,16 @@ async function renderCommission(){
       <tr>
         <td class="px-5 py-3 font-medium text-white text-xs">${r.name}</td>
         <td class="px-5 py-3 font-mono text-xs text-gray-400">${r.roleId||'—'}</td>
+        <td class="px-5 py-3 text-xs">${r.rank}</td>
         <td class="px-5 py-3 text-xs">${r.count}</td>
-        <td class="px-5 py-3 text-xs">${peso(r.tcp)}</td>
-        <td class="px-5 py-3 text-xs">${rate}%</td>
+        <td class="px-5 py-3 text-xs">${peso(r.tcn)}</td>
+        <td class="px-5 py-3 text-xs">${r.rate}%</td>
         <td class="px-5 py-3 text-xs">${peso(r.gross)}</td>
         <td class="px-5 py-3 text-xs text-red-400">-${peso(r.withholding)}</td>
         <td class="px-5 py-3 text-xs text-red-400">-${peso(r.percentageTax)}</td>
         <td class="px-5 py-3 text-xs text-orange-400 font-semibold">${peso(r.net)}</td>
       </tr>
-    `).join('') || `<tr><td colspan="9" class="px-5 py-5 text-center text-gray-500 text-xs">No ${level.replace('_',' ')}s yet.</td></tr>`;
+    `).join('') || `<tr><td colspan="10" class="px-5 py-5 text-center text-gray-500 text-xs">No ${level.replace('_',' ')}s yet.</td></tr>`;
 
   } catch(err) {
     console.error('Error loading commission data:', err);
