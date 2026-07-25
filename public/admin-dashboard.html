@@ -585,7 +585,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div><label class="text-xs text-gray-400 mb-1 block">Property Photo</label><input id="pImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Property Name *</label><input id="pName" type="text" class="field" placeholder="e.g. Bernwood Centrale"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Location *</label><input id="pLoc" type="text" class="field" placeholder="e.g. Cebu City"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Property Type *</label><select id="pType" class="field"><option value="Condo">Condo</option><option value="House and Lot">House and Lot</option></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Property Type *</label><select id="pType" class="field"><option value="Condo">Condo</option><option value="House and Lot">House and Lot</option><option value="Lot">Lot</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Selling Status *</label><select id="pSellStatus" class="field" onchange="document.getElementById('pTurnoverRow').classList.toggle('hidden', this.value!=='Pre-selling')"><option value="RFO">RFO</option><option value="Pre-selling">Pre-selling</option></select></div>
       <div id="pTurnoverRow" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Turnover Date</label><input id="pTurnover" type="date" class="field"></div>
       <div>
@@ -615,7 +615,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div><label class="text-xs text-gray-400 mb-1 block">Property Photo (leave blank to keep current)</label><input id="ePImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Property Name</label><input id="ePName" type="text" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Location</label><input id="ePLoc" type="text" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Property Type</label><select id="ePType" class="field"><option value="Condo">Condo</option><option value="House and Lot">House and Lot</option></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Property Type</label><select id="ePType" class="field"><option value="Condo">Condo</option><option value="House and Lot">House and Lot</option><option value="Lot">Lot</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Selling Status</label><select id="ePSellStatus" class="field" onchange="document.getElementById('ePTurnoverRow').classList.toggle('hidden', this.value!=='Pre-selling')"><option value="RFO">RFO</option><option value="Pre-selling">Pre-selling</option></select></div>
       <div id="ePTurnoverRow" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Turnover Date</label><input id="ePTurnover" type="date" class="field"></div>
       <div>
@@ -1847,7 +1847,7 @@ function filterUnits(val, btn){
 async function renderUnits(){
   if(!currentPropId) return;
   const token = localStorage.getItem('token');
-  const showLot = currentPropType==='House and Lot';
+  const showLot = ['House and Lot','Lot'].includes(currentPropType);
   document.getElementById('uLotRow').classList.toggle('hidden', !showLot);
   try {
     const res = await fetch(`/api/units?property_id=${currentPropId}`, {
@@ -1969,7 +1969,7 @@ async function saveUnit(){
   fd.append('downpayment', parseMoney(document.getElementById('uDownpayment').value) || '');
   fd.append('bedrooms', document.getElementById('uBeds').value || '');
   fd.append('square_meters', document.getElementById('uSqm').value || '');
-  fd.append('lot_type', currentPropType==='House and Lot' ? document.getElementById('uLotType').value : '');
+  fd.append('lot_type', ['House and Lot','Lot'].includes(currentPropType) ? document.getElementById('uLotType').value : '');
   fd.append('furnishing', document.getElementById('uFurnish').value);
   fd.append('status', status);
   fd.append('construction_status', constStatus);
@@ -2021,7 +2021,7 @@ function openEditUnit(id){
   document.getElementById('eUBeds').value=u.bedrooms??'';
   document.getElementById('eUSqm').value=u.square_meters??'';
   if(u.lot_type) document.getElementById('eULotType').value=u.lot_type;
-  document.getElementById('eULotRow').classList.toggle('hidden', currentPropType!=='House and Lot');
+  document.getElementById('eULotRow').classList.toggle('hidden', !['House and Lot','Lot'].includes(currentPropType));
   document.getElementById('eUFurnish').value=u.furnishing||'Bare Unit';
   document.getElementById('eUStatus').value=u.status;
   document.getElementById('eUConstStatus').value=u.construction_status||'RFO';
@@ -2050,7 +2050,7 @@ async function updateUnit(){
   fd.append('downpayment', parseMoney(document.getElementById('eUDownpayment').value) || '');
   fd.append('bedrooms', document.getElementById('eUBeds').value || '');
   fd.append('square_meters', document.getElementById('eUSqm').value || '');
-  fd.append('lot_type', currentPropType==='House and Lot' ? document.getElementById('eULotType').value : '');
+  fd.append('lot_type', ['House and Lot','Lot'].includes(currentPropType) ? document.getElementById('eULotType').value : '');
   fd.append('furnishing', document.getElementById('eUFurnish').value);
   fd.append('status', newStatus);
   fd.append('construction_status', newConstStatus);
