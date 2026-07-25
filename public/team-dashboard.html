@@ -38,6 +38,9 @@
   .modal-backdrop.open{display:flex}
   .modal-box{background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;width:100%;max-width:480px;padding:28px;position:relative;max-height:92vh;overflow-y:auto;color:#111827}
   .field{width:100%;padding:10px 13px;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;color:#111827;font-size:.875rem;outline:none;transition:border-color .15s}
+  .section{display:none}
+  .section.active{display:block}
+  .filter-btn.active-filter{border-color:#ea580c80!important;background:rgba(234,88,12,.1)!important;color:#ea580c!important}
   @media(max-width:768px){
     #sidebar{position:fixed;transform:translateX(-100%);z-index:40;transition:transform .25s}
     #sidebar.open{transform:translateX(0)}
@@ -53,8 +56,13 @@
     <span class="font-semibold text-white" id="sidebarRoleLabel">TPPG</span>
   </div>
   <nav class="flex-1 px-3 py-4 space-y-0.5">
-    <div class="nav-link active" id="navTeam" onclick="switchTab('team',this)"><span class="dot"></span> My Team</div>
-    <div class="nav-link" id="navClients" onclick="switchTab('clients',this)"><span class="dot"></span> My Clients</div>
+    <div class="nav-link active" onclick="showSection('overview',this)"><span class="dot"></span> Dashboard</div>
+    <div class="nav-link" onclick="showSection('team',this)"><span class="dot"></span> My Team</div>
+    <div class="nav-link" onclick="showSection('properties',this)"><span class="dot"></span> Properties</div>
+    <div class="nav-link" onclick="showSection('commission',this)"><span class="dot"></span> Commission</div>
+    <div class="nav-link" onclick="showSection('sales',this)"><span class="dot"></span> My Sales &amp; Clients</div>
+    <div class="nav-link" onclick="showSection('compute',this)"><span class="dot"></span> Computation Tool</div>
+    <div class="nav-link" onclick="showSection('profile',this)"><span class="dot"></span> My Profile</div>
   </nav>
   <div class="mx-3 mb-3 px-3 py-2 rounded-lg bg-yellow-500/8 border border-yellow-500/20 text-yellow-400 text-xs">👁 View-only access</div>
   <div class="px-5 py-4 border-t border-white/8">
@@ -71,26 +79,36 @@
 
 <div id="main" class="ml-60 min-h-screen flex flex-col">
   <header class="sticky top-0 z-30 bg-gray-950/90 backdrop-blur border-b border-white/8 px-8 py-4 flex items-center justify-between">
-    <h1 class="font-bold text-lg" id="pageTitle">My Team</h1>
+    <h1 class="font-bold text-lg" id="pageTitle">Dashboard</h1>
     <p class="text-xs text-gray-500" id="teamSummary"></p>
   </header>
 
   <main class="flex-1 p-6 space-y-6">
 
-    <div id="tab-team" class="space-y-6">
-      <!-- Unit Manager only: Sales Managers -->
+    <!-- DASHBOARD -->
+    <div id="sec-overview" class="section active space-y-5">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="ovCards"></div>
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-gray-200"><h3 class="font-semibold text-sm">Recent Clients</h3></div>
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
+            <th class="text-left px-5 py-2">Client</th><th class="text-left px-5 py-2">Unit</th><th class="text-left px-5 py-2">TCP</th>
+          </tr></thead>
+          <tbody id="ovRecentBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- MY TEAM -->
+    <div id="sec-team" class="section space-y-6">
       <div id="smSection" class="hidden space-y-3">
         <h2 class="font-semibold text-sm text-gray-500 uppercase tracking-wide">Sales Managers</h2>
         <div id="smGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </div>
-
-      <!-- Unit Manager + Sales Manager: Team Leaders -->
       <div id="tlSection" class="hidden space-y-3">
         <h2 class="font-semibold text-sm text-gray-500 uppercase tracking-wide">Team Leaders</h2>
         <div id="tlGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </div>
-
-      <!-- Everyone: Agents -->
       <div class="space-y-3">
         <h2 class="font-semibold text-sm text-gray-500 uppercase tracking-wide">Agents</h2>
         <div class="card overflow-hidden">
@@ -105,7 +123,48 @@
       </div>
     </div>
 
-    <div id="tab-clients" class="hidden space-y-4">
+    <!-- PROPERTIES (view-only) -->
+    <div id="sec-properties" class="section space-y-4">
+      <div class="flex flex-wrap gap-3 items-center justify-between">
+        <div class="flex gap-2">
+          <button onclick="filterUnitsList('all',this)"       class="filter-btn active-filter px-4 py-2 rounded-lg text-sm border border-orange-500/50 bg-orange-500/10 text-orange-400">All</button>
+          <button onclick="filterUnitsList('Available',this)" class="filter-btn px-4 py-2 rounded-lg text-sm border border-gray-200 text-gray-400 hover:text-gray-700">Available</button>
+          <button onclick="filterUnitsList('Hold',this)"      class="filter-btn px-4 py-2 rounded-lg text-sm border border-gray-200 text-gray-400 hover:text-gray-700">Hold</button>
+          <button onclick="filterUnitsList('Sold',this)"      class="filter-btn px-4 py-2 rounded-lg text-sm border border-gray-200 text-gray-400 hover:text-gray-700">Sold</button>
+        </div>
+        <input type="text" placeholder="Search units…" oninput="searchUnitsList(this.value)" class="field w-52">
+      </div>
+      <div class="card overflow-hidden">
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase tracking-wide border-b border-gray-200">
+            <th class="text-left px-5 py-2">Developer</th><th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Unit</th><th class="text-left px-5 py-2">Bedrooms</th><th class="text-left px-5 py-2">Furnishing</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Status</th>
+          </tr></thead>
+          <tbody id="unitsListBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
+        </table></div>
+        <div class="px-5 py-2 border-t border-gray-200 text-xs text-gray-500" id="unitsListCount"></div>
+      </div>
+    </div>
+
+    <!-- COMMISSION (personal) -->
+    <div id="sec-commission" class="section space-y-4">
+      <div class="card p-6 max-w-lg">
+        <p class="text-xs text-gray-500 mb-1">Your Rank</p>
+        <p class="font-semibold text-lg mb-4" id="commRankLabel">—</p>
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-xs text-gray-500">Personal Sales (TCN)</p><p class="font-bold" id="commTCN">₱0</p></div>
+          <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-xs text-gray-500">Rate</p><p class="font-bold" id="commRateVal">0%</p></div>
+        </div>
+        <div class="border-t border-gray-200 pt-3 space-y-1.5">
+          <div class="flex justify-between text-sm"><span class="text-gray-500">Gross Commission</span><span class="font-semibold" id="commGrossVal">₱0</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Withholding Tax (10%)</span><span class="text-red-500" id="commWithVal">-₱0</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Percentage Tax (3%)</span><span class="text-red-500" id="commPercVal">-₱0</span></div>
+          <div class="flex justify-between text-sm font-semibold pt-1.5 border-t border-gray-200"><span>Net Commission</span><span class="text-orange-600" id="commNetVal">₱0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY SALES & CLIENTS -->
+    <div id="sec-sales" class="section space-y-4">
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="card p-5"><p class="text-gray-500 text-xs uppercase tracking-wide mb-2">Total Clients</p><p id="clientCount" class="text-3xl font-bold">0</p></div>
         <div class="card p-5"><p class="text-gray-500 text-xs uppercase tracking-wide mb-2">Total Sales Value</p><p id="clientRev" class="text-3xl font-bold text-orange-600">₱0</p></div>
@@ -122,6 +181,45 @@
           </tr></thead>
           <tbody id="clientsBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
         </table></div>
+      </div>
+    </div>
+
+    <!-- COMPUTATION TOOL -->
+    <div id="sec-compute" class="section">
+      <div class="max-w-md">
+        <div class="card p-6 space-y-5">
+          <div><h3 class="font-semibold text-lg">Commission Calculator</h3><p class="text-xs text-gray-500 mt-1">Compute your commission based on property price and rate.</p></div>
+          <div class="space-y-3">
+            <div><label class="text-xs text-gray-400 mb-1 block">Property Price (₱)</label><input id="calcPrice" type="number" placeholder="e.g. 3500000" class="field" oninput="computeCalc()"></div>
+            <div><label class="text-xs text-gray-400 mb-1 block">Commission Rate (%)</label><input id="calcRate" type="number" placeholder="e.g. 3" class="field" oninput="computeCalc()"></div>
+          </div>
+          <div id="calcResult" class="hidden rounded-xl bg-orange-500/10 border border-orange-500/25 p-5">
+            <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Gross Commission</p>
+            <p id="calcAmount" class="text-3xl font-bold text-orange-400">₱0</p>
+            <div class="mt-3 pt-3 border-t border-orange-500/20 space-y-1.5">
+              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Withholding Tax (10%)</span><span class="text-red-400" id="calcWithholding">-₱0</span></div>
+              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Percentage Tax (3%)</span><span class="text-red-400" id="calcPercTax">-₱0</span></div>
+              <div class="flex justify-between text-sm font-semibold pt-1.5 border-t border-orange-500/20"><span class="text-white">Net Commission</span><span class="text-orange-400" id="calcNetCommission">₱0</span></div>
+            </div>
+          </div>
+          <p class="text-xs text-gray-600 italic">Gross Commission = Price × Rate ÷ 100. Net Commission deducts 10% withholding tax + 3% percentage tax.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY PROFILE -->
+    <div id="sec-profile" class="section">
+      <div class="max-w-md card p-6 space-y-4">
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold text-2xl" id="profileInitial">-</div>
+          <div><p class="font-semibold text-lg" id="profileNameRow">—</p><p class="text-xs text-gray-500" id="profileRoleRow">—</p></div>
+        </div>
+        <div class="border-t border-gray-200 pt-4 space-y-3 text-sm">
+          <div class="flex justify-between"><span class="text-gray-500">ID</span><span class="font-mono" id="profileId">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Email</span><span id="profileEmail">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Commission Rank</span><span id="profileRank">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Commission Rate</span><span id="profileRate">—</span></div>
+        </div>
       </div>
     </div>
 
@@ -157,22 +255,44 @@ if (!token || !['unit_manager','sales_manager','team_leader'].includes(role)) {
 }
 
 const ROLE_LABELS = { unit_manager: 'Unit Manager', sales_manager: 'Sales Manager', team_leader: 'Team Leader' };
+const peso = n => '₱' + Number(n||0).toLocaleString('en-PH', {maximumFractionDigits:0});
+const SB = { Available:'badge-green', Hold:'badge-yellow', Sold:'badge-red', approved:'badge-green', pending:'badge-yellow', rejected:'badge-red', suspended:'badge-red' };
 
 document.getElementById('sidebarRoleLabel').textContent = 'TPPG ' + (ROLE_LABELS[role] || '');
 document.getElementById('sidebarName').textContent = name || '—';
 document.getElementById('sidebarRole2').textContent = (ROLE_LABELS[role] || '—') + (localStorage.getItem('personId') ? ' · ' + localStorage.getItem('personId') : '');
 document.getElementById('sidebarInitials').textContent = (name || '?')[0].toUpperCase();
-document.getElementById('pageTitle').textContent = `${ROLE_LABELS[role]} Dashboard`;
 
-const SB = { approved:'badge-green', pending:'badge-yellow', rejected:'badge-red', suspended:'badge-red' };
+// ── SECTION SWITCHING ──
+window.showSection = (id, linkEl) => {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+  linkEl.classList.add('active');
+  const TITLES = { overview:'Dashboard', team:'My Team', properties:'Properties', commission:'Commission', sales:'My Sales & Clients', compute:'Computation Tool', profile:'My Profile' };
+  document.getElementById('pageTitle').textContent = TITLES[id];
+  if(id==='overview') renderOverview();
+  else if(id==='team') loadMyTeam();
+  else if(id==='properties') loadUnitsList();
+  else if(id==='commission') renderCommissionPersonal();
+  else if(id==='sales') loadMyClients();
+  else if(id==='profile') renderProfile();
+};
 
+window.openModal  = (id) => document.getElementById(id).classList.add('open');
+window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+document.querySelectorAll('.modal-backdrop').forEach(m => {
+  m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); });
+});
+window.logout = () => { localStorage.clear(); window.location.href = 'index.html'; };
+
+// ── MY TEAM ──
 async function loadMyTeam(){
   try {
     const res = await fetch('/api/my-team', { headers: { 'Authorization': 'Bearer ' + token } });
     if (!res.ok) throw new Error('Failed to load team');
     const data = await res.json();
 
-    // Sales Managers (Unit Manager only)
     if (data.salesManagers && data.salesManagers.length){
       document.getElementById('smSection').classList.remove('hidden');
       document.getElementById('smGrid').innerHTML = data.salesManagers.map(sm => `
@@ -180,11 +300,8 @@ async function loadMyTeam(){
           <div class="w-9 h-9 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold mb-2">${sm.name[0]}</div>
           <p class="font-semibold text-sm">${sm.name}</p>
           <p class="text-xs text-gray-500">${sm.email||'—'}</p>
-        </div>
-      `).join('');
+        </div>`).join('');
     }
-
-    // Team Leaders (Unit Manager + Sales Manager)
     if (data.teamLeaders && data.teamLeaders.length){
       document.getElementById('tlSection').classList.remove('hidden');
       document.getElementById('tlGrid').innerHTML = data.teamLeaders.map(tl => `
@@ -192,11 +309,8 @@ async function loadMyTeam(){
           <div class="w-9 h-9 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold mb-2">${tl.name[0]}</div>
           <p class="font-semibold text-sm">${tl.name}</p>
           <p class="text-xs text-gray-500">${tl.email||'—'}</p>
-        </div>
-      `).join('');
+        </div>`).join('');
     }
-
-    // Agents (everyone)
     const agents = data.agents || [];
     document.getElementById('agentsBody').innerHTML = agents.map(a => `
       <tr>
@@ -205,9 +319,7 @@ async function loadMyTeam(){
         <td class="px-5 py-3 text-gray-500 text-xs">${a.phone||'—'}</td>
         <td class="px-5 py-3 font-mono text-xs">${a.agent_id||'—'}</td>
         <td class="px-5 py-3 text-xs"><span class="badge ${SB[a.status]||'badge-blue'}">${a.status}</span></td>
-      </tr>
-    `).join('') || `<tr><td colspan="5" class="px-5 py-5 text-center text-gray-500 text-xs">No agents in your team yet.</td></tr>`;
-
+      </tr>`).join('') || `<tr><td colspan="5" class="px-5 py-5 text-center text-gray-500 text-xs">No agents in your team yet.</td></tr>`;
     document.getElementById('agentCount').textContent = `${agents.length} agent${agents.length===1?'':'s'} on your team`;
 
     const smCount = (data.salesManagers||[]).length;
@@ -217,79 +329,166 @@ async function loadMyTeam(){
       role==='sales_manager' ? `${tlCount} Team Leaders · ${agents.length} Agents` :
       `${agents.length} Agents`;
 
+    return data;
   } catch(err) {
     console.error('Error loading team:', err);
   }
 }
 
-window.logout = () => {
-  localStorage.clear();
-  window.location.href = 'index.html';
-};
+// ── PERSONAL CLIENTS/BUYERS (shared data used by Overview, Sales, Commission) ──
+let myUnitsCache = [], myBuyersWithUnit = [];
+async function fetchMyClientsData(){
+  const [buyersRes, unitsRes, propsRes, devsRes] = await Promise.all([
+    fetch('/api/buyers', { headers: { 'Authorization': 'Bearer ' + token } }),
+    fetch('/api/units',  { headers: { 'Authorization': 'Bearer ' + token } }),
+    fetch('/api/properties', { headers: { 'Authorization': 'Bearer ' + token } }),
+    fetch('/api/developers', { headers: { 'Authorization': 'Bearer ' + token } }),
+  ]);
+  const buyers = await buyersRes.json();
+  myUnitsCache = await unitsRes.json();
+  const propsCache = await propsRes.json();
+  const devsCache  = await devsRes.json();
+  myBuyersWithUnit = buyers.map(b => {
+    const unit = myUnitsCache.find(u=>u.id===b.unit_id);
+    const property = unit ? propsCache.find(p=>p.id===unit.property_id) : null;
+    const developer = property ? devsCache.find(d=>d.id===property.developer_id) : null;
+    return { ...b, unit, property, developer };
+  });
+  return { buyers: myBuyersWithUnit, props: propsCache, devs: devsCache };
+}
 
-const peso = n => '₱' + Number(n||0).toLocaleString('en-PH', {maximumFractionDigits:0});
-
-window.switchTab = (tab, linkEl) => {
-  document.getElementById('tab-team').classList.toggle('hidden', tab!=='team');
-  document.getElementById('tab-clients').classList.toggle('hidden', tab!=='clients');
-  document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
-  linkEl.classList.add('active');
-  if(tab==='clients') loadMyClients();
-};
-
-window.openModal  = (id) => document.getElementById(id).classList.add('open');
-window.closeModal = (id) => document.getElementById(id).classList.remove('open');
-document.querySelectorAll('.modal-backdrop').forEach(m => {
-  m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); });
-});
-
-let myUnitsCache = [];
-async function loadMyClients(){
+// ── DASHBOARD (Overview) ──
+async function renderOverview(){
   try {
-    const [buyersRes, unitsRes, propsRes, devsRes, tlRes, smRes, umRes] = await Promise.all([
-      fetch('/api/buyers', { headers: { 'Authorization': 'Bearer ' + token } }),
-      fetch('/api/units',  { headers: { 'Authorization': 'Bearer ' + token } }),
+    const teamData = await loadMyTeam();
+    const { buyers } = await fetchMyClientsData();
+    const totalValue = buyers.reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
+    const availableUnits = myUnitsCache.filter(u=>u.status==='Available').length;
+
+    const teamSize = role==='unit_manager' ? (teamData.salesManagers.length + teamData.teamLeaders.length + teamData.agents.length)
+      : role==='sales_manager' ? (teamData.teamLeaders.length + teamData.agents.length)
+      : teamData.agents.length;
+
+    document.getElementById('ovCards').innerHTML = [
+      ['Team Size', teamSize, ''],
+      ['My Clients', buyers.length, ''],
+      ['My Sales Value', peso(totalValue), 'text-orange-600'],
+      ['Available Units', availableUnits, 'text-green-600'],
+    ].map(([l,v,c])=>`<div class="card p-4"><p class="text-gray-500 text-xs uppercase tracking-wide mb-1">${l}</p><p class="text-2xl font-bold ${c}">${v}</p></div>`).join('');
+
+    const recent = [...buyers].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,5);
+    document.getElementById('ovRecentBody').innerHTML = recent.map(b=>`
+      <tr>
+        <td class="px-5 py-2 text-xs font-medium">${b.name}</td>
+        <td class="px-5 py-2 text-xs">${b.unit?b.unit.unit_name:'—'}</td>
+        <td class="px-5 py-2 text-xs text-orange-600">${b.unit?peso(b.unit.tcp):'—'}</td>
+      </tr>`).join('') || `<tr><td colspan="3" class="px-5 py-4 text-center text-gray-500 text-xs">No clients yet.</td></tr>`;
+  } catch(err) { console.error('Error loading overview:', err); }
+}
+
+// ── PROPERTIES (view-only) ──
+let unitsListFilter='all', unitsListSearch='';
+async function loadUnitsList(){
+  try {
+    const [unitsRes, propsRes, devsRes] = await Promise.all([
+      fetch('/api/units', { headers: { 'Authorization': 'Bearer ' + token } }),
       fetch('/api/properties', { headers: { 'Authorization': 'Bearer ' + token } }),
       fetch('/api/developers', { headers: { 'Authorization': 'Bearer ' + token } }),
-      fetch('/api/team-leaders', { headers: { 'Authorization': 'Bearer ' + token } }),
-      fetch('/api/sales-managers', { headers: { 'Authorization': 'Bearer ' + token } }),
-      fetch('/api/unit-managers', { headers: { 'Authorization': 'Bearer ' + token } }),
     ]);
-    const buyers = await buyersRes.json();
-    myUnitsCache = await unitsRes.json();
-    const propsCache = await propsRes.json();
-    const devsCache  = await devsRes.json();
-    const tlCache = await tlRes.json();
-    const smCache = await smRes.json();
-    const umCache = await umRes.json();
+    const units = await unitsRes.json();
+    const props = await propsRes.json();
+    const devs  = await devsRes.json();
+    window._unitsListData = units.map(u=>{
+      const p = props.find(pp=>pp.id===u.property_id);
+      const d = p ? devs.find(dd=>dd.id===p.developer_id) : null;
+      return { ...u, propertyName: p?p.name:'—', developerName: d?d.name:'—' };
+    });
+    renderUnitsList();
+  } catch(err) { console.error('Error loading units:', err); }
+}
+function renderUnitsList(){
+  const all = window._unitsListData || [];
+  const filtered = all.filter(u=>{
+    const mf = unitsListFilter==='all' || u.status===unitsListFilter;
+    const ms = u.unit_name.toLowerCase().includes(unitsListSearch) || u.propertyName.toLowerCase().includes(unitsListSearch);
+    return mf && ms;
+  });
+  document.getElementById('unitsListBody').innerHTML = filtered.map(u=>`
+    <tr>
+      <td class="px-5 py-3 text-xs">${u.developerName}</td>
+      <td class="px-5 py-3 text-xs">${u.propertyName}</td>
+      <td class="px-5 py-3 font-medium text-xs">${u.unit_name}</td>
+      <td class="px-5 py-3 text-xs">${u.bedrooms??'—'}</td>
+      <td class="px-5 py-3 text-xs">${u.furnishing||'—'}</td>
+      <td class="px-5 py-3 text-xs text-orange-600">${peso(u.tcp)}</td>
+      <td class="px-5 py-3 text-xs"><span class="badge ${SB[u.status]}">${u.status}</span></td>
+    </tr>`).join('') || `<tr><td colspan="7" class="px-5 py-5 text-center text-gray-500 text-xs">No units found.</td></tr>`;
+  document.getElementById('unitsListCount').textContent = `Showing ${filtered.length} of ${all.length} units`;
+}
+window.filterUnitsList = (val, btn) => {
+  unitsListFilter = val;
+  document.querySelectorAll('#sec-properties .filter-btn').forEach(b=>{ b.classList.remove('active-filter','border-orange-500/50','bg-orange-500/10','text-orange-400'); b.classList.add('border-gray-200','text-gray-400'); });
+  btn.classList.add('active-filter','border-orange-500/50','bg-orange-500/10','text-orange-400'); btn.classList.remove('border-gray-200','text-gray-400');
+  renderUnitsList();
+};
+window.searchUnitsList = val => { unitsListSearch = val.toLowerCase(); renderUnitsList(); };
 
-    // Resolve who I directly report to
+// ── COMMISSION (personal) ──
+async function renderCommissionPersonal(){
+  const { buyers } = await fetchMyClientsData();
+  const rank = localStorage.getItem('commissionRank') || '—';
+  const rate = parseFloat(localStorage.getItem('commissionRate')) || 0;
+  const tcn = buyers.reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
+  const gross = tcn * rate / 100;
+  const withholding = gross * 0.10;
+  const percTax = gross * 0.03;
+  const net = gross - withholding - percTax;
+
+  document.getElementById('commRankLabel').textContent = rank;
+  document.getElementById('commTCN').textContent = peso(tcn);
+  document.getElementById('commRateVal').textContent = rate + '%';
+  document.getElementById('commGrossVal').textContent = peso(gross);
+  document.getElementById('commWithVal').textContent = '-' + peso(withholding);
+  document.getElementById('commPercVal').textContent = '-' + peso(percTax);
+  document.getElementById('commNetVal').textContent = peso(net);
+}
+
+// ── MY SALES & CLIENTS ──
+async function loadMyClients(){
+  try {
+    const { buyers } = await fetchMyClientsData();
+    const totalValue = buyers.reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
+    const best = buyers.length ? buyers.reduce((a,b)=> (b.unit && (!a.unit || Number(b.unit.tcp)>Number(a.unit.tcp))) ? b : a) : null;
+
     let reportsTo = 'Unassigned';
     const mySMId = localStorage.getItem('salesManagerId');
     const myUMId = localStorage.getItem('unitManagerId');
     if(role === 'team_leader'){
-      if(mySMId){ const sm = smCache.find(s=>s.id===mySMId); if(sm) reportsTo = `${sm.name} (Sales Manager)`; }
-      else if(myUMId){ const um = umCache.find(u=>u.id===myUMId); if(um) reportsTo = `${um.name} (Unit Manager)`; }
+      if(mySMId || myUMId){
+        const [smRes, umRes] = await Promise.all([
+          fetch('/api/sales-managers', { headers: { 'Authorization': 'Bearer ' + token } }),
+          fetch('/api/unit-managers', { headers: { 'Authorization': 'Bearer ' + token } }),
+        ]);
+        const smCache = await smRes.json(); const umCache = await umRes.json();
+        if(mySMId){ const sm = smCache.find(s=>s.id===mySMId); if(sm) reportsTo = `${sm.name} (Sales Manager)`; }
+        else if(myUMId){ const um = umCache.find(u=>u.id===myUMId); if(um) reportsTo = `${um.name} (Unit Manager)`; }
+      }
     } else if(role === 'sales_manager'){
-      reportsTo = myUMId ? (umCache.find(u=>u.id===myUMId)?.name + ' (Unit Manager)' || 'Solo') : 'Solo (no Unit Manager)';
+      if(myUMId){
+        const umRes = await fetch('/api/unit-managers', { headers: { 'Authorization': 'Bearer ' + token } });
+        const umCache = await umRes.json();
+        const um = umCache.find(u=>u.id===myUMId);
+        reportsTo = um ? `${um.name} (Unit Manager)` : 'Solo (no Unit Manager)';
+      } else { reportsTo = 'Solo (no Unit Manager)'; }
     } else if(role === 'unit_manager'){
       reportsTo = 'Admin';
     }
-
-    const withUnit = buyers.map(b => {
-      const unit = myUnitsCache.find(u=>u.id===b.unit_id);
-      const property = unit ? propsCache.find(p=>p.id===unit.property_id) : null;
-      const developer = property ? devsCache.find(d=>d.id===property.developer_id) : null;
-      return { ...b, unit, property, developer };
-    });
-    const totalValue = withUnit.reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
-    const best = withUnit.length ? withUnit.reduce((a,b)=> (b.unit && (!a.unit || Number(b.unit.tcp)>Number(a.unit.tcp))) ? b : a) : null;
 
     document.getElementById('clientCount').textContent = buyers.length;
     document.getElementById('clientRev').textContent   = peso(totalValue);
     document.getElementById('clientBest').textContent  = best && best.unit ? best.unit.unit_name : '—';
 
-    document.getElementById('clientsBody').innerHTML = withUnit.map(b => `
+    document.getElementById('clientsBody').innerHTML = buyers.map(b => `
       <tr>
         <td class="px-5 py-3 font-medium text-xs">${b.name}</td>
         <td class="px-5 py-3 text-gray-500 text-xs">${b.email||'—'}</td>
@@ -311,17 +510,16 @@ async function loadMyClients(){
     console.error('Error loading clients:', err);
   }
 }
-
 window.saveBuyer = async () => {
-  const name = document.getElementById('bName').value.trim();
-  if(!name){ document.getElementById('bErr').classList.remove('hidden'); return; }
+  const name2 = document.getElementById('bName').value.trim();
+  if(!name2){ document.getElementById('bErr').classList.remove('hidden'); return; }
   document.getElementById('bErr').classList.add('hidden');
   try {
     await fetch('/api/buyers', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name,
+        name: name2,
         email: document.getElementById('bEmail').value.trim(),
         phone: document.getElementById('bPhone').value.trim(),
         address: document.getElementById('bAddr').value.trim(),
@@ -337,7 +535,35 @@ window.saveBuyer = async () => {
   }
 };
 
-loadMyTeam();
+// ── COMPUTATION TOOL ──
+window.computeCalc = () => {
+  const price = parseFloat(document.getElementById('calcPrice').value);
+  const rate  = parseFloat(document.getElementById('calcRate').value);
+  const result = document.getElementById('calcResult');
+  if (!price || !rate) { result.classList.add('hidden'); return; }
+  const comm = price*rate/100;
+  const withholding = comm*0.10;
+  const percTax = comm*0.03;
+  const netComm = comm - withholding - percTax;
+  document.getElementById('calcAmount').textContent = peso(comm);
+  document.getElementById('calcWithholding').textContent = '-'+peso(withholding);
+  document.getElementById('calcPercTax').textContent = '-'+peso(percTax);
+  document.getElementById('calcNetCommission').textContent = peso(netComm);
+  result.classList.remove('hidden');
+};
+
+// ── MY PROFILE ──
+function renderProfile(){
+  document.getElementById('profileInitial').textContent = (name||'?')[0].toUpperCase();
+  document.getElementById('profileNameRow').textContent = name || '—';
+  document.getElementById('profileRoleRow').textContent = ROLE_LABELS[role] || '—';
+  document.getElementById('profileId').textContent = localStorage.getItem('personId') || '—';
+  document.getElementById('profileEmail').textContent = localStorage.getItem('email') || '—';
+  document.getElementById('profileRank').textContent = localStorage.getItem('commissionRank') || '—';
+  document.getElementById('profileRate').textContent = (localStorage.getItem('commissionRate')||'0') + '%';
+}
+
+renderOverview();
 
 });
 </script>

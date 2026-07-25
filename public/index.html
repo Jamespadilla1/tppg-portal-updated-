@@ -177,11 +177,15 @@ window.handleLogin = async () => {
       localStorage.setItem('teamLeaderId', data.teamLeaderId || '');
       localStorage.setItem('salesManagerId', data.salesManagerId || '');
       localStorage.setItem('unitManagerId', data.unitManagerId || '');
+      localStorage.setItem('commissionRank', data.commissionRank || '');
+      localStorage.setItem('commissionRate', data.commissionRate || '');
       window.location.href = 'agent-dashboard.html';
     } else {
       localStorage.setItem('personId', data.personId || '');
       localStorage.setItem('unitManagerId', data.unitManagerId || '');
       localStorage.setItem('salesManagerId', data.salesManagerId || '');
+      localStorage.setItem('commissionRank', data.commissionRank || '');
+      localStorage.setItem('commissionRate', data.commissionRate || '');
       window.location.href = 'team-dashboard.html';
     }
 

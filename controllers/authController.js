@@ -60,6 +60,8 @@ const login = async (req, res) => {
         teamLeaderId:  agent.team_leader_id  || '',
         salesManagerId: agent.sales_manager_id || '',
         unitManagerId: agent.unit_manager_id || '',
+        commissionRank: agent.commission_rank || '',
+        commissionRate: agent.commission_rate || '',
       });
     }
 
@@ -88,6 +90,8 @@ const login = async (req, res) => {
         personId: person[idFieldMap[role]],
         unitManagerId: person.unit_manager_id || '',
         salesManagerId: person.sales_manager_id || '',
+        commissionRank: person.commission_rank || '',
+        commissionRate: person.commission_rate || '',
       });
     }
 
