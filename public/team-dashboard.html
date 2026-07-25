@@ -29,6 +29,16 @@
   .nav-link.active .dot{opacity:1;background:#ea580c}
   .card{background:#ffffff;border:1px solid #e5e7eb;border-radius:12px}
   .card:hover{border-color:#ea580c66}
+  .org-wrap{display:flex;flex-direction:column;align-items:center;padding:20px 0 10px}
+  .org-root{opacity:0;transform:translateY(-10px) scale(.95);transition:all .35s ease}
+  .org-root.org-in{opacity:1;transform:translateY(0) scale(1)}
+  .org-vline{width:2px;height:24px;background:#e5e7eb}
+  .org-children-row{display:flex;justify-content:center;gap:28px;position:relative;padding-top:24px;flex-wrap:wrap}
+  .org-children-row::before{content:'';position:absolute;top:0;left:8%;right:8%;height:2px;background:#e5e7eb}
+  .org-branch{display:flex;flex-direction:column;align-items:center;position:relative;opacity:0;transform:translateY(-8px) scale(.95);transition:all .35s ease}
+  .org-branch.org-in{opacity:1;transform:translateY(0) scale(1)}
+  .org-branch::before{content:'';position:absolute;top:-24px;width:2px;height:24px;background:#e5e7eb;left:50%;transform:translateX(-50%)}
+  .org-node{width:180px}
   .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:500}
   .badge-green{background:rgba(34,197,94,.1);color:#16a34a}
   .badge-yellow{background:rgba(234,179,8,.1);color:#ca8a04}
@@ -100,48 +110,64 @@
     </div>
 
     <!-- MY TEAM -->
-    <div id="sec-team" class="section space-y-6">
-      <div id="smSection" class="hidden space-y-3">
-        <h2 class="font-semibold text-sm text-gray-500 uppercase tracking-wide">Sales Managers</h2>
-        <div id="smGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-      </div>
-      <div id="tlSection" class="hidden space-y-3">
-        <h2 class="font-semibold text-sm text-gray-500 uppercase tracking-wide">Team Leaders</h2>
-        <div id="tlGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-      </div>
-      <div class="space-y-3">
-        <h2 class="font-semibold text-sm text-gray-500 uppercase tracking-wide">Agents</h2>
-        <div class="card overflow-hidden">
-          <div class="overflow-x-auto"><table class="w-full text-sm">
-            <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
-              <th class="text-left px-5 py-2">Full Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Agent ID</th><th class="text-left px-5 py-2">Status</th>
-            </tr></thead>
-            <tbody id="agentsBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
-          </table></div>
-          <div class="px-5 py-2 border-t border-gray-200 text-xs text-gray-500" id="agentCount"></div>
-        </div>
-      </div>
+    <div id="sec-team" class="section space-y-4">
+      <button id="teamBackBtn" onclick="teamGoBack()" class="hidden text-xs text-gray-400 hover:text-white flex items-center gap-1">← Back</button>
+      <div id="teamChart"></div>
     </div>
 
     <!-- PROPERTIES (view-only) -->
     <div id="sec-properties" class="section space-y-4">
-      <div class="flex flex-wrap gap-3 items-center justify-between">
-        <div class="flex gap-2">
-          <button onclick="filterUnitsList('all',this)"       class="filter-btn active-filter px-4 py-2 rounded-lg text-sm border border-orange-500/50 bg-orange-500/10 text-orange-400">All</button>
-          <button onclick="filterUnitsList('Available',this)" class="filter-btn px-4 py-2 rounded-lg text-sm border border-gray-200 text-gray-400 hover:text-gray-700">Available</button>
-          <button onclick="filterUnitsList('Hold',this)"      class="filter-btn px-4 py-2 rounded-lg text-sm border border-gray-200 text-gray-400 hover:text-gray-700">Hold</button>
-          <button onclick="filterUnitsList('Sold',this)"      class="filter-btn px-4 py-2 rounded-lg text-sm border border-gray-200 text-gray-400 hover:text-gray-700">Sold</button>
+      <!-- LEVEL 1: Developers -->
+      <div id="propDevListView">
+        <div class="card p-4 mb-3">
+          <div class="flex gap-2 flex-wrap">
+            <select id="propSearchType" class="field w-40">
+              <option value="">All Types</option>
+              <option value="Condo">Condo</option>
+              <option value="House and Lot">House and Lot</option>
+              <option value="Lot">Lot</option>
+            </select>
+            <input id="propSearchLoc" type="text" placeholder="Type any location…" class="field flex-1 min-w-[160px]" onkeydown="if(event.key==='Enter')searchPropsGlobal()">
+            <button onclick="searchPropsGlobal()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 rounded-lg text-sm font-medium transition-colors">Search</button>
+          </div>
+          <div id="propSearchResults" class="mt-3"></div>
         </div>
-        <input type="text" placeholder="Search units…" oninput="searchUnitsList(this.value)" class="field w-52">
+        <p class="text-xs text-gray-500 mb-3">Select a developer to view their properties.</p>
+        <div id="propDevGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
       </div>
-      <div class="card overflow-hidden">
-        <div class="overflow-x-auto"><table class="w-full text-sm">
-          <thead><tr class="text-gray-500 text-xs uppercase tracking-wide border-b border-gray-200">
-            <th class="text-left px-5 py-2">Developer</th><th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Unit</th><th class="text-left px-5 py-2">Bedrooms</th><th class="text-left px-5 py-2">Furnishing</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Status</th>
-          </tr></thead>
-          <tbody id="unitsListBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
-        </table></div>
-        <div class="px-5 py-2 border-t border-gray-200 text-xs text-gray-500" id="unitsListCount"></div>
+
+      <!-- LEVEL 2: A developer's properties -->
+      <div id="propListView" class="hidden space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <button onclick="propBackToDevelopers()" class="text-xs text-gray-400 hover:text-gray-700 flex items-center gap-1">← Back to Developers</button>
+          <h3 id="propListTitle" class="font-semibold text-sm"></h3>
+        </div>
+        <div id="propListGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+      </div>
+
+      <!-- LEVEL 3: A property's units -->
+      <div id="propUnitsView" class="hidden space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <button onclick="propBackToProperties()" class="text-xs text-gray-400 hover:text-gray-700 flex items-center gap-1">← Back to Properties</button>
+          <h3 id="propUnitsTitle" class="font-semibold text-sm"></h3>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="filterUnitsList('all',this)"       class="filter-btn active-filter px-3 py-1.5 rounded-lg text-xs border border-orange-500/50 bg-orange-500/10 text-orange-400">All</button>
+          <button onclick="filterUnitsList('Available',this)" class="filter-btn px-3 py-1.5 rounded-lg text-xs border border-gray-200 text-gray-400 hover:text-gray-700">Available</button>
+          <button onclick="filterUnitsList('Hold',this)"      class="filter-btn px-3 py-1.5 rounded-lg text-xs border border-gray-200 text-gray-400 hover:text-gray-700">Hold</button>
+          <button onclick="filterUnitsList('Sold',this)"      class="filter-btn px-3 py-1.5 rounded-lg text-xs border border-gray-200 text-gray-400 hover:text-gray-700">Sold</button>
+          <input type="text" placeholder="Search units…" oninput="searchUnitsList(this.value)" class="field ml-auto w-40 text-xs">
+        </div>
+        <div id="propUnitGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+        <p id="unitsListCount" class="text-xs text-gray-500"></p>
+      </div>
+    </div>
+
+    <!-- UNIT DETAIL (view-only) -->
+    <div id="unitDetailModal" class="modal-backdrop">
+      <div class="modal-box max-w-lg">
+        <button onclick="closeModal('unitDetailModal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-700 text-xl">&times;</button>
+        <div id="unitDetailContent"></div>
       </div>
     </div>
 
@@ -272,8 +298,8 @@ window.showSection = (id, linkEl) => {
   const TITLES = { overview:'Dashboard', team:'My Team', properties:'Properties', commission:'Commission', sales:'My Sales & Clients', compute:'Computation Tool', profile:'My Profile' };
   document.getElementById('pageTitle').textContent = TITLES[id];
   if(id==='overview') renderOverview();
-  else if(id==='team') loadMyTeam();
-  else if(id==='properties') loadUnitsList();
+  else if(id==='team'){ teamDrillStack=[]; renderTeamChart(); }
+  else if(id==='properties') enterPropDevelopers();
   else if(id==='commission') renderCommissionPersonal();
   else if(id==='sales') loadMyClients();
   else if(id==='profile') renderProfile();
@@ -287,53 +313,127 @@ document.querySelectorAll('.modal-backdrop').forEach(m => {
 window.logout = () => { localStorage.clear(); window.location.href = 'index.html'; };
 
 // ── MY TEAM ──
-async function loadMyTeam(){
+// Lightweight fetch used by Overview/Sales for team-size stats (no rendering)
+async function fetchMyTeamData(){
   try {
     const res = await fetch('/api/my-team', { headers: { 'Authorization': 'Bearer ' + token } });
     if (!res.ok) throw new Error('Failed to load team');
-    const data = await res.json();
-
-    if (data.salesManagers && data.salesManagers.length){
-      document.getElementById('smSection').classList.remove('hidden');
-      document.getElementById('smGrid').innerHTML = data.salesManagers.map(sm => `
-        <div class="card p-4">
-          <div class="w-9 h-9 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold mb-2">${sm.name[0]}</div>
-          <p class="font-semibold text-sm">${sm.name}</p>
-          <p class="text-xs text-gray-500">${sm.email||'—'}</p>
-        </div>`).join('');
-    }
-    if (data.teamLeaders && data.teamLeaders.length){
-      document.getElementById('tlSection').classList.remove('hidden');
-      document.getElementById('tlGrid').innerHTML = data.teamLeaders.map(tl => `
-        <div class="card p-4">
-          <div class="w-9 h-9 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold mb-2">${tl.name[0]}</div>
-          <p class="font-semibold text-sm">${tl.name}</p>
-          <p class="text-xs text-gray-500">${tl.email||'—'}</p>
-        </div>`).join('');
-    }
-    const agents = data.agents || [];
-    document.getElementById('agentsBody').innerHTML = agents.map(a => `
-      <tr>
-        <td class="px-5 py-3 font-medium text-xs">${a.name}</td>
-        <td class="px-5 py-3 text-gray-500 text-xs">${a.email}</td>
-        <td class="px-5 py-3 text-gray-500 text-xs">${a.phone||'—'}</td>
-        <td class="px-5 py-3 font-mono text-xs">${a.agent_id||'—'}</td>
-        <td class="px-5 py-3 text-xs"><span class="badge ${SB[a.status]||'badge-blue'}">${a.status}</span></td>
-      </tr>`).join('') || `<tr><td colspan="5" class="px-5 py-5 text-center text-gray-500 text-xs">No agents in your team yet.</td></tr>`;
-    document.getElementById('agentCount').textContent = `${agents.length} agent${agents.length===1?'':'s'} on your team`;
-
-    const smCount = (data.salesManagers||[]).length;
-    const tlCount = (data.teamLeaders||[]).length;
-    document.getElementById('teamSummary').textContent =
-      role==='unit_manager' ? `${smCount} Sales Managers · ${tlCount} Team Leaders · ${agents.length} Agents` :
-      role==='sales_manager' ? `${tlCount} Team Leaders · ${agents.length} Agents` :
-      `${agents.length} Agents`;
-
-    return data;
+    return await res.json();
   } catch(err) {
     console.error('Error loading team:', err);
+    return { salesManagers: [], teamLeaders: [], agents: [] };
   }
 }
+async function loadMyTeam(){
+  const data = await fetchMyTeamData();
+  const smCount = (data.salesManagers||[]).length;
+  const tlCount = (data.teamLeaders||[]).length;
+  const agCount = (data.agents||[]).length;
+  document.getElementById('teamSummary').textContent =
+    role==='unit_manager' ? `${smCount} Sales Managers · ${tlCount} Team Leaders · ${agCount} Agents` :
+    role==='sales_manager' ? `${tlCount} Team Leaders · ${agCount} Agents` :
+    `${agCount} Agents`;
+  return data;
+}
+
+// ── MY TEAM: org chart drill-down (self as root, drill into subordinates) ──
+let teamDrillStack = []; // {role, id, name} — empty means show self as root
+
+function orgNode(opts){
+  return `
+    <div class="card org-node p-3 ${opts.clickable?'cursor-pointer':''}" ${opts.onclick?`onclick="${opts.onclick}"`:''}>
+      <div class="flex items-center gap-2 mb-1.5">
+        <div class="w-8 h-8 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold text-sm shrink-0">${opts.name[0]}</div>
+        <div class="min-w-0">
+          <p class="font-semibold text-xs truncate">${opts.name}</p>
+          <p class="text-[10px] text-gray-500 truncate">${opts.email||''}</p>
+        </div>
+      </div>
+      <span class="badge badge-blue text-[10px] inline-block">${opts.roleLabel}</span>
+      ${opts.subLabel ? `<p class="text-[10px] text-gray-500 border-t border-gray-200 pt-1.5 mt-1.5 text-center">${opts.subLabel}</p>` : ''}
+    </div>`;
+}
+function animateOrgIn(){
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.querySelectorAll('.org-root, .org-branch').forEach(el => el.classList.add('org-in'));
+  }));
+}
+
+async function renderTeamChart(){
+  const chart = document.getElementById('teamChart');
+  const backBtn = document.getElementById('teamBackBtn');
+
+  if(!teamDrillStack.length){
+    backBtn.classList.add('hidden');
+    const rootRole = role; // unit_manager | sales_manager | team_leader
+    const rootData = await fetchMyTeamData();
+    const rootLabel = ROLE_LABELS[rootRole];
+    const smCount = (rootData.salesManagers||[]).length;
+    const tlCount = (rootData.teamLeaders||[]).length;
+    const agCount = (rootData.agents||[]).length;
+    const subParts = [];
+    if(rootRole==='unit_manager') subParts.push(`${smCount} Sales Mgrs`, `${tlCount} Team Leads`, `${agCount} Agents`);
+    else if(rootRole==='sales_manager') subParts.push(`${tlCount} Team Leads`, `${agCount} Agents`);
+    else subParts.push(`${agCount} Agents`);
+
+    const rootOpts = { name, email: localStorage.getItem('email'), roleLabel: rootLabel, subLabel: subParts.join(' · ') };
+    const directSM = (rootData.salesManagers||[]).map(sm => ({ name: sm.name, email: sm.email, roleLabel:'Sales Manager', clickable:true, onclick:`teamDrillInto('sales_manager','${sm.id}','${sm.name.replace(/'/g,"\\'")}')` }));
+    const directTLOnly = rootRole==='unit_manager'
+      ? (rootData.teamLeaders||[]).filter(tl=>!tl.sales_manager_id).map(tl => ({ name: tl.name, email: tl.email, roleLabel:'Team Leader', clickable:true, onclick:`teamDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` }))
+      : rootRole==='sales_manager'
+      ? (rootData.teamLeaders||[]).map(tl => ({ name: tl.name, email: tl.email, roleLabel:'Team Leader', clickable:true, onclick:`teamDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` }))
+      : [];
+    const directAgentsOnly = rootRole==='team_leader'
+      ? (rootData.agents||[]).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:false }))
+      : (rootData.agents||[]).filter(a => (rootRole==='unit_manager' && !a.team_leader_id && !a.sales_manager_id) || (rootRole==='sales_manager' && !a.team_leader_id)).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:false }));
+
+    const children = [...directSM, ...directTLOnly, ...directAgentsOnly];
+    chart.innerHTML = `
+      <div class="org-wrap">
+        <div class="org-root">${orgNode(rootOpts)}</div>
+        ${children.length ? `
+          <div class="org-vline"></div>
+          <div class="org-children-row">${children.map(c=>`<div class="org-branch">${orgNode(c)}</div>`).join('')}</div>
+        ` : `<p class="text-center text-gray-500 text-xs py-6">Nobody under you yet.</p>`}
+      </div>`;
+    animateOrgIn();
+    return;
+  }
+
+  backBtn.classList.remove('hidden');
+  const current = teamDrillStack[teamDrillStack.length-1];
+  try {
+    const res = await fetch(`/api/my-team/of/${current.role}/${current.id}`, { headers: { 'Authorization': 'Bearer ' + token } });
+    const data = await res.json();
+    const rootOpts = { name: current.name, roleLabel: ROLE_LABELS[current.role] || current.role, subLabel: '' };
+    let children = [];
+    if(current.role==='sales_manager'){
+      children = [
+        ...(data.teamLeaders||[]).map(tl => ({ name: tl.name, email: tl.email, roleLabel:'Team Leader', clickable:true, onclick:`teamDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` })),
+        ...(data.agents||[]).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:false })),
+      ];
+    } else if(current.role==='team_leader'){
+      children = (data.agents||[]).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:false }));
+    }
+    chart.innerHTML = `
+      <div class="org-wrap">
+        <div class="org-root">${orgNode(rootOpts)}</div>
+        ${children.length ? `
+          <div class="org-vline"></div>
+          <div class="org-children-row">${children.map(c=>`<div class="org-branch">${orgNode(c)}</div>`).join('')}</div>
+        ` : `<p class="text-center text-gray-500 text-xs py-6">Nobody under this person yet.</p>`}
+      </div>`;
+    animateOrgIn();
+  } catch(err) { console.error('Error loading subordinate team:', err); }
+}
+window.teamDrillInto = (role2, id, personName) => {
+  teamDrillStack.push({ role: role2, id, name: personName });
+  renderTeamChart();
+};
+window.teamGoBack = () => {
+  teamDrillStack.pop();
+  renderTeamChart();
+};
 
 // ── PERSONAL CLIENTS/BUYERS (shared data used by Overview, Sales, Commission) ──
 let myUnitsCache = [], myBuyersWithUnit = [];
@@ -387,51 +487,149 @@ async function renderOverview(){
 }
 
 // ── PROPERTIES (view-only) ──
+let propAllDevs=[], propAllProps=[], propAllUnits=[];
+let propCurrentDevId=null, propCurrentDevName='', propCurrentPropId=null, propCurrentPropName='';
 let unitsListFilter='all', unitsListSearch='';
-async function loadUnitsList(){
-  try {
-    const [unitsRes, propsRes, devsRes] = await Promise.all([
-      fetch('/api/units', { headers: { 'Authorization': 'Bearer ' + token } }),
-      fetch('/api/properties', { headers: { 'Authorization': 'Bearer ' + token } }),
-      fetch('/api/developers', { headers: { 'Authorization': 'Bearer ' + token } }),
-    ]);
-    const units = await unitsRes.json();
-    const props = await propsRes.json();
-    const devs  = await devsRes.json();
-    window._unitsListData = units.map(u=>{
-      const p = props.find(pp=>pp.id===u.property_id);
-      const d = p ? devs.find(dd=>dd.id===p.developer_id) : null;
-      return { ...u, propertyName: p?p.name:'—', developerName: d?d.name:'—' };
-    });
-    renderUnitsList();
-  } catch(err) { console.error('Error loading units:', err); }
+
+async function fetchAllPropData(){
+  const [devsRes, propsRes, unitsRes] = await Promise.all([
+    fetch('/api/developers', { headers: { 'Authorization': 'Bearer ' + token } }),
+    fetch('/api/properties', { headers: { 'Authorization': 'Bearer ' + token } }),
+    fetch('/api/units', { headers: { 'Authorization': 'Bearer ' + token } }),
+  ]);
+  propAllDevs = await devsRes.json();
+  propAllProps = await propsRes.json();
+  propAllUnits = await unitsRes.json();
 }
+
+async function enterPropDevelopers(){
+  propCurrentDevId = null; propCurrentPropId = null;
+  document.getElementById('propDevListView').classList.remove('hidden');
+  document.getElementById('propListView').classList.add('hidden');
+  document.getElementById('propUnitsView').classList.add('hidden');
+  await fetchAllPropData();
+  document.getElementById('propDevGrid').innerHTML = propAllDevs.map(d => `
+    <div onclick="propViewDeveloper('${d.id}','${d.name.replace(/'/g,"\\'")}')" class="card overflow-hidden cursor-pointer text-center">
+      <div class="w-full h-28 bg-gray-50 flex items-center justify-center overflow-hidden">
+        ${d.logo_url ? `<img src="${d.logo_url}" class="w-full h-full object-cover">` : `<span class="text-gray-400 text-xs">No logo</span>`}
+      </div>
+      <div class="p-3"><p class="font-semibold text-sm">${d.name}</p></div>
+    </div>`).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No developers yet.</p>`;
+}
+
+function propViewDeveloper(id, name){
+  propCurrentDevId = id; propCurrentDevName = name;
+  document.getElementById('propDevListView').classList.add('hidden');
+  document.getElementById('propListView').classList.remove('hidden');
+  document.getElementById('propListTitle').textContent = name;
+  const props = propAllProps.filter(p=>p.developer_id===id);
+  document.getElementById('propListGrid').innerHTML = props.map(p => `
+    <div onclick="propViewProperty('${p.id}','${p.name.replace(/'/g,"\\'")}')" class="card overflow-hidden cursor-pointer">
+      <div class="w-full h-36 bg-gray-50 flex items-center justify-center overflow-hidden">
+        ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-400 text-xs">No photo</span>`}
+      </div>
+      <div class="p-3 space-y-1">
+        <p class="font-semibold text-sm">${p.name}</p>
+        <p class="text-xs text-gray-500">${p.location||'—'}</p>
+        <p class="text-xs text-gray-500">${p.property_type||'Condo'}</p>
+      </div>
+    </div>`).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No properties yet for ${name}.</p>`;
+}
+function propBackToDevelopers(){ enterPropDevelopers(); }
+
+function propViewProperty(id, name){
+  propCurrentPropId = id; propCurrentPropName = name;
+  document.getElementById('propListView').classList.add('hidden');
+  document.getElementById('propUnitsView').classList.remove('hidden');
+  document.getElementById('propUnitsTitle').textContent = name;
+  unitsListFilter = 'all'; unitsListSearch = '';
+  renderUnitsList();
+}
+function propBackToProperties(){
+  document.getElementById('propUnitsView').classList.add('hidden');
+  document.getElementById('propListView').classList.remove('hidden');
+}
+
 function renderUnitsList(){
-  const all = window._unitsListData || [];
+  const all = propAllUnits.filter(u=>u.property_id===propCurrentPropId);
   const filtered = all.filter(u=>{
     const mf = unitsListFilter==='all' || u.status===unitsListFilter;
-    const ms = u.unit_name.toLowerCase().includes(unitsListSearch) || u.propertyName.toLowerCase().includes(unitsListSearch);
+    const ms = u.unit_name.toLowerCase().includes(unitsListSearch);
     return mf && ms;
   });
-  document.getElementById('unitsListBody').innerHTML = filtered.map(u=>`
-    <tr>
-      <td class="px-5 py-3 text-xs">${u.developerName}</td>
-      <td class="px-5 py-3 text-xs">${u.propertyName}</td>
-      <td class="px-5 py-3 font-medium text-xs">${u.unit_name}</td>
-      <td class="px-5 py-3 text-xs">${u.bedrooms??'—'}</td>
-      <td class="px-5 py-3 text-xs">${u.furnishing||'—'}</td>
-      <td class="px-5 py-3 text-xs text-orange-600">${peso(u.tcp)}</td>
-      <td class="px-5 py-3 text-xs"><span class="badge ${SB[u.status]}">${u.status}</span></td>
-    </tr>`).join('') || `<tr><td colspan="7" class="px-5 py-5 text-center text-gray-500 text-xs">No units found.</td></tr>`;
+  document.getElementById('propUnitGrid').innerHTML = filtered.map(u => `
+    <div onclick="viewUnitDetail('${u.id}')" class="card overflow-hidden cursor-pointer">
+      <div class="w-full h-32 bg-gray-50 flex items-center justify-center overflow-hidden">
+        ${u.image_url ? `<img src="${u.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-400 text-xs">No photo</span>`}
+      </div>
+      <div class="p-3 space-y-1">
+        <div class="flex items-start justify-between gap-2">
+          <p class="font-semibold text-sm leading-tight">${u.unit_name}</p>
+          <span class="badge ${SB[u.status]} shrink-0">${u.status}</span>
+        </div>
+        <p class="text-orange-600 font-bold text-sm">${peso(u.tcp)}</p>
+        <p class="text-gray-500 text-xs">${u.bedrooms??'—'} BR · ${u.square_meters??'—'} sqm</p>
+      </div>
+    </div>`).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No units yet for ${propCurrentPropName}.</p>`;
   document.getElementById('unitsListCount').textContent = `Showing ${filtered.length} of ${all.length} units`;
 }
 window.filterUnitsList = (val, btn) => {
   unitsListFilter = val;
-  document.querySelectorAll('#sec-properties .filter-btn').forEach(b=>{ b.classList.remove('active-filter','border-orange-500/50','bg-orange-500/10','text-orange-400'); b.classList.add('border-gray-200','text-gray-400'); });
+  document.querySelectorAll('#propUnitsView .filter-btn').forEach(b=>{ b.classList.remove('active-filter','border-orange-500/50','bg-orange-500/10','text-orange-400'); b.classList.add('border-gray-200','text-gray-400'); });
   btn.classList.add('active-filter','border-orange-500/50','bg-orange-500/10','text-orange-400'); btn.classList.remove('border-gray-200','text-gray-400');
   renderUnitsList();
 };
 window.searchUnitsList = val => { unitsListSearch = val.toLowerCase(); renderUnitsList(); };
+
+function viewUnitDetail(id){
+  const u = propAllUnits.find(x=>x.id===id);
+  if(!u) return;
+  document.getElementById('unitDetailContent').innerHTML = `
+    <div class="w-full h-48 bg-gray-50 rounded-lg overflow-hidden mb-4 flex items-center justify-center">
+      ${u.image_url ? `<img src="${u.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-400 text-xs">No photo</span>`}
+    </div>
+    <div class="flex items-start justify-between gap-2 mb-1">
+      <h3 class="font-bold text-lg">${u.unit_name}</h3>
+      <span class="badge ${SB[u.status]}">${u.status}</span>
+    </div>
+    <p class="text-gray-500 text-sm mb-3">${propCurrentPropName}</p>
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">TCP</p><p class="font-bold">${peso(u.tcp)}</p></div>
+      <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Bedrooms</p><p class="font-bold">${u.bedrooms??'—'}</p></div>
+      <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Square Meters</p><p class="font-bold">${u.square_meters??'—'}</p></div>
+      <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Furnishing</p><p class="font-bold">${u.furnishing||'Bare Unit'}</p></div>
+    </div>
+    <p class="text-gray-500 text-xs mb-1">Description</p>
+    <p class="text-gray-700 text-sm">${u.description||'No description provided.'}</p>
+  `;
+  openModal('unitDetailModal');
+}
+
+// Global property search across all developers (from Level 1)
+async function searchPropsGlobal(){
+  const type = document.getElementById('propSearchType').value;
+  const loc = document.getElementById('propSearchLoc').value.trim().toLowerCase();
+  const resultsEl = document.getElementById('propSearchResults');
+  if(!type && !loc){ resultsEl.innerHTML = '<p class="text-xs text-gray-500">Enter a location or pick a type to search.</p>'; return; }
+  if(!propAllProps.length) await fetchAllPropData();
+  const filtered = propAllProps.filter(p=>{
+    const mt = !type || p.property_type===type;
+    const ml = !loc || (p.location||'').toLowerCase().includes(loc) || p.name.toLowerCase().includes(loc);
+    return mt && ml;
+  });
+  resultsEl.innerHTML = filtered.length ? `
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      ${filtered.map(p=>{
+        const dev = propAllDevs.find(d=>d.id===p.developer_id);
+        return `<div onclick="propViewDeveloper('${p.developer_id}','${dev?dev.name.replace(/'/g,"\\'"):''}');propViewProperty('${p.id}','${p.name.replace(/'/g,"\\'")}')" class="card p-3 cursor-pointer">
+          <p class="font-semibold text-sm">${p.name}</p>
+          <p class="text-xs text-gray-500">${p.location||'—'} · ${p.property_type}</p>
+          <p class="text-xs text-gray-500">Developer: ${dev?dev.name:'—'}</p>
+        </div>`;
+      }).join('')}
+    </div>
+  ` : `<p class="text-xs text-gray-500">No properties match your search.</p>`;
+}
 
 // ── COMMISSION (personal) ──
 async function renderCommissionPersonal(){
