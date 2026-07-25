@@ -108,4 +108,4 @@ const getTeamOf = async (req, res) => {
   }
 };
 
-module.exports = { getMyTeam, getTeamOf };
+module.exports = { getMyTeam, getTeamOf, fetchTeamFor };

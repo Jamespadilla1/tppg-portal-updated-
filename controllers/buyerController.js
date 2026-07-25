@@ -1,4 +1,5 @@
 const supabase = require('../config/db');
+const { fetchTeamFor } = require('./teamViewController');
 
 // GET /api/buyers — admin sees all; other roles see only buyers they personally input
 const getBuyers = async (req, res) => {
@@ -8,6 +9,35 @@ const getBuyers = async (req, res) => {
       query = query.eq('input_by_id', req.user.id).eq('input_by_role', req.user.role);
     }
     const { data: buyers, error } = await query;
+    if (error) throw error;
+    res.json(buyers);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+// GET /api/buyers/team — for Unit Manager/Sales Manager/Team Leader: buyers added by them
+// PLUS everyone in their downward team (used for team-scoped Reports & Analytics)
+const getTeamBuyers = async (req, res) => {
+  try {
+    const { id, role } = req.user;
+    if (!['unit_manager', 'sales_manager', 'team_leader'].includes(role)) {
+      return res.status(403).json({ message: 'This account type has no team-wide view.' });
+    }
+
+    const team = await fetchTeamFor(id, role);
+    const people = [{ role, id }];
+    (team.salesManagers || []).forEach(p => people.push({ role: 'sales_manager', id: p.id }));
+    (team.teamLeaders || []).forEach(p => people.push({ role: 'team_leader', id: p.id }));
+    (team.agents || []).forEach(p => people.push({ role: 'agent', id: p.id }));
+
+    const orFilters = people.map(p => `and(input_by_role.eq.${p.role},input_by_id.eq.${p.id})`);
+    const { data: buyers, error } = await supabase
+      .from('buyers')
+      .select('*')
+      .or(orFilters.join(','))
+      .order('created_at', { ascending: false });
     if (error) throw error;
     res.json(buyers);
   } catch (err) {
@@ -111,4 +141,4 @@ const deleteBuyer = async (req, res) => {
   }
 };
 
-module.exports = { getBuyers, createBuyer, updateBuyer, deleteBuyer };
+module.exports = { getBuyers, getTeamBuyers, createBuyer, updateBuyer, deleteBuyer };

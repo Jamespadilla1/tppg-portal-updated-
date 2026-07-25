@@ -57,6 +57,7 @@
     #main{margin-left:0!important}
   }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 </head>
 <body class="bg-gray-950 text-white min-h-screen">
 
@@ -72,6 +73,7 @@
     <div class="nav-link" onclick="showSection('commission',this)"><span class="dot"></span> Commission</div>
     <div class="nav-link" onclick="showSection('sales',this)"><span class="dot"></span> My Sales &amp; Clients</div>
     <div class="nav-link" onclick="showSection('compute',this)"><span class="dot"></span> Computation Tool</div>
+    <div class="nav-link" onclick="showSection('reports',this)"><span class="dot"></span> Reports &amp; Analytics</div>
     <div class="nav-link" onclick="showSection('profile',this)"><span class="dot"></span> My Profile</div>
   </nav>
   <div class="mx-3 mb-3 px-3 py-2 rounded-lg bg-yellow-500/8 border border-yellow-500/20 text-yellow-400 text-xs">👁 View-only access</div>
@@ -234,6 +236,17 @@
     </div>
 
     <!-- MY PROFILE -->
+    <!-- REPORTS & ANALYTICS (team-scoped) -->
+    <div id="sec-reports" class="section space-y-4">
+      <div class="card p-5 space-y-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="repCards"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="bg-gray-50 rounded-lg border border-gray-200 p-4"><canvas id="repChart1" height="220"></canvas></div>
+          <div class="bg-gray-50 rounded-lg border border-gray-200 p-4"><canvas id="repChart2" height="220"></canvas></div>
+        </div>
+      </div>
+    </div>
+
     <div id="sec-profile" class="section">
       <div class="max-w-md card p-6 space-y-4">
         <div class="flex items-center gap-4">
@@ -295,13 +308,14 @@ window.showSection = (id, linkEl) => {
   document.getElementById('sec-'+id).classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
   linkEl.classList.add('active');
-  const TITLES = { overview:'Dashboard', team:'My Team', properties:'Properties', commission:'Commission', sales:'My Sales & Clients', compute:'Computation Tool', profile:'My Profile' };
+  const TITLES = { overview:'Dashboard', team:'My Team', properties:'Properties', commission:'Commission', sales:'My Sales & Clients', compute:'Computation Tool', reports:'Reports & Analytics', profile:'My Profile' };
   document.getElementById('pageTitle').textContent = TITLES[id];
   if(id==='overview') renderOverview();
   else if(id==='team'){ teamDrillStack=[]; renderTeamChart(); }
   else if(id==='properties') enterPropDevelopers();
   else if(id==='commission') renderCommissionPersonal();
   else if(id==='sales') loadMyClients();
+  else if(id==='reports') renderTeamReports();
   else if(id==='profile') renderProfile();
 };
 
@@ -649,6 +663,71 @@ async function renderCommissionPersonal(){
   document.getElementById('commWithVal').textContent = '-' + peso(withholding);
   document.getElementById('commPercVal').textContent = '-' + peso(percTax);
   document.getElementById('commNetVal').textContent = peso(net);
+}
+
+// ── REPORTS & ANALYTICS (team-scoped) ──
+function unitTCP(units, unitId){ const u = units.find(x=>x.id===unitId); return u ? Number(u.tcp)||0 : 0; }
+let repChart1 = null, repChart2 = null;
+const CHART_COLORS = ['#e2733a','#22c55e','#eab308','#3b82f6','#a855f7','#ef4444','#14b8a6'];
+
+async function renderTeamReports(){
+  try {
+    const [buyersRes, unitsRes] = await Promise.all([
+      fetch('/api/buyers/team', { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch('/api/units', { headers: { 'Authorization': 'Bearer ' + token } }),
+    ]);
+    const buyers = await buyersRes.json();
+    const units = await unitsRes.json();
+    const teamData = await fetchMyTeamData();
+
+    const withValue = buyers.map(b => ({ ...b, value: unitTCP(units, b.unit_id) }));
+    const totalValue = withValue.reduce((s,b)=>s+b.value,0);
+    const teamSize = role==='unit_manager' ? (teamData.salesManagers.length + teamData.teamLeaders.length + teamData.agents.length)
+      : role==='sales_manager' ? (teamData.teamLeaders.length + teamData.agents.length)
+      : teamData.agents.length;
+
+    document.getElementById('repCards').innerHTML = [
+      ['Team Size', teamSize, ''],
+      ['Team Clients', withValue.length, ''],
+      ['Team Sales Value', peso(totalValue), 'text-orange-600'],
+      ['Average Sale', peso(withValue.length ? totalValue/withValue.length : 0), ''],
+    ].map(([l,v,c])=>`<div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">${l}</p><p class="text-xl font-bold ${c}">${v}</p></div>`).join('');
+
+    // Chart 1: sales value by month
+    const byMonth = {};
+    withValue.forEach(b=>{
+      const d = new Date(b.created_at);
+      const key = d.toLocaleDateString('en-PH',{year:'numeric',month:'short'});
+      byMonth[key] = (byMonth[key]||0) + b.value;
+    });
+    const monthLabels = Object.keys(byMonth);
+    if(repChart1) repChart1.destroy();
+    repChart1 = new Chart(document.getElementById('repChart1').getContext('2d'), {
+      type:'line',
+      data:{ labels: monthLabels, datasets:[{ label:'Sales Value', data: monthLabels.map(k=>byMonth[k]), borderColor:'#e2733a', backgroundColor:'rgba(226,115,58,.15)', fill:true, tension:.3 }] },
+      options:{ plugins:{ title:{display:true,text:'Team Sales by Month'}, legend:{display:false} } }
+    });
+
+    // Chart 2: sales value by team member
+    const byPerson = {};
+    withValue.forEach(b=>{
+      byPerson[b.input_by_id] = (byPerson[b.input_by_id]||0) + b.value;
+    });
+    function nameFor(id){
+      if(id===localStorage.getItem('personId')) return name;
+      const found = [...teamData.salesManagers, ...teamData.teamLeaders, ...teamData.agents].find(p=>p.id===id);
+      return found ? found.name : 'Unknown';
+    }
+    const personLabels = Object.keys(byPerson).map(nameFor);
+    if(repChart2) repChart2.destroy();
+    repChart2 = new Chart(document.getElementById('repChart2').getContext('2d'), {
+      type:'bar',
+      data:{ labels: personLabels, datasets:[{ label:'Sales Value', data: Object.values(byPerson), backgroundColor: CHART_COLORS }] },
+      options:{ indexAxis:'y', plugins:{ title:{display:true,text:'Sales by Team Member'}, legend:{display:false} } }
+    });
+  } catch(err) {
+    console.error('Error loading team reports:', err);
+  }
 }
 
 // ── MY SALES & CLIENTS ──
