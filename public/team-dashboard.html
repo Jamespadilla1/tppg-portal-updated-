@@ -71,7 +71,7 @@
     <div class="nav-link" onclick="showSection('team',this)"><span class="dot"></span> My Team</div>
     <div class="nav-link" onclick="showSection('properties',this)"><span class="dot"></span> Properties</div>
     <div class="nav-link" onclick="showSection('commission',this)"><span class="dot"></span> Commission</div>
-    <div class="nav-link" onclick="showSection('sales',this)"><span class="dot"></span> My Sales &amp; Clients</div>
+    <div class="nav-link" onclick="showSection('sales',this)"><span class="dot"></span> Sales &amp; Buyers</div>
     <div class="nav-link" onclick="showSection('compute',this)"><span class="dot"></span> Computation Tool</div>
     <div class="nav-link" onclick="showSection('reports',this)"><span class="dot"></span> Reports &amp; Analytics</div>
     <div class="nav-link" onclick="showSection('profile',this)"><span class="dot"></span> My Profile</div>
@@ -194,18 +194,18 @@
     <!-- MY SALES & CLIENTS -->
     <div id="sec-sales" class="section space-y-4">
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="card p-5"><p class="text-gray-500 text-xs uppercase tracking-wide mb-2">Total Clients</p><p id="clientCount" class="text-3xl font-bold">0</p></div>
+        <div class="card p-5"><p class="text-gray-500 text-xs uppercase tracking-wide mb-2">Total Buyers</p><p id="clientCount" class="text-3xl font-bold">0</p></div>
         <div class="card p-5"><p class="text-gray-500 text-xs uppercase tracking-wide mb-2">Total Sales Value</p><p id="clientRev" class="text-3xl font-bold text-orange-600">₱0</p></div>
         <div class="card p-5"><p class="text-gray-500 text-xs uppercase tracking-wide mb-2">Top Sale</p><p id="clientBest" class="text-xl font-bold">—</p></div>
       </div>
       <div class="card overflow-hidden">
         <div class="flex items-center justify-between p-4 border-b border-gray-200">
-          <h3 class="font-semibold text-sm">My Clients</h3>
+          <h3 class="font-semibold text-sm">Team Sales &amp; Buyers</h3>
           <button onclick="openModal('addBuyerModal')" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Client</button>
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
-            <th class="text-left px-5 py-2">Client Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Developer</th><th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Type</th><th class="text-left px-5 py-2">Unit</th><th class="text-left px-5 py-2">Bedrooms</th><th class="text-left px-5 py-2">Furnishing</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Added By</th><th class="text-left px-5 py-2">Reports To</th>
+            <th class="text-left px-5 py-2">Buyer Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Developer</th><th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Type</th><th class="text-left px-5 py-2">Unit</th><th class="text-left px-5 py-2">Bedrooms</th><th class="text-left px-5 py-2">Furnishing</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Sold By</th>
           </tr></thead>
           <tbody id="clientsBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
         </table></div>
@@ -308,7 +308,7 @@ window.showSection = (id, linkEl) => {
   document.getElementById('sec-'+id).classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
   linkEl.classList.add('active');
-  const TITLES = { overview:'Dashboard', team:'My Team', properties:'Properties', commission:'Commission', sales:'My Sales & Clients', compute:'Computation Tool', reports:'Reports & Analytics', profile:'My Profile' };
+  const TITLES = { overview:'Dashboard', team:'My Team', properties:'Properties', commission:'Commission', sales:'Sales & Buyers', compute:'Computation Tool', reports:'Reports & Analytics', profile:'My Profile' };
   document.getElementById('pageTitle').textContent = TITLES[id];
   if(id==='overview') renderOverview();
   else if(id==='team'){ teamDrillStack=[]; renderTeamChart(); }
@@ -738,33 +738,36 @@ async function renderTeamReports(){
 // ── MY SALES & CLIENTS ──
 async function loadMyClients(){
   try {
-    const { buyers } = await fetchMyClientsData();
+    const [buyersRes, unitsRes, propsRes, devsRes] = await Promise.all([
+      fetch('/api/buyers/team', { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch('/api/units',  { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch('/api/properties', { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch('/api/developers', { headers: { 'Authorization': 'Bearer ' + token } }),
+    ]);
+    const rawBuyers = await buyersRes.json();
+    myUnitsCache = await unitsRes.json();
+    const propsCache = await propsRes.json();
+    const devsCache  = await devsRes.json();
+    const teamData = await fetchMyTeamData();
+
+    const ROLE_LABEL_MAP = { agent: 'Agent', team_leader: 'Team Leader', sales_manager: 'Sales Manager', unit_manager: 'Unit Manager' };
+    function soldByLabel(b){
+      if(b.input_by_id === localStorage.getItem('personId')) return `${name} (${ROLE_LABELS[role]})`;
+      const pools = { agent: teamData.agents, team_leader: teamData.teamLeaders, sales_manager: teamData.salesManagers };
+      const pool = pools[b.input_by_role] || [];
+      const person = pool.find(p=>p.id===b.input_by_id);
+      return person ? `${person.name} (${ROLE_LABEL_MAP[b.input_by_role]||b.input_by_role})` : 'Unknown';
+    }
+
+    const buyers = rawBuyers.map(b => {
+      const unit = myUnitsCache.find(u=>u.id===b.unit_id);
+      const property = unit ? propsCache.find(p=>p.id===unit.property_id) : null;
+      const developer = property ? devsCache.find(d=>d.id===property.developer_id) : null;
+      return { ...b, unit, property, developer };
+    });
+
     const totalValue = buyers.reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
     const best = buyers.length ? buyers.reduce((a,b)=> (b.unit && (!a.unit || Number(b.unit.tcp)>Number(a.unit.tcp))) ? b : a) : null;
-
-    let reportsTo = 'Unassigned';
-    const mySMId = localStorage.getItem('salesManagerId');
-    const myUMId = localStorage.getItem('unitManagerId');
-    if(role === 'team_leader'){
-      if(mySMId || myUMId){
-        const [smRes, umRes] = await Promise.all([
-          fetch('/api/sales-managers', { headers: { 'Authorization': 'Bearer ' + token } }),
-          fetch('/api/unit-managers', { headers: { 'Authorization': 'Bearer ' + token } }),
-        ]);
-        const smCache = await smRes.json(); const umCache = await umRes.json();
-        if(mySMId){ const sm = smCache.find(s=>s.id===mySMId); if(sm) reportsTo = `${sm.name} (Sales Manager)`; }
-        else if(myUMId){ const um = umCache.find(u=>u.id===myUMId); if(um) reportsTo = `${um.name} (Unit Manager)`; }
-      }
-    } else if(role === 'sales_manager'){
-      if(myUMId){
-        const umRes = await fetch('/api/unit-managers', { headers: { 'Authorization': 'Bearer ' + token } });
-        const umCache = await umRes.json();
-        const um = umCache.find(u=>u.id===myUMId);
-        reportsTo = um ? `${um.name} (Unit Manager)` : 'Solo (no Unit Manager)';
-      } else { reportsTo = 'Solo (no Unit Manager)'; }
-    } else if(role === 'unit_manager'){
-      reportsTo = 'Admin';
-    }
 
     document.getElementById('clientCount').textContent = buyers.length;
     document.getElementById('clientRev').textContent   = peso(totalValue);
@@ -782,9 +785,8 @@ async function loadMyClients(){
         <td class="px-5 py-3 text-gray-500 text-xs">${b.unit ? (b.unit.bedrooms ?? '—') : '—'}</td>
         <td class="px-5 py-3 text-gray-500 text-xs">${b.unit ? (b.unit.furnishing||'—') : '—'}</td>
         <td class="px-5 py-3 text-orange-600 text-xs">${b.unit ? peso(b.unit.tcp) : '—'}</td>
-        <td class="px-5 py-3 text-gray-500 text-xs">${name} (${ROLE_LABELS[role]})</td>
-        <td class="px-5 py-3 text-gray-500 text-xs">${reportsTo}</td>
-      </tr>`).join('') || `<tr><td colspan="12" class="px-5 py-5 text-center text-gray-500 text-xs">No clients added yet.</td></tr>`;
+        <td class="px-5 py-3 text-gray-500 text-xs">${soldByLabel(b)}</td>
+      </tr>`).join('') || `<tr><td colspan="11" class="px-5 py-5 text-center text-gray-500 text-xs">No buyers recorded yet.</td></tr>`;
 
     document.getElementById('bUnit').innerHTML = `<option value="">— None selected —</option>` +
       myUnitsCache.map(u=>`<option value="${u.id}">${u.unit_name} (${peso(u.tcp)})</option>`).join('');
