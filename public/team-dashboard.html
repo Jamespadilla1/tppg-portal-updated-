@@ -135,8 +135,12 @@
               <option value="Pre-selling">Pre-selling</option>
             </select></div>
             <div class="flex-1 min-w-[140px]"><label class="text-xs text-gray-500 mb-1 block">Location</label><input id="propSearchLoc" type="text" placeholder="Type any location…" class="field" onkeydown="if(event.key==='Enter')searchPropsGlobal()"></div>
-            <div><label class="text-xs text-gray-500 mb-1 block">Min Monthly DP (₱)</label><input id="propSearchDPMin" type="number" placeholder="0" class="field w-32"></div>
-            <div><label class="text-xs text-gray-500 mb-1 block">Max Monthly DP (₱)</label><input id="propSearchDPMax" type="number" placeholder="No limit" class="field w-32"></div>
+            <div><label class="text-xs text-gray-500 mb-1 block">Filter By</label><select id="propSearchBudgetType" class="field w-32" onchange="updateBudgetLabels('prop')">
+              <option value="tcp">TCP</option>
+              <option value="dp">Monthly DP</option>
+            </select></div>
+            <div><label class="text-xs text-gray-500 mb-1 block" id="propSearchMinLabel">Min TCP (₱)</label><input id="propSearchDPMin" type="number" placeholder="0" class="field w-32"></div>
+            <div><label class="text-xs text-gray-500 mb-1 block" id="propSearchMaxLabel">Max TCP (₱)</label><input id="propSearchDPMax" type="number" placeholder="No limit" class="field w-32"></div>
             <button onclick="searchPropsGlobal()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">Search</button>
           </div>
           <div id="propSearchResults" class="mt-3"></div>
@@ -635,27 +639,40 @@ window.viewUnitDetail = function(id){
 }
 
 // Global property search across all developers (from Level 1)
+window.updateBudgetLabels = function(context){
+  const budgetType = document.getElementById(context+'SearchBudgetType').value;
+  const label = budgetType==='dp' ? 'Monthly DP' : 'TCP';
+  document.getElementById(context+'SearchMinLabel').textContent = `Min ${label} (₱)`;
+  document.getElementById(context+'SearchMaxLabel').textContent = `Max ${label} (₱)`;
+}
+
 window.searchPropsGlobal = async function(){
   const type = document.getElementById('propSearchType').value;
   const selling = document.getElementById('propSearchSelling').value;
   const loc = document.getElementById('propSearchLoc').value.trim().toLowerCase();
-  const dpMin = parseFloat(document.getElementById('propSearchDPMin').value) || 0;
-  const dpMaxRaw = document.getElementById('propSearchDPMax').value;
-  const dpMax = dpMaxRaw ? parseFloat(dpMaxRaw) : Infinity;
+  const budgetType = document.getElementById('propSearchBudgetType').value;
+  const budgetMin = parseFloat(document.getElementById('propSearchDPMin').value) || 0;
+  const budgetMaxRaw = document.getElementById('propSearchDPMax').value;
+  const budgetMax = budgetMaxRaw ? parseFloat(budgetMaxRaw) : Infinity;
   const resultsEl = document.getElementById('propSearchResults');
-  if(!type && !selling && !loc && !dpMin && dpMaxRaw===''){ resultsEl.innerHTML = '<p class="text-xs text-gray-500">Enter a filter to search.</p>'; return; }
+  if(!type && !selling && !loc && !budgetMin && budgetMaxRaw===''){ resultsEl.innerHTML = '<p class="text-xs text-gray-500">Enter a filter to search.</p>'; return; }
   if(!propAllProps.length) await fetchAllPropData();
   const filtered = propAllProps.filter(p=>{
     const mt = !type || p.property_type===type;
     const ms = !selling || p.selling_status===selling;
     const ml = !loc || (p.location||'').toLowerCase().includes(loc) || p.name.toLowerCase().includes(loc);
     if(!mt || !ms || !ml) return false;
-    if(dpMin || dpMaxRaw!==''){
+    if(budgetMin || budgetMaxRaw!==''){
       const propUnits = propAllUnits.filter(u=>u.property_id===p.id);
       const hasMatch = propUnits.some(u=>{
-        const terms = u.downpayment_terms_months || 24;
-        const monthlyDP = u.downpayment ? Number(u.downpayment)/terms : 0;
-        return monthlyDP >= dpMin && monthlyDP <= dpMax;
+        let value;
+        if(budgetType==='dp'){
+          const terms = u.downpayment_terms_months || 24;
+          value = u.downpayment ? Number(u.downpayment)/terms : 0;
+        } else {
+          value = Number(u.tcp) || 0;
+        }
+        return value >= budgetMin && value <= budgetMax;
       });
       if(!hasMatch) return false;
     }
