@@ -120,6 +120,31 @@ const updateBuyer = async (req, res) => {
   }
 };
 
+// PATCH /api/buyers/:id/overrides — admin only: set manager override amounts + incentive for a sale
+const setBuyerOverrides = async (req, res) => {
+  try {
+    const { override_team_leader, override_sales_manager, override_unit_manager, incentive_amount } = req.body;
+    const { data: buyer, error } = await supabase
+      .from('buyers')
+      .update({
+        override_team_leader: override_team_leader || null,
+        override_sales_manager: override_sales_manager || null,
+        override_unit_manager: override_unit_manager || null,
+        incentive_amount: incentive_amount || null,
+        updated_at: new Date(),
+      })
+      .eq('id', req.params.id)
+      .select()
+      .single();
+    if (error) throw error;
+    if (!buyer) return res.status(404).json({ message: 'Not found.' });
+    res.json(buyer);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
 // DELETE /api/buyers/:id — admin only (prevents accidental data loss by sales roles)
 // Reverts the linked unit back to Available since the sale record is gone
 const deleteBuyer = async (req, res) => {
@@ -141,4 +166,4 @@ const deleteBuyer = async (req, res) => {
   }
 };
 
-module.exports = { getBuyers, getTeamBuyers, createBuyer, updateBuyer, deleteBuyer };
+module.exports = { getBuyers, getTeamBuyers, createBuyer, updateBuyer, setBuyerOverrides, deleteBuyer };

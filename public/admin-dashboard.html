@@ -160,8 +160,8 @@ tr:hover td{background:rgba(0,0,0,.02)}
             <option value="tcp">TCP</option>
             <option value="dp">Monthly DP</option>
           </select></div>
-          <div><label class="text-xs text-gray-400 mb-1 block" id="ovSearchMinLabel">Min TCP (₱)</label><input id="ovSearchDPMin" type="number" placeholder="0" class="field w-32"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block" id="ovSearchMaxLabel">Max TCP (₱)</label><input id="ovSearchDPMax" type="number" placeholder="No limit" class="field w-32"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block" id="ovSearchMinLabel">Min TCP (₱)</label><input id="ovSearchDPMin" type="text" inputmode="numeric" placeholder="0" class="field w-32" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block" id="ovSearchMaxLabel">Max TCP (₱)</label><input id="ovSearchDPMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-32" oninput="formatMoneyInput(this)"></div>
           <button onclick="searchPropertiesGlobal('ov')" class="bg-orange-500 hover:bg-orange-600 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">Search</button>
         </div>
         <div id="ovSearchResults" class="mt-3"></div>
@@ -234,8 +234,8 @@ tr:hover td{background:rgba(0,0,0,.02)}
               <option value="tcp">TCP</option>
               <option value="dp">Monthly DP</option>
             </select></div>
-            <div><label class="text-xs text-gray-400 mb-1 block" id="plSearchMinLabel">Min TCP (₱)</label><input id="plSearchDPMin" type="number" placeholder="0" class="field w-32"></div>
-            <div><label class="text-xs text-gray-400 mb-1 block" id="plSearchMaxLabel">Max TCP (₱)</label><input id="plSearchDPMax" type="number" placeholder="No limit" class="field w-32"></div>
+            <div><label class="text-xs text-gray-400 mb-1 block" id="plSearchMinLabel">Min TCP (₱)</label><input id="plSearchDPMin" type="text" inputmode="numeric" placeholder="0" class="field w-32" oninput="formatMoneyInput(this)"></div>
+            <div><label class="text-xs text-gray-400 mb-1 block" id="plSearchMaxLabel">Max TCP (₱)</label><input id="plSearchDPMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-32" oninput="formatMoneyInput(this)"></div>
             <button onclick="searchPropertiesGlobal('pl')" class="bg-orange-500 hover:bg-orange-600 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">Search</button>
           </div>
           <div id="plSearchResults" class="mt-3"></div>
@@ -356,10 +356,68 @@ tr:hover td{background:rgba(0,0,0,.02)}
           <tbody id="commBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
       </div>
+
+      <!-- COMMISSION RECEIVABLES (tranches from developers) -->
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-white/8 flex items-center justify-between">
+          <div>
+            <h3 class="font-semibold text-sm">Commission Receivables</h3>
+            <p class="text-xs text-gray-500 mt-0.5">Log of commission releases from developers — monthly tranches or annual payouts.</p>
+          </div>
+          <button onclick="openAddReceivableModal()" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Release</button>
+        </div>
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
+            <th class="text-left px-5 py-2">Developer</th><th class="text-left px-5 py-2">Linked Sale</th><th class="text-left px-5 py-2">Amount</th><th class="text-left px-5 py-2">Release Date</th><th class="text-left px-5 py-2">Type</th><th class="text-left px-5 py-2">Notes</th><th class="text-left px-5 py-2">Actions</th>
+          </tr></thead>
+          <tbody id="receivablesBody" class="divide-y divide-white/6 text-gray-300"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ADD/EDIT COMMISSION RECEIVABLE -->
+    <div id="receivableModal" class="modal-backdrop">
+      <div class="modal-box">
+        <button onclick="closeModal('receivableModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+        <h3 class="font-bold text-lg mb-4" id="receivableModalTitle">Add Commission Release</h3>
+        <div class="space-y-3">
+          <input id="recI" type="hidden">
+          <div><label class="text-xs text-gray-400 mb-1 block">Developer *</label><select id="recDeveloper" class="field"></select></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Linked Sale (optional)</label><select id="recBuyer" class="field"><option value="">— None —</option></select></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Amount (₱) *</label><input id="recAmount" type="text" inputmode="numeric" class="field" placeholder="500,000" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Release Date *</label><input id="recDate" type="date" class="field"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Type</label><select id="recType" class="field">
+            <option value="Monthly Tranche">Monthly Tranche</option>
+            <option value="Annual">Annual</option>
+          </select></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Notes</label><textarea id="recNotes" class="field" rows="2"></textarea></div>
+          <p id="recErr" class="text-red-400 text-xs hidden">Developer, amount, and release date are required.</p>
+          <button onclick="saveReceivable()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- OVERRIDES & INCENTIVE -->
+    <div id="overridesModal" class="modal-backdrop">
+      <div class="modal-box">
+        <button onclick="closeModal('overridesModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+        <h3 class="font-bold text-lg mb-1">Overrides &amp; Incentive</h3>
+        <p class="text-xs text-gray-500 mb-4" id="overridesModalSub"></p>
+        <div class="space-y-3">
+          <input id="ovI" type="hidden">
+          <div><label class="text-xs text-gray-400 mb-1 block">Team Leader Override (₱)</label><input id="ovTL" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Sales Manager Override (₱)</label><input id="ovSM" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Unit Manager Override (₱)</label><input id="ovUM" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Incentive (₱)</label><input id="ovIncentive" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
+          <p class="text-xs text-gray-600 italic">Only the relevant manager/Team Leader for this sale can see their own override amount.</p>
+          <button onclick="saveOverrides()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save</button>
+        </div>
+      </div>
     </div>
 
     <!-- ══ PROPERTY COMPUTATION ══ -->
     <div id="sec-compute" class="section">
+
       <div class="max-w-lg space-y-4">
         <div class="card p-6 space-y-4">
           <div><h3 class="font-semibold">Commission Calculator</h3><p class="text-xs text-gray-500 mt-0.5">Compute commission and incentive amounts.</p></div>
@@ -1080,9 +1138,9 @@ async function searchPropertiesGlobal(context){
   const selling = document.getElementById(context==='ov'?'ovSearchSelling':'plSearchSelling').value;
   const loc  = document.getElementById(context==='ov'?'ovSearchLoc':'plSearchLoc').value.trim().toLowerCase();
   const budgetType = document.getElementById(context+'SearchBudgetType').value; // 'tcp' or 'dp'
-  const budgetMin = parseFloat(document.getElementById(context==='ov'?'ovSearchDPMin':'plSearchDPMin').value) || 0;
+  const budgetMin = parseMoney(document.getElementById(context==='ov'?'ovSearchDPMin':'plSearchDPMin').value);
   const budgetMaxRaw = document.getElementById(context==='ov'?'ovSearchDPMax':'plSearchDPMax').value;
-  const budgetMax = budgetMaxRaw ? parseFloat(budgetMaxRaw) : Infinity;
+  const budgetMax = budgetMaxRaw ? parseMoney(budgetMaxRaw) : Infinity;
   const resultsEl = document.getElementById(context==='ov'?'ovSearchResults':'plSearchResults');
 
   if(!type && !selling && !loc && !budgetMin && budgetMaxRaw===''){ resultsEl.innerHTML = '<p class="text-xs text-gray-500">Enter a filter to search.</p>'; return; }
@@ -2951,7 +3009,7 @@ async function renderBuyers(){
         <td class="px-5 py-3 text-orange-400 text-xs">${b.unit ? peso(b.unit.tcp) : '—'}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${addedBy}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${reportsTo}</td>
-        <td class="px-5 py-3"><button onclick="deleteBuyerAdmin('${b.id}')" class="text-xs text-red-400 hover:text-red-300">Delete</button></td>
+        <td class="px-5 py-3 flex gap-2"><button onclick="openOverridesModal('${b.id}','${b.name.replace(/'/g,"\\'")}')" class="text-xs text-blue-400 hover:text-blue-300">Overrides</button><button onclick="deleteBuyerAdmin('${b.id}')" class="text-xs text-red-400 hover:text-red-300">Delete</button></td>
       </tr>`;
     }).join('') || `<tr><td colspan="13" class="px-5 py-5 text-center text-gray-500 text-xs">No clients yet.</td></tr>`;
 
@@ -3053,6 +3111,164 @@ async function renderCommission(){
 
   } catch(err) {
     console.error('Error loading commission data:', err);
+  }
+  renderReceivables();
+}
+
+// ══════════════════════════════════════
+// COMMISSION RECEIVABLES (tranches from developers)
+// ══════════════════════════════════════
+let receivablesCache = [], receivablesDevsCache = [], receivablesBuyersCache = [];
+
+async function renderReceivables(){
+  const token = localStorage.getItem('token');
+  const headers = { 'Authorization': 'Bearer ' + token };
+  try {
+    const [recRes, devsRes, buyersRes] = await Promise.all([
+      fetch('/api/commission-receivables', {headers}),
+      fetch('/api/developers', {headers}),
+      fetch('/api/buyers', {headers}),
+    ]);
+    receivablesCache = await recRes.json();
+    receivablesDevsCache = await devsRes.json();
+    receivablesBuyersCache = await buyersRes.json();
+
+    document.getElementById('receivablesBody').innerHTML = receivablesCache.map(r => {
+      const dev = receivablesDevsCache.find(d=>d.id===r.developer_id);
+      const buyer = receivablesBuyersCache.find(b=>b.id===r.buyer_id);
+      return `
+      <tr>
+        <td class="px-5 py-3 text-xs">${dev ? dev.name : '—'}</td>
+        <td class="px-5 py-3 text-xs">${buyer ? buyer.name : '—'}</td>
+        <td class="px-5 py-3 text-xs text-orange-400 font-semibold">${peso(r.amount)}</td>
+        <td class="px-5 py-3 text-xs">${new Date(r.release_date).toLocaleDateString()}</td>
+        <td class="px-5 py-3 text-xs"><span class="badge bg-blue">${r.release_type}</span></td>
+        <td class="px-5 py-3 text-xs text-gray-400">${r.notes||'—'}</td>
+        <td class="px-5 py-3 flex gap-2">
+          <button onclick="openEditReceivableModal('${r.id}')" class="text-xs text-orange-400 hover:text-orange-300">Edit</button>
+          <button onclick="deleteReceivable('${r.id}')" class="text-xs text-red-400 hover:text-red-300">Delete</button>
+        </td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="7" class="px-5 py-5 text-center text-gray-500 text-xs">No commission releases logged yet.</td></tr>`;
+  } catch(err) {
+    console.error('Error loading receivables:', err);
+  }
+}
+
+function openAddReceivableModal(){
+  document.getElementById('receivableModalTitle').textContent = 'Add Commission Release';
+  document.getElementById('recI').value = '';
+  document.getElementById('recDeveloper').innerHTML = receivablesDevsCache.map(d=>`<option value="${d.id}">${d.name}</option>`).join('');
+  document.getElementById('recBuyer').innerHTML = `<option value="">— None —</option>` + receivablesBuyersCache.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+  document.getElementById('recAmount').value = '';
+  document.getElementById('recDate').value = '';
+  document.getElementById('recType').value = 'Monthly Tranche';
+  document.getElementById('recNotes').value = '';
+  document.getElementById('recErr').classList.add('hidden');
+  openModal('receivableModal');
+}
+function openEditReceivableModal(id){
+  const r = receivablesCache.find(x=>x.id===id);
+  if(!r) return;
+  document.getElementById('receivableModalTitle').textContent = 'Edit Commission Release';
+  document.getElementById('recI').value = r.id;
+  document.getElementById('recDeveloper').innerHTML = receivablesDevsCache.map(d=>`<option value="${d.id}">${d.name}</option>`).join('');
+  document.getElementById('recDeveloper').value = r.developer_id;
+  document.getElementById('recBuyer').innerHTML = `<option value="">— None —</option>` + receivablesBuyersCache.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+  document.getElementById('recBuyer').value = r.buyer_id || '';
+  document.getElementById('recAmount').value = r.amount ? Number(r.amount).toLocaleString('en-US') : '';
+  document.getElementById('recDate').value = r.release_date;
+  document.getElementById('recType').value = r.release_type;
+  document.getElementById('recNotes').value = r.notes || '';
+  document.getElementById('recErr').classList.add('hidden');
+  openModal('receivableModal');
+}
+async function saveReceivable(){
+  const id = document.getElementById('recI').value;
+  const developer_id = document.getElementById('recDeveloper').value;
+  const amount = parseMoney(document.getElementById('recAmount').value);
+  const release_date = document.getElementById('recDate').value;
+  if(!developer_id || !amount || !release_date){ document.getElementById('recErr').classList.remove('hidden'); return; }
+  document.getElementById('recErr').classList.add('hidden');
+
+  const token = localStorage.getItem('token');
+  const payload = {
+    developer_id,
+    buyer_id: document.getElementById('recBuyer').value || null,
+    amount,
+    release_date,
+    release_type: document.getElementById('recType').value,
+    notes: document.getElementById('recNotes').value.trim(),
+  };
+  try {
+    const url = id ? `/api/commission-receivables/${id}` : '/api/commission-receivables';
+    await fetch(url, {
+      method: id ? 'PUT' : 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Commission release of ${peso(amount)} ${id?'updated':'logged'}`, actor: 'Admin', role: 'admin' })
+    });
+    closeModal('receivableModal');
+    renderReceivables();
+  } catch(err) {
+    console.error('Error saving receivable:', err);
+    alert('Failed to save.');
+  }
+}
+async function deleteReceivable(id){
+  if(!confirm('Delete this commission release entry?')) return;
+  const token = localStorage.getItem('token');
+  try {
+    await fetch(`/api/commission-receivables/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+    renderReceivables();
+  } catch(err) {
+    console.error('Error deleting receivable:', err);
+    alert('Failed to delete.');
+  }
+}
+
+// ══════════════════════════════════════
+// OVERRIDES & INCENTIVE (per sale)
+// ══════════════════════════════════════
+function openOverridesModal(buyerId, buyerName){
+  const b = receivablesBuyersCache.find(x=>x.id===buyerId) || sbBuyersCache?.find(x=>x.id===buyerId);
+  document.getElementById('ovI').value = buyerId;
+  document.getElementById('overridesModalSub').textContent = `For sale: ${buyerName}`;
+  document.getElementById('ovTL').value = b && b.override_team_leader ? Number(b.override_team_leader).toLocaleString('en-US') : '';
+  document.getElementById('ovSM').value = b && b.override_sales_manager ? Number(b.override_sales_manager).toLocaleString('en-US') : '';
+  document.getElementById('ovUM').value = b && b.override_unit_manager ? Number(b.override_unit_manager).toLocaleString('en-US') : '';
+  document.getElementById('ovIncentive').value = b && b.incentive_amount ? Number(b.incentive_amount).toLocaleString('en-US') : '';
+  openModal('overridesModal');
+}
+async function saveOverrides(){
+  const id = document.getElementById('ovI').value;
+  const token = localStorage.getItem('token');
+  const payload = {
+    override_team_leader: parseMoney(document.getElementById('ovTL').value) || null,
+    override_sales_manager: parseMoney(document.getElementById('ovSM').value) || null,
+    override_unit_manager: parseMoney(document.getElementById('ovUM').value) || null,
+    incentive_amount: parseMoney(document.getElementById('ovIncentive').value) || null,
+  };
+  try {
+    await fetch(`/api/buyers/${id}/overrides`, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Overrides/incentive updated for a sale`, actor: 'Admin', role: 'admin' })
+    });
+    closeModal('overridesModal');
+    if(typeof renderBuyers === 'function' && document.getElementById('sec-buyers')?.classList.contains('active')) renderBuyers();
+  } catch(err) {
+    console.error('Error saving overrides:', err);
+    alert('Failed to save overrides.');
   }
 }
 

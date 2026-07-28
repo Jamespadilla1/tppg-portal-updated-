@@ -139,8 +139,8 @@
               <option value="tcp">TCP</option>
               <option value="dp">Monthly DP</option>
             </select></div>
-            <div><label class="text-xs text-gray-500 mb-1 block" id="propSearchMinLabel">Min TCP (₱)</label><input id="propSearchDPMin" type="number" placeholder="0" class="field w-32"></div>
-            <div><label class="text-xs text-gray-500 mb-1 block" id="propSearchMaxLabel">Max TCP (₱)</label><input id="propSearchDPMax" type="number" placeholder="No limit" class="field w-32"></div>
+            <div><label class="text-xs text-gray-500 mb-1 block" id="propSearchMinLabel">Min TCP (₱)</label><input id="propSearchDPMin" type="text" inputmode="numeric" placeholder="0" class="field w-32" oninput="formatMoneyInput(this)"></div>
+            <div><label class="text-xs text-gray-500 mb-1 block" id="propSearchMaxLabel">Max TCP (₱)</label><input id="propSearchDPMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-32" oninput="formatMoneyInput(this)"></div>
             <button onclick="searchPropsGlobal()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">Search</button>
           </div>
           <div id="propSearchResults" class="mt-3"></div>
@@ -216,7 +216,7 @@
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
-            <th class="text-left px-5 py-2">Buyer Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Developer</th><th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Type</th><th class="text-left px-5 py-2">Unit</th><th class="text-left px-5 py-2">Bedrooms</th><th class="text-left px-5 py-2">Furnishing</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Sold By</th>
+            <th class="text-left px-5 py-2">Buyer Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Developer</th><th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Type</th><th class="text-left px-5 py-2">Unit</th><th class="text-left px-5 py-2">Bedrooms</th><th class="text-left px-5 py-2">Furnishing</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Sold By</th><th class="text-left px-5 py-2">My Override</th><th class="text-left px-5 py-2">Incentive</th>
           </tr></thead>
           <tbody id="clientsBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
         </table></div>
@@ -306,6 +306,16 @@ if (!token || !['unit_manager','sales_manager','team_leader'].includes(role)) {
 
 const ROLE_LABELS = { unit_manager: 'Unit Manager', sales_manager: 'Sales Manager', team_leader: 'Team Leader' };
 const peso = n => '₱' + Number(n||0).toLocaleString('en-PH', {maximumFractionDigits:0});
+function parseMoney(str){
+  return parseFloat((str||'').toString().replace(/,/g,'')) || 0;
+}
+window.formatMoneyInput = function(el){
+  const cursorFromEnd = el.value.length - el.selectionStart;
+  const digits = el.value.replace(/[^\d]/g,'');
+  el.value = digits === '' ? '' : parseInt(digits,10).toLocaleString('en-US');
+  const pos = Math.max(0, el.value.length - cursorFromEnd);
+  el.setSelectionRange(pos, pos);
+};
 const SB = { Available:'badge-green', Hold:'badge-yellow', Sold:'badge-red', approved:'badge-green', pending:'badge-yellow', rejected:'badge-red', suspended:'badge-red' };
 
 document.getElementById('sidebarRoleLabel').textContent = 'TPPG ' + (ROLE_LABELS[role] || '');
@@ -651,9 +661,9 @@ window.searchPropsGlobal = async function(){
   const selling = document.getElementById('propSearchSelling').value;
   const loc = document.getElementById('propSearchLoc').value.trim().toLowerCase();
   const budgetType = document.getElementById('propSearchBudgetType').value;
-  const budgetMin = parseFloat(document.getElementById('propSearchDPMin').value) || 0;
+  const budgetMin = parseMoney(document.getElementById('propSearchDPMin').value);
   const budgetMaxRaw = document.getElementById('propSearchDPMax').value;
-  const budgetMax = budgetMaxRaw ? parseFloat(budgetMaxRaw) : Infinity;
+  const budgetMax = budgetMaxRaw ? parseMoney(budgetMaxRaw) : Infinity;
   const resultsEl = document.getElementById('propSearchResults');
   if(!type && !selling && !loc && !budgetMin && budgetMaxRaw===''){ resultsEl.innerHTML = '<p class="text-xs text-gray-500">Enter a filter to search.</p>'; return; }
   if(!propAllProps.length) await fetchAllPropData();
@@ -803,6 +813,11 @@ async function loadMyClients(){
       const person = pool.find(p=>p.id===b.input_by_id);
       return person ? `${person.name} (${ROLE_LABEL_MAP[b.input_by_role]||b.input_by_role})` : 'Unknown';
     }
+    function myOverrideFor(b){
+      const fieldMap = { team_leader: 'override_team_leader', sales_manager: 'override_sales_manager', unit_manager: 'override_unit_manager' };
+      const val = b[fieldMap[role]];
+      return val ? peso(val) : '—';
+    }
 
     const buyers = rawBuyers.map(b => {
       const unit = myUnitsCache.find(u=>u.id===b.unit_id);
@@ -831,7 +846,9 @@ async function loadMyClients(){
         <td class="px-5 py-3 text-gray-500 text-xs">${b.unit ? (b.unit.furnishing||'—') : '—'}</td>
         <td class="px-5 py-3 text-orange-600 text-xs">${b.unit ? peso(b.unit.tcp) : '—'}</td>
         <td class="px-5 py-3 text-gray-500 text-xs">${soldByLabel(b)}</td>
-      </tr>`).join('') || `<tr><td colspan="11" class="px-5 py-5 text-center text-gray-500 text-xs">No buyers recorded yet.</td></tr>`;
+        <td class="px-5 py-3 text-green-600 text-xs font-semibold">${myOverrideFor(b)}</td>
+        <td class="px-5 py-3 text-purple-600 text-xs font-semibold">${b.incentive_amount ? peso(b.incentive_amount) : '—'}</td>
+      </tr>`).join('') || `<tr><td colspan="13" class="px-5 py-5 text-center text-gray-500 text-xs">No buyers recorded yet.</td></tr>`;
 
     document.getElementById('bUnit').innerHTML = `<option value="">— None selected —</option>` +
       myUnitsCache.map(u=>`<option value="${u.id}">${u.unit_name} (${peso(u.tcp)})</option>`).join('');
