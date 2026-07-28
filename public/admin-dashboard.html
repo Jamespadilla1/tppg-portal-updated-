@@ -574,6 +574,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
     <div class="space-y-3">
       <div><label class="text-xs text-gray-400 mb-1 block">Developer Logo</label><input id="devLogo" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Developer Name *</label><input id="devName" type="text" class="field" placeholder="e.g. Megaworld"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Drive Link (optional)</label><input id="devDriveLink" type="url" class="field" placeholder="https://drive.google.com/..."></div>
       <p id="devErr" class="text-red-400 text-xs hidden">Developer name is required.</p>
       <button onclick="saveDeveloper()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors mt-1">Save Developer</button>
     </div>
@@ -589,6 +590,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <input id="eDevI" type="hidden">
       <div><label class="text-xs text-gray-400 mb-1 block">Developer Logo (leave blank to keep current)</label><input id="eDevLogo" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Developer Name *</label><input id="eDevName" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Drive Link (optional)</label><input id="eDevDriveLink" type="url" class="field" placeholder="https://drive.google.com/..."></div>
       <p id="eDevErr" class="text-red-400 text-xs hidden">Developer name is required.</p>
       <button onclick="updateDeveloper()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors mt-1">Update Developer</button>
     </div>
@@ -1434,6 +1436,7 @@ async function renderDevelopers(){
         </div>
         <div class="p-3">
           <p class="font-semibold text-white text-sm">${d.name}</p>
+          ${d.drive_link ? `<a href="${d.drive_link}" target="_blank" onclick="event.stopPropagation()" class="text-xs text-orange-400 hover:underline block mt-1">📁 Drive</a>` : ''}
         </div>
       </div>
     `).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No developers yet — click "+ Add Developer" to start.</p>`;
@@ -1466,6 +1469,7 @@ function openEditDeveloper(id){
   if(!d) return;
   document.getElementById('eDevI').value = d.id;
   document.getElementById('eDevName').value = d.name;
+  document.getElementById('eDevDriveLink').value = d.drive_link || '';
   document.getElementById('eDevLogo').value = '';
   openModal('editDevModal');
 }
@@ -1478,6 +1482,7 @@ async function updateDeveloper(){
   const token = localStorage.getItem('token');
   const fd = new FormData();
   fd.append('name', name);
+  fd.append('drive_link', document.getElementById('eDevDriveLink').value.trim());
   const logoFile = document.getElementById('eDevLogo').files[0];
   if(logoFile) fd.append('logo', logoFile);
 
@@ -1527,6 +1532,7 @@ async function saveDeveloper(){
   const token = localStorage.getItem('token');
   const fd = new FormData();
   fd.append('name', name);
+  fd.append('drive_link', document.getElementById('devDriveLink').value.trim());
   const logoFile = document.getElementById('devLogo').files[0];
   if(logoFile) fd.append('logo', logoFile);
 
@@ -1544,6 +1550,7 @@ async function saveDeveloper(){
     });
     closeModal('addDevModal');
     document.getElementById('devName').value='';
+    document.getElementById('devDriveLink').value='';
     document.getElementById('devLogo').value='';
     renderDevelopers();
   } catch(err) {

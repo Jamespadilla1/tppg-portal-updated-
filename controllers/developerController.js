@@ -20,14 +20,14 @@ const getDevelopers = async (req, res) => {
 // POST /api/developers (admin only)
 const createDeveloper = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, drive_link } = req.body;
     if (!name) return res.status(400).json({ message: 'Developer name is required.' });
 
     const logo_url = await uploadToStorage(req.file, 'developer-logos');
 
     const { data: developer, error } = await supabase
       .from('developers')
-      .insert([{ name, logo_url }])
+      .insert([{ name, logo_url, drive_link: drive_link || null }])
       .select()
       .single();
 
@@ -42,8 +42,8 @@ const createDeveloper = async (req, res) => {
 // PUT /api/developers/:id (admin only)
 const updateDeveloper = async (req, res) => {
   try {
-    const { name } = req.body;
-    const updateData = { name };
+    const { name, drive_link } = req.body;
+    const updateData = { name, drive_link: drive_link || null };
     if (req.file) updateData.logo_url = await uploadToStorage(req.file, 'developer-logos');
 
     const { data: developer, error } = await supabase
