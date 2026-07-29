@@ -364,13 +364,13 @@ tr:hover td{background:rgba(0,0,0,.02)}
         <div class="px-5 py-3 border-b border-white/8 flex items-center justify-between">
           <div>
             <h3 class="font-semibold text-sm">Commission Receivables</h3>
-            <p class="text-xs text-gray-500 mt-0.5">Log of commission releases from developers — monthly tranches or annual payouts.</p>
+            <p class="text-xs text-gray-500 mt-0.5">Log of commission releases from developers — monthly tranches or annual payouts. Includes per-sale manager overrides and agent incentive; incentive is visible only to the specific agent who made that sale, not their team.</p>
           </div>
           <button onclick="openAddReceivableModal()" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Release</button>
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
-            <th class="text-left px-5 py-2">Developer</th><th class="text-left px-5 py-2">Linked Sale</th><th class="text-left px-5 py-2">Amount</th><th class="text-left px-5 py-2">Release Date</th><th class="text-left px-5 py-2">Type</th><th class="text-left px-5 py-2">Notes</th><th class="text-left px-5 py-2">Actions</th>
+            <th class="text-left px-5 py-2">Developer</th><th class="text-left px-5 py-2">Linked Sale</th><th class="text-left px-5 py-2">Amount</th><th class="text-left px-5 py-2">Release Date</th><th class="text-left px-5 py-2">Type</th><th class="text-left px-5 py-2">Notes</th><th class="text-left px-5 py-2">Overrides &amp; Incentive</th><th class="text-left px-5 py-2">Actions</th>
           </tr></thead>
           <tbody id="receivablesBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
@@ -3065,7 +3065,7 @@ async function renderBuyers(){
         <td class="px-5 py-3 text-orange-400 text-xs">${b.unit ? peso(b.unit.tcp) : '—'}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${addedBy}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${reportsTo}</td>
-        <td class="px-5 py-3 flex gap-2"><button onclick="openOverridesModal('${b.id}','${b.name.replace(/'/g,"\\'")}')" class="text-xs text-blue-400 hover:text-blue-300">Overrides</button><button onclick="deleteBuyerAdmin('${b.id}')" class="text-xs text-red-400 hover:text-red-300">Delete</button></td>
+        <td class="px-5 py-3 flex gap-2"><button onclick="deleteBuyerAdmin('${b.id}')" class="text-xs text-red-400 hover:text-red-300">Delete</button></td>
       </tr>`;
     }).join('') || `<tr><td colspan="13" class="px-5 py-5 text-center text-gray-500 text-xs">No clients yet.</td></tr>`;
 
@@ -3218,6 +3218,12 @@ async function renderReceivables(){
       const sellerLabel = buyer ? sellerLabelForBuyer(buyer) : '—';
       const trancheInfo = (r.release_type==='Monthly Tranche' && r.monthly_amount && r.tranche_months)
         ? `${peso(r.monthly_amount)}/mo × ${r.tranche_months} mo` : '';
+      const ovParts = [];
+      if(buyer && buyer.override_team_leader)   ovParts.push(`TL: ${peso(buyer.override_team_leader)}`);
+      if(buyer && buyer.override_sales_manager) ovParts.push(`SM: ${peso(buyer.override_sales_manager)}`);
+      if(buyer && buyer.override_unit_manager)  ovParts.push(`UM: ${peso(buyer.override_unit_manager)}`);
+      const ovSummary = ovParts.length ? ovParts.join(' · ') : '—';
+      const incentiveSummary = buyer && buyer.incentive_amount ? `Incentive: ${peso(buyer.incentive_amount)}` : '';
       return `
       <tr>
         <td class="px-5 py-3 text-xs">${dev ? dev.name : '—'}</td>
@@ -3226,12 +3232,14 @@ async function renderReceivables(){
         <td class="px-5 py-3 text-xs">${new Date(r.release_date).toLocaleDateString()}</td>
         <td class="px-5 py-3 text-xs"><span class="badge bg-blue">${r.release_type}</span></td>
         <td class="px-5 py-3 text-xs text-gray-400">${r.notes||'—'}</td>
+        <td class="px-5 py-3 text-xs text-green-400">${ovSummary}${incentiveSummary ? `<div class="text-purple-400 font-semibold mt-0.5">${incentiveSummary}</div>` : ''}</td>
         <td class="px-5 py-3 flex gap-2">
           <button onclick="openEditReceivableModal('${r.id}')" class="text-xs text-orange-400 hover:text-orange-300">Edit</button>
+          ${buyer ? `<button onclick="openOverridesModal('${buyer.id}','${buyer.name.replace(/'/g,"\\'")}')" class="text-xs text-blue-400 hover:text-blue-300">Overrides</button>` : ''}
           <button onclick="deleteReceivable('${r.id}')" class="text-xs text-red-400 hover:text-red-300">Delete</button>
         </td>
       </tr>`;
-    }).join('') || `<tr><td colspan="7" class="px-5 py-5 text-center text-gray-500 text-xs">No commission releases logged yet.</td></tr>`;
+    }).join('') || `<tr><td colspan="8" class="px-5 py-5 text-center text-gray-500 text-xs">No commission releases logged yet.</td></tr>`;
   } catch(err) {
     console.error('Error loading receivables:', err);
   }
@@ -3401,6 +3409,7 @@ async function saveOverrides(){
       body: JSON.stringify({ message: `Overrides/incentive updated for a sale`, actor: 'Admin', role: 'admin' })
     });
     closeModal('overridesModal');
+    if(document.getElementById('sec-commission')?.classList.contains('active')) renderReceivables();
     if(typeof renderBuyers === 'function' && document.getElementById('sec-buyers')?.classList.contains('active')) renderBuyers();
   } catch(err) {
     console.error('Error saving overrides:', err);
