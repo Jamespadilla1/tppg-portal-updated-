@@ -225,7 +225,7 @@
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
-            <th class="text-left px-5 py-2">Buyer Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Developer</th><th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Type</th><th class="text-left px-5 py-2">Unit</th><th class="text-left px-5 py-2">Bedrooms</th><th class="text-left px-5 py-2">Furnishing</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Sold By</th><th class="text-left px-5 py-2">My Override</th><th class="text-left px-5 py-2">Incentive</th>
+            <th class="text-left px-5 py-2">Buyer Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Developer</th><th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Type</th><th class="text-left px-5 py-2">Unit</th><th class="text-left px-5 py-2">Bedrooms</th><th class="text-left px-5 py-2">Furnishing</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Sold By</th><th class="text-left px-5 py-2">My Override</th>
           </tr></thead>
           <tbody id="clientsBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
         </table></div>
@@ -923,8 +923,7 @@ async function loadMyClients(){
         <td class="px-5 py-3 text-orange-600 text-xs">${b.unit ? peso(b.unit.tcp) : '—'}</td>
         <td class="px-5 py-3 text-gray-500 text-xs">${soldByLabel(b)}</td>
         <td class="px-5 py-3 text-green-600 text-xs font-semibold">${myOverrideFor(b)}</td>
-        <td class="px-5 py-3 text-purple-600 text-xs font-semibold">${b.incentive_amount ? peso(b.incentive_amount) : '—'}</td>
-      </tr>`).join('') || `<tr><td colspan="13" class="px-5 py-5 text-center text-gray-500 text-xs">No buyers recorded yet.</td></tr>`;
+      </tr>`).join('') || `<tr><td colspan="12" class="px-5 py-5 text-center text-gray-500 text-xs">No buyers recorded yet.</td></tr>`;
 
     document.getElementById('bUnit').innerHTML = `<option value="">— None selected —</option>` +
       myUnitsCache.map(u=>`<option value="${u.id}">${u.unit_name} (${peso(u.tcp)})</option>`).join('');
