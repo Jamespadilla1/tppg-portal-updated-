@@ -235,7 +235,7 @@
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase tracking-wide border-b border-white/8">
-            <th class="text-left px-4 py-3">Client Name</th><th class="text-left px-4 py-3">Email</th><th class="text-left px-4 py-3">Phone</th><th class="text-left px-4 py-3">Developer</th><th class="text-left px-4 py-3">Property</th><th class="text-left px-4 py-3">Type</th><th class="text-left px-4 py-3">Unit</th><th class="text-left px-4 py-3">Bedrooms</th><th class="text-left px-4 py-3">Furnishing</th><th class="text-left px-4 py-3">TCP</th><th class="text-left px-4 py-3">Added By</th><th class="text-left px-4 py-3">Reports To</th>
+            <th class="text-left px-4 py-3">Client Name</th><th class="text-left px-4 py-3">Email</th><th class="text-left px-4 py-3">Phone</th><th class="text-left px-4 py-3">Developer</th><th class="text-left px-4 py-3">Property</th><th class="text-left px-4 py-3">Type</th><th class="text-left px-4 py-3">Unit</th><th class="text-left px-4 py-3">Bedrooms</th><th class="text-left px-4 py-3">Furnishing</th><th class="text-left px-4 py-3">TCP</th><th class="text-left px-4 py-3">Added By</th><th class="text-left px-4 py-3">Reports To</th><th class="text-left px-4 py-3">Incentive</th>
           </tr></thead>
           <tbody id="salesBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
@@ -793,7 +793,8 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="px-4 py-4 text-orange-400">${b.unit ? peso(b.unit.tcp) : '—'}</td>
           <td class="px-4 py-4 text-gray-400">${agentName} (Agent)</td>
           <td class="px-4 py-4 text-gray-400">${reportsTo}</td>
-        </tr>`).join('') || `<tr><td colspan="12" class="px-4 py-6 text-center text-gray-500 text-sm">No clients added yet.</td></tr>`;
+          <td class="px-4 py-4 text-purple-400 font-semibold">${b.incentive_amount ? peso(b.incentive_amount) : '—'}</td>
+        </tr>`).join('') || `<tr><td colspan="13" class="px-4 py-6 text-center text-gray-500 text-sm">No clients added yet.</td></tr>`;
 
       document.getElementById('bUnit').innerHTML = `<option value="">— None selected —</option>` +
         myUnitsCache.map(u=>`<option value="${u.id}">${u.unit_name} (${peso(u.tcp)})</option>`).join('');
