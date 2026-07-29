@@ -85,6 +85,7 @@
         <p class="text-xs text-gray-500" id="sidebarRole2">—</p>
       </div>
     </div>
+    <p id="sidebarReportsTo" class="hidden mt-2.5 text-[11px] text-orange-400 bg-orange-500/8 border border-orange-500/20 rounded-lg px-2.5 py-1.5"></p>
     <button onclick="logout()" class="mt-3 w-full text-xs text-gray-500 hover:text-red-400 text-left transition-colors">← Log out</button>
   </div>
 </aside>
@@ -330,6 +331,33 @@ document.getElementById('sidebarRoleLabel').textContent = 'TPPG ' + (ROLE_LABELS
 document.getElementById('sidebarName').textContent = name || '—';
 document.getElementById('sidebarRole2').textContent = (ROLE_LABELS[role] || '—') + (localStorage.getItem('personId') ? ' · ' + localStorage.getItem('personId') : '');
 document.getElementById('sidebarInitials').textContent = (name || '?')[0].toUpperCase();
+
+// ── REPORTS TO badge (Sales Manager / Team Leader: who they report up to) ──
+async function renderReportsToBadge(){
+  const myUMId = localStorage.getItem('unitManagerId');
+  const mySMId = localStorage.getItem('salesManagerId');
+  const badge = document.getElementById('sidebarReportsTo');
+  const parts = [];
+  try {
+    if(role==='team_leader' && mySMId){
+      const res = await fetch('/api/sales-managers', { headers: { 'Authorization': 'Bearer ' + token } });
+      const list = await res.json();
+      const sm = list.find(s=>s.id===mySMId);
+      if(sm) parts.push(`${sm.name} (Sales Manager)`);
+    }
+    if(myUMId){
+      const res = await fetch('/api/unit-managers', { headers: { 'Authorization': 'Bearer ' + token } });
+      const list = await res.json();
+      const um = list.find(u=>u.id===myUMId);
+      if(um) parts.push(`${um.name} (Unit Manager)`);
+    }
+    if(parts.length){
+      badge.textContent = 'Reports to: ' + parts.join(' · ');
+      badge.classList.remove('hidden');
+    }
+  } catch(err) { console.error('Error loading reporting chain:', err); }
+}
+renderReportsToBadge();
 
 // ── SECTION SWITCHING ──
 window.showSection = (id, linkEl) => {
