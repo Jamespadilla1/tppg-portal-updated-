@@ -147,6 +147,7 @@
             <div><label class="text-xs text-gray-500 mb-1 block">Filter By</label><select id="propSearchBudgetType" class="field w-32" onchange="updateBudgetLabels('prop')">
               <option value="tcp">TCP</option>
               <option value="dp">Monthly DP</option>
+              <option value="fulldp">Full DP</option>
             </select></div>
             <div><label class="text-xs text-gray-500 mb-1 block" id="propSearchMinLabel">Min TCP (₱)</label><input id="propSearchDPMin" type="text" inputmode="numeric" placeholder="0" class="field w-32" oninput="formatMoneyInput(this)"></div>
             <div><label class="text-xs text-gray-500 mb-1 block" id="propSearchMaxLabel">Max TCP (₱)</label><input id="propSearchDPMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-32" oninput="formatMoneyInput(this)"></div>
@@ -585,6 +586,8 @@ document.addEventListener('DOMContentLoaded', () => {
   window.viewUnitDetail = function(id){
     const u = propAllUnits.find(x=>x.id===id);
     if(!u) return;
+    const terms = u.downpayment_terms_months || 24;
+    const monthlyDP = u.downpayment ? Number(u.downpayment)/terms : null;
     document.getElementById('unitDetailContent').innerHTML = `
       <div class="w-full h-48 bg-gray-50 rounded-lg overflow-hidden mb-4 flex items-center justify-center">
         ${u.image_url ? `<img src="${u.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-400 text-xs">No photo</span>`}
@@ -600,6 +603,12 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Square Meters</p><p class="font-bold">${u.square_meters??'—'}</p></div>
         <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Furnishing</p><p class="font-bold">${u.furnishing||'Bare Unit'}</p></div>
       </div>
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Reservation Fee</p><p class="font-bold">${u.reservation_fee ? peso(u.reservation_fee) : '—'}</p></div>
+        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Full Downpayment</p><p class="font-bold">${u.downpayment ? peso(u.downpayment) : '—'}</p></div>
+        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Monthly DP</p><p class="font-bold">${monthlyDP ? peso(monthlyDP) : '—'}</p></div>
+        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Downpayment Terms</p><p class="font-bold">${u.downpayment ? terms + ' months' : '—'}</p></div>
+      </div>
       <p class="text-gray-500 text-xs mb-1">Description</p>
       <p class="text-gray-700 text-sm">${u.description||'No description provided.'}</p>
     `;
@@ -609,7 +618,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Global property search across all developers (from Level 1)
   window.updateBudgetLabels = function(context){
     const budgetType = document.getElementById(context+'SearchBudgetType').value;
-    const label = budgetType==='dp' ? 'Monthly DP' : 'TCP';
+    const label = budgetType==='dp' ? 'Monthly DP' : (budgetType==='fulldp' ? 'Full DP' : 'TCP');
     document.getElementById(context+'SearchMinLabel').textContent = `Min ${label} (₱)`;
     document.getElementById(context+'SearchMaxLabel').textContent = `Max ${label} (₱)`;
   }
@@ -637,6 +646,8 @@ document.addEventListener('DOMContentLoaded', () => {
           if(budgetType==='dp'){
             const terms = u.downpayment_terms_months || 24;
             value = u.downpayment ? Number(u.downpayment)/terms : 0;
+          } else if(budgetType==='fulldp'){
+            value = Number(u.downpayment) || 0;
           } else {
             value = Number(u.tcp) || 0;
           }
