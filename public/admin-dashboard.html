@@ -758,7 +758,10 @@ tr:hover td{background:rgba(0,0,0,.02)}
           </div>
         </div>
       </div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Downpayment Terms (months)</label><input id="uDPTerms" type="number" min="1" class="field" placeholder="24" value="24"></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs text-gray-400 mb-1 block">Downpayment Terms (months)</label><input id="uDPTerms" type="number" min="1" class="field" placeholder="24" value="24" oninput="syncMonthlyDP('u')"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Monthly DP (₱)</label><input id="uMonthlyDP" type="text" inputmode="numeric" class="field" placeholder="14,583" oninput="formatMoneyInput(this);syncDPFromMonthly('u')"></div>
+      </div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="text-xs text-gray-400 mb-1 block">Bedrooms</label><input id="uBeds" type="number" min="0" class="field" placeholder="2"></div>
         <div><label class="text-xs text-gray-400 mb-1 block">Square Meters</label><input id="uSqm" type="number" step="0.1" class="field" placeholder="45"></div>
@@ -796,7 +799,10 @@ tr:hover td{background:rgba(0,0,0,.02)}
           </div>
         </div>
       </div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Downpayment Terms (months)</label><input id="eUDPTerms" type="number" min="1" class="field" placeholder="24"></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs text-gray-400 mb-1 block">Downpayment Terms (months)</label><input id="eUDPTerms" type="number" min="1" class="field" placeholder="24" oninput="syncMonthlyDP('eU')"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Monthly DP (₱)</label><input id="eUMonthlyDP" type="text" inputmode="numeric" class="field" placeholder="14,583" oninput="formatMoneyInput(this);syncDPFromMonthly('eU')"></div>
+      </div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="text-xs text-gray-400 mb-1 block">Bedrooms</label><input id="eUBeds" type="number" min="0" class="field"></div>
         <div><label class="text-xs text-gray-400 mb-1 block">Square Meters</label><input id="eUSqm" type="number" step="0.1" class="field"></div>
@@ -2088,12 +2094,31 @@ function syncDPFromAmount(prefix){
   const dp = parseMoney(document.getElementById(prefix+'Downpayment').value);
   const pctEl = document.getElementById(prefix+'DownpaymentPct');
   pctEl.value = tcp > 0 ? +(dp/tcp*100).toFixed(2) : '';
+  syncMonthlyDP(prefix);
 }
 function syncDPFromPct(prefix){
   const tcp = parseMoney(document.getElementById(prefix+'TCP').value);
   const pct = parseFloat(document.getElementById(prefix+'DownpaymentPct').value) || 0;
   const dpEl = document.getElementById(prefix+'Downpayment');
   dpEl.value = tcp > 0 ? Math.round(tcp * pct / 100).toLocaleString('en-US') : '';
+  syncMonthlyDP(prefix);
+}
+// ── Full Downpayment <-> Monthly DP <-> Terms sync ──
+function syncMonthlyDP(prefix){
+  const dp = parseMoney(document.getElementById(prefix+'Downpayment').value);
+  const terms = parseInt(document.getElementById(prefix+'DPTerms').value, 10) || 0;
+  const monthlyEl = document.getElementById(prefix+'MonthlyDP');
+  if(!monthlyEl) return;
+  monthlyEl.value = (dp > 0 && terms > 0) ? Math.round(dp / terms).toLocaleString('en-US') : '';
+}
+function syncDPFromMonthly(prefix){
+  const monthly = parseMoney(document.getElementById(prefix+'MonthlyDP').value);
+  const terms = parseInt(document.getElementById(prefix+'DPTerms').value, 10) || 0;
+  if(terms > 0){
+    const dpEl = document.getElementById(prefix+'Downpayment');
+    dpEl.value = monthly > 0 ? Math.round(monthly * terms).toLocaleString('en-US') : '';
+    syncDPFromAmount(prefix); // keep % in sync too
+  }
 }
 async function saveUnit(){
   const name=document.getElementById('uName').value.trim();
@@ -2141,7 +2166,7 @@ async function saveUnit(){
       body: JSON.stringify({ message: `Unit "${name}" added under ${currentPropName} — status: ${status}${constDetail}`, actor: 'Admin', role: 'admin' })
     });
     closeModal('addUnitModal');
-    ['uName','uTCP','uResFee','uDownpayment','uDownpaymentPct','uBeds','uSqm','uDesc','uFinishDate'].forEach(id=>document.getElementById(id).value='');
+    ['uName','uTCP','uResFee','uDownpayment','uDownpaymentPct','uMonthlyDP','uBeds','uSqm','uDesc','uFinishDate'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('uDPTerms').value='24';
     document.getElementById('uStatus').value='Available';
     document.getElementById('uFurnish').value='Bare Unit';
