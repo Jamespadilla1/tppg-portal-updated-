@@ -783,7 +783,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
       </div>
       <div id="uLotRow" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Lot Position</label><select id="uLotType" class="field"><option value="Corner Lot">Corner Lot</option><option value="End Unit">End Unit</option><option value="Middle Unit">Middle Unit</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Furnishing</label><select id="uFurnish" class="field"><option value="Fully Furnished">Fully Furnished</option><option value="Semi Furnished">Semi Furnished</option><option value="Bare Unit" selected>Bare Unit</option></select></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Construction Status</label><select id="uConstStatus" class="field" onchange="document.getElementById('uFinishRow').classList.toggle('hidden', this.value!=='Under Construction')"><option value="RFO">RFO</option><option value="Under Construction">Under Construction</option></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Construction Status</label><select id="uConstStatus" class="field" onchange="document.getElementById('uFinishRow').classList.toggle('hidden', !['Under Construction','Pre-selling'].includes(this.value))"><option value="RFO">RFO</option><option value="Under Construction">Under Construction</option><option value="Pre-selling">Pre-selling</option></select></div>
       <div id="uFinishRow" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Estimated Finish Date</label><input id="uFinishDate" type="date" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="uStatus" class="field"><option value="Available">Available</option><option value="Hold">Hold</option><option value="Sold">Sold</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Description</label><textarea id="uDesc" class="field" placeholder="Brief unit description…"></textarea></div>
@@ -831,7 +831,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
       </div>
       <div id="eULotRow" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Lot Position</label><select id="eULotType" class="field"><option value="Corner Lot">Corner Lot</option><option value="End Unit">End Unit</option><option value="Middle Unit">Middle Unit</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Furnishing</label><select id="eUFurnish" class="field"><option value="Fully Furnished">Fully Furnished</option><option value="Semi Furnished">Semi Furnished</option><option value="Bare Unit">Bare Unit</option></select></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Construction Status</label><select id="eUConstStatus" class="field" onchange="document.getElementById('eUFinishRow').classList.toggle('hidden', this.value!=='Under Construction')"><option value="RFO">RFO</option><option value="Under Construction">Under Construction</option></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Construction Status</label><select id="eUConstStatus" class="field" onchange="document.getElementById('eUFinishRow').classList.toggle('hidden', !['Under Construction','Pre-selling'].includes(this.value))"><option value="RFO">RFO</option><option value="Under Construction">Under Construction</option><option value="Pre-selling">Pre-selling</option></select></div>
       <div id="eUFinishRow" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Estimated Finish Date</label><input id="eUFinishDate" type="date" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="eUStatus" class="field"><option value="Available">Available</option><option value="Hold">Hold</option><option value="Sold">Sold</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Description</label><textarea id="eUDesc" class="field"></textarea></div>
@@ -2055,9 +2055,9 @@ async function renderUnits(){
           <p class="text-gray-500 text-xs">${bedroomLabel(u.bedrooms)}${u.bedrooms!==0 ? ' BR' : ''} · ${u.square_meters??'—'} sqm${u.lot_type?' · '+u.lot_type:''}</p>
           <div class="flex items-center gap-1.5 flex-wrap">
             <span class="badge bg-blue text-xs">${u.furnishing||'Bare Unit'}</span>
-            <span class="badge ${u.construction_status==='Under Construction'?'bg-yellow':'bg-green'} text-xs">${u.construction_status||'RFO'}</span>
+            <span class="badge ${u.construction_status==='Under Construction'?'bg-yellow':(u.construction_status==='Pre-selling'?'bg-blue':'bg-green')} text-xs">${u.construction_status||'RFO'}</span>
           </div>
-          ${u.construction_status==='Under Construction' && u.estimated_finish_date ? `<p class="text-gray-500 text-xs">Est. finish: ${new Date(u.estimated_finish_date).toLocaleDateString('en-PH',{year:'numeric',month:'short'})}</p>` : ''}
+          ${['Under Construction','Pre-selling'].includes(u.construction_status) && u.estimated_finish_date ? `<p class="text-gray-500 text-xs">Est. finish: ${new Date(u.estimated_finish_date).toLocaleDateString('en-PH',{year:'numeric',month:'short'})}</p>` : ''}
         </div>
       </div>
     `).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No units yet for ${currentPropName} — click "+ Add Unit" to start.</p>`;
@@ -2085,7 +2085,7 @@ function viewUnit(id){
       <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Lot Position</p><p class="text-white font-bold">${u.lot_type||'—'}</p></div>
       <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Furnishing</p><p class="text-white font-bold">${u.furnishing||'Bare Unit'}</p></div>
       <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Construction Status</p><p class="text-white font-bold">${u.construction_status||'RFO'}</p></div>
-      ${u.construction_status==='Under Construction' && u.estimated_finish_date ? `<div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Est. Finish Date</p><p class="text-white font-bold">${new Date(u.estimated_finish_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})}</p></div>` : ''}
+      ${['Under Construction','Pre-selling'].includes(u.construction_status) && u.estimated_finish_date ? `<div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Est. Finish Date</p><p class="text-white font-bold">${new Date(u.estimated_finish_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})}</p></div>` : ''}
     </div>
     <div class="rounded-xl bg-orange-500/10 border border-orange-500/25 p-4 mb-3 space-y-2">
       <div class="flex justify-between items-center"><p class="text-xs text-gray-400 uppercase tracking-wide">TCP (Total Contract Price)</p><p class="text-lg font-bold text-orange-400">${peso(u.tcp)}</p></div>
@@ -2174,7 +2174,7 @@ async function saveUnit(){
   fd.append('furnishing', document.getElementById('uFurnish').value);
   fd.append('status', status);
   fd.append('construction_status', constStatus);
-  fd.append('estimated_finish_date', constStatus==='Under Construction' ? finishDate : '');
+  fd.append('estimated_finish_date', ['Under Construction','Pre-selling'].includes(constStatus) ? finishDate : '');
   fd.append('description', document.getElementById('uDesc').value.trim());
   const imgFile = document.getElementById('uImage').files[0];
   if(imgFile) fd.append('image', imgFile);
@@ -2188,7 +2188,7 @@ async function saveUnit(){
       body: fd
     });
     if(!res.ok) throw new Error('Failed to save unit');
-    const constDetail = constStatus==='Under Construction' && finishDate
+    const constDetail = ['Under Construction','Pre-selling'].includes(constStatus) && finishDate
       ? ` — ${constStatus}, est. finish: ${finishDate}`
       : ` — ${constStatus}`;
     await fetch('/api/logs', {
@@ -2229,7 +2229,7 @@ function openEditUnit(id){
   document.getElementById('eUStatus').value=u.status;
   document.getElementById('eUConstStatus').value=u.construction_status||'RFO';
   document.getElementById('eUFinishDate').value=u.estimated_finish_date||'';
-  document.getElementById('eUFinishRow').classList.toggle('hidden', (u.construction_status||'RFO')!=='Under Construction');
+  document.getElementById('eUFinishRow').classList.toggle('hidden', !['Under Construction','Pre-selling'].includes(u.construction_status||'RFO'));
   document.getElementById('eUDesc').value=u.description||'';
   document.getElementById('eUImage').value='';
   document.getElementById('eUCompImage').value='';
@@ -2258,7 +2258,7 @@ async function updateUnit(){
   fd.append('furnishing', document.getElementById('eUFurnish').value);
   fd.append('status', newStatus);
   fd.append('construction_status', newConstStatus);
-  fd.append('estimated_finish_date', newConstStatus==='Under Construction' ? finishDate : '');
+  fd.append('estimated_finish_date', ['Under Construction','Pre-selling'].includes(newConstStatus) ? finishDate : '');
   fd.append('description', document.getElementById('eUDesc').value.trim());
   const imgFile = document.getElementById('eUImage').files[0];
   if(imgFile) fd.append('image', imgFile);
@@ -2274,7 +2274,7 @@ async function updateUnit(){
     if(!res.ok) throw new Error('Failed to update unit');
     let logMsg;
     if(statusChanged) logMsg = `Unit "${name}" status changed to ${newStatus}`;
-    else if(constChanged) logMsg = `Unit "${name}" construction status changed to ${newConstStatus}${newConstStatus==='Under Construction' && finishDate ? ' (est. finish: '+finishDate+')' : ''}`;
+    else if(constChanged) logMsg = `Unit "${name}" construction status changed to ${newConstStatus}${['Under Construction','Pre-selling'].includes(newConstStatus) && finishDate ? ' (est. finish: '+finishDate+')' : ''}`;
     else logMsg = `Unit "${name}" updated`;
     await fetch('/api/logs', {
       method: 'POST',
