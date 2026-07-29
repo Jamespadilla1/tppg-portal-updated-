@@ -147,6 +147,15 @@
           <tbody id="commBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
       </div>
+      <div class="card overflow-hidden">
+        <div class="px-6 py-4 border-b border-white/8"><h3 class="font-semibold">My Commission Releases</h3><p class="text-xs text-gray-500 mt-0.5">Commission payouts recorded by Admin for sales you made.</p></div>
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase tracking-wide border-b border-white/8">
+            <th class="text-left px-6 py-3">Sale / Property</th><th class="text-left px-6 py-3">Amount</th><th class="text-left px-6 py-3">Release Date</th><th class="text-left px-6 py-3">Type</th><th class="text-left px-6 py-3">Notes</th>
+          </tr></thead>
+          <tbody id="myReceivablesBody" class="divide-y divide-white/6 text-gray-300"></tbody>
+        </table></div>
+      </div>
     </div>
 
     <!-- SALES PERFORMANCE -->
@@ -344,6 +353,40 @@ document.addEventListener('DOMContentLoaded', () => {
         <td class="px-6 py-4 text-orange-400 font-semibold">${peso(p.price*p.rate/100)}</td>
         <td class="px-6 py-4 text-gray-500">${p.date||'—'}</td>
       </tr>`).join('') || `<tr><td colspan="5" class="px-6 py-6 text-center text-gray-500 text-sm">No sold properties yet.</td></tr>`;
+    renderMyReceivables();
+  }
+
+  async function renderMyReceivables() {
+    try {
+      const [recRes, buyersRes, unitsRes, propsRes] = await Promise.all([
+        fetch('/api/commission-receivables/mine', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch('/api/buyers', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch('/api/units',  { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch('/api/properties', { headers: { 'Authorization': 'Bearer ' + token } }),
+      ]);
+      const receivables = await recRes.json();
+      const buyers = await buyersRes.json();
+      const units = await unitsRes.json();
+      const props = await propsRes.json();
+      document.getElementById('myReceivablesBody').innerHTML = receivables.map(r => {
+        const buyer = buyers.find(b=>b.id===r.buyer_id);
+        const unit = buyer ? units.find(u=>u.id===buyer.unit_id) : null;
+        const prop = unit ? props.find(p=>p.id===unit.property_id) : null;
+        const saleLabel = prop ? `${prop.name}${unit ? ' / ' + unit.unit_name : ''}` : (buyer ? buyer.name : '—');
+        const trancheInfo = (r.release_type==='Monthly Tranche' && r.monthly_amount && r.tranche_months)
+          ? `<div class="text-gray-500 font-normal text-xs">${peso(r.monthly_amount)}/mo × ${r.tranche_months} mo</div>` : '';
+        return `
+        <tr>
+          <td class="px-6 py-4 font-medium text-white">${saleLabel}</td>
+          <td class="px-6 py-4 text-orange-400 font-semibold">${peso(r.amount)}${trancheInfo}</td>
+          <td class="px-6 py-4 text-gray-500">${new Date(r.release_date).toLocaleDateString()}</td>
+          <td class="px-6 py-4">${r.release_type}</td>
+          <td class="px-6 py-4 text-gray-500">${r.notes||'—'}</td>
+        </tr>`;
+      }).join('') || `<tr><td colspan="5" class="px-6 py-6 text-center text-gray-500 text-sm">No commission releases recorded yet.</td></tr>`;
+    } catch(err) {
+      console.error('Error loading my receivables:', err);
+    }
   }
 
   // ── SALES / MY CLIENTS (real data) ──

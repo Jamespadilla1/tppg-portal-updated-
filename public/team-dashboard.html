@@ -200,9 +200,16 @@
           <div class="flex justify-between text-sm font-semibold pt-1.5 border-t border-gray-200"><span>Net Commission</span><span class="text-orange-600" id="commNetVal">₱0</span></div>
         </div>
       </div>
+      <div class="card overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200"><h3 class="font-semibold">My Commission Releases</h3><p class="text-xs text-gray-500 mt-0.5">Commission payouts recorded by Admin for sales you made.</p></div>
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
+            <th class="text-left px-5 py-2">Sale / Property</th><th class="text-left px-5 py-2">Amount</th><th class="text-left px-5 py-2">Release Date</th><th class="text-left px-5 py-2">Type</th><th class="text-left px-5 py-2">Notes</th>
+          </tr></thead>
+          <tbody id="myReceivablesBody" class="divide-y divide-gray-200 text-gray-700"></tbody>
+        </table></div>
+      </div>
     </div>
-
-    <!-- MY SALES & CLIENTS -->
     <div id="sec-sales" class="section space-y-4">
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="card p-5"><p class="text-gray-500 text-xs uppercase tracking-wide mb-2">Total Buyers</p><p id="clientCount" class="text-3xl font-bold">0</p></div>
@@ -723,6 +730,31 @@ async function renderCommissionPersonal(){
   document.getElementById('commWithVal').textContent = '-' + peso(withholding);
   document.getElementById('commPercVal').textContent = '-' + peso(percTax);
   document.getElementById('commNetVal').textContent = peso(net);
+  renderMyReceivables();
+}
+
+async function renderMyReceivables(){
+  try {
+    const res = await fetch('/api/commission-receivables/mine', { headers: { 'Authorization': 'Bearer ' + token } });
+    const receivables = await res.json();
+    const { buyers } = await fetchMyClientsData(); // buyers already carry .unit and .property
+    document.getElementById('myReceivablesBody').innerHTML = receivables.map(r => {
+      const buyer = buyers.find(b=>b.id===r.buyer_id);
+      const saleLabel = buyer && buyer.property ? `${buyer.property.name}${buyer.unit ? ' / ' + buyer.unit.unit_name : ''}` : (buyer ? buyer.name : '—');
+      const trancheInfo = (r.release_type==='Monthly Tranche' && r.monthly_amount && r.tranche_months)
+        ? `<div class="text-gray-400 font-normal text-xs">${peso(r.monthly_amount)}/mo × ${r.tranche_months} mo</div>` : '';
+      return `
+      <tr>
+        <td class="px-5 py-3 text-xs font-medium text-gray-900">${saleLabel}</td>
+        <td class="px-5 py-3 text-xs text-orange-600 font-semibold">${peso(r.amount)}${trancheInfo}</td>
+        <td class="px-5 py-3 text-xs">${new Date(r.release_date).toLocaleDateString()}</td>
+        <td class="px-5 py-3 text-xs">${r.release_type}</td>
+        <td class="px-5 py-3 text-xs text-gray-500">${r.notes||'—'}</td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="5" class="px-5 py-5 text-center text-gray-400 text-xs">No commission releases recorded yet.</td></tr>`;
+  } catch(err) {
+    console.error('Error loading my receivables:', err);
+  }
 }
 
 // ── REPORTS & ANALYTICS (team-scoped) ──

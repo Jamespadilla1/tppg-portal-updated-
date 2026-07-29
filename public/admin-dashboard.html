@@ -384,16 +384,22 @@ tr:hover td{background:rgba(0,0,0,.02)}
         <h3 class="font-bold text-lg mb-4" id="receivableModalTitle">Add Commission Release</h3>
         <div class="space-y-3">
           <input id="recI" type="hidden">
-          <div><label class="text-xs text-gray-400 mb-1 block">Developer *</label><select id="recDeveloper" class="field"></select></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Linked Sale (optional)</label><select id="recBuyer" class="field"><option value="">— None —</option></select></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Amount (₱) *</label><input id="recAmount" type="text" inputmode="numeric" class="field" placeholder="500,000" oninput="formatMoneyInput(this)"></div>
+          <input id="recDeveloper" type="hidden">
+          <div><label class="text-xs text-gray-400 mb-1 block">Linked Sale *</label><select id="recBuyer" class="field" onchange="onRecBuyerChange()"><option value="">— Select the sale —</option></select></div>
+          <p id="recDevPreview" class="text-xs text-gray-500 -mt-2"></p>
+          <div id="recAnnualAmountRow"><label class="text-xs text-gray-400 mb-1 block">Amount (₱) *</label><input id="recAmount" type="text" inputmode="numeric" class="field" placeholder="500,000" oninput="formatMoneyInput(this);syncReceivableTotal()"></div>
+          <div id="recTrancheFields" class="hidden grid grid-cols-2 gap-3">
+            <div><label class="text-xs text-gray-400 mb-1 block">Monthly Amount (₱) *</label><input id="recMonthlyAmount" type="text" inputmode="numeric" class="field" placeholder="15,000" oninput="formatMoneyInput(this);syncReceivableTotal()"></div>
+            <div><label class="text-xs text-gray-400 mb-1 block">Number of Months *</label><input id="recTrancheMonths" type="number" min="1" class="field" placeholder="24" oninput="syncReceivableTotal()"></div>
+          </div>
+          <p id="recTrancheTotal" class="text-xs text-gray-500 hidden"></p>
           <div><label class="text-xs text-gray-400 mb-1 block">Release Date *</label><input id="recDate" type="date" class="field"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Type</label><select id="recType" class="field">
+          <div><label class="text-xs text-gray-400 mb-1 block">Type</label><select id="recType" class="field" onchange="onRecTypeChange()">
             <option value="Monthly Tranche">Monthly Tranche</option>
             <option value="Annual">Annual</option>
           </select></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Notes</label><textarea id="recNotes" class="field" rows="2"></textarea></div>
-          <p id="recErr" class="text-red-400 text-xs hidden">Developer, amount, and release date are required.</p>
+          <p id="recErr" class="text-red-400 text-xs hidden">Linked sale, amount, and release date are required.</p>
           <button onclick="saveReceivable()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save</button>
         </div>
       </div>
@@ -3168,29 +3174,55 @@ async function renderCommission(){
 // ══════════════════════════════════════
 // COMMISSION RECEIVABLES (tranches from developers)
 // ══════════════════════════════════════
-let receivablesCache = [], receivablesDevsCache = [], receivablesBuyersCache = [];
+let receivablesCache = [], receivablesDevsCache = [], receivablesBuyersCache = [], receivablesUnitsCache = [], receivablesPropsCache = [];
+
+// Resolve a buyer's input_by_role/input_by_id to the actual person who made the sale (agent/TL/SM/UM)
+function resolveSellerPerson(role, id){
+  const map = { agent: teamAgentsCache, team_leader: tlCache, sales_manager: smCache, unit_manager: umCache };
+  const list = map[role] || [];
+  return list.find(p=>p.id===id) || null;
+}
+const REC_ROLE_LABEL = { agent:'Agent', team_leader:'Team Leader', sales_manager:'Sales Manager', unit_manager:'Unit Manager' };
+
+function sellerLabelForBuyer(b){
+  if(!b.input_by_role) return '— Unknown seller —';
+  const person = resolveSellerPerson(b.input_by_role, b.input_by_id);
+  const sellerName = person ? person.name : 'Unknown';
+  const unit = receivablesUnitsCache.find(u=>u.id===b.unit_id);
+  const prop = unit ? receivablesPropsCache.find(p=>p.id===unit.property_id) : null;
+  const context = prop ? ` — ${prop.name}${unit ? ' / ' + unit.unit_name : ''}` : '';
+  return `${sellerName} (${REC_ROLE_LABEL[b.input_by_role]})${context}`;
+}
 
 async function renderReceivables(){
   const token = localStorage.getItem('token');
   const headers = { 'Authorization': 'Bearer ' + token };
   try {
-    const [recRes, devsRes, buyersRes] = await Promise.all([
+    const [recRes, devsRes, buyersRes, unitsRes, propsRes] = await Promise.all([
       fetch('/api/commission-receivables', {headers}),
       fetch('/api/developers', {headers}),
       fetch('/api/buyers', {headers}),
+      fetch('/api/units', {headers}),
+      fetch('/api/properties', {headers}),
     ]);
     receivablesCache = await recRes.json();
     receivablesDevsCache = await devsRes.json();
     receivablesBuyersCache = await buyersRes.json();
+    receivablesUnitsCache = await unitsRes.json();
+    receivablesPropsCache = await propsRes.json();
+    await fetchTeamStructureData(); // loads umCache, smCache, tlCache, teamAgentsCache
 
     document.getElementById('receivablesBody').innerHTML = receivablesCache.map(r => {
       const dev = receivablesDevsCache.find(d=>d.id===r.developer_id);
       const buyer = receivablesBuyersCache.find(b=>b.id===r.buyer_id);
+      const sellerLabel = buyer ? sellerLabelForBuyer(buyer) : '—';
+      const trancheInfo = (r.release_type==='Monthly Tranche' && r.monthly_amount && r.tranche_months)
+        ? `${peso(r.monthly_amount)}/mo × ${r.tranche_months} mo` : '';
       return `
       <tr>
         <td class="px-5 py-3 text-xs">${dev ? dev.name : '—'}</td>
-        <td class="px-5 py-3 text-xs">${buyer ? buyer.name : '—'}</td>
-        <td class="px-5 py-3 text-xs text-orange-400 font-semibold">${peso(r.amount)}</td>
+        <td class="px-5 py-3 text-xs">${sellerLabel}</td>
+        <td class="px-5 py-3 text-xs text-orange-400 font-semibold">${peso(r.amount)}${trancheInfo ? `<div class="text-gray-500 font-normal">${trancheInfo}</div>` : ''}</td>
         <td class="px-5 py-3 text-xs">${new Date(r.release_date).toLocaleDateString()}</td>
         <td class="px-5 py-3 text-xs"><span class="badge bg-blue">${r.release_type}</span></td>
         <td class="px-5 py-3 text-xs text-gray-400">${r.notes||'—'}</td>
@@ -3205,16 +3237,55 @@ async function renderReceivables(){
   }
 }
 
+function populateRecBuyerOptions(selectedBuyerId){
+  document.getElementById('recBuyer').innerHTML = `<option value="">— Select the sale —</option>` +
+    receivablesBuyersCache.map(b=>`<option value="${b.id}" ${b.id===selectedBuyerId?'selected':''}>${sellerLabelForBuyer(b)}</option>`).join('');
+}
+
+function onRecBuyerChange(){
+  const buyerId = document.getElementById('recBuyer').value;
+  const buyer = receivablesBuyersCache.find(b=>b.id===buyerId);
+  const unit = buyer ? receivablesUnitsCache.find(u=>u.id===buyer.unit_id) : null;
+  const prop = unit ? receivablesPropsCache.find(p=>p.id===unit.property_id) : null;
+  const dev = prop ? receivablesDevsCache.find(d=>d.id===prop.developer_id) : null;
+  document.getElementById('recDeveloper').value = dev ? dev.id : '';
+  document.getElementById('recDevPreview').textContent = dev ? `Developer: ${dev.name}` : (buyer ? 'No developer could be determined from this sale — check the unit/property.' : '');
+}
+
+function onRecTypeChange(){
+  const isTranche = document.getElementById('recType').value === 'Monthly Tranche';
+  document.getElementById('recTrancheFields').classList.toggle('hidden', !isTranche);
+  document.getElementById('recAnnualAmountRow').classList.toggle('hidden', isTranche);
+  document.getElementById('recTrancheTotal').classList.toggle('hidden', !isTranche);
+  syncReceivableTotal();
+}
+
+function syncReceivableTotal(){
+  const isTranche = document.getElementById('recType').value === 'Monthly Tranche';
+  if(!isTranche) return;
+  const monthly = parseMoney(document.getElementById('recMonthlyAmount').value);
+  const months = parseInt(document.getElementById('recTrancheMonths').value, 10) || 0;
+  const total = monthly * months;
+  document.getElementById('recAmount').value = total > 0 ? total.toLocaleString('en-US') : '';
+  document.getElementById('recTrancheTotal').textContent = (monthly>0 && months>0)
+    ? `${peso(monthly)}/month for ${months} month${months===1?'':'s'} = ${peso(total)} total`
+    : '';
+}
+
 function openAddReceivableModal(){
   document.getElementById('receivableModalTitle').textContent = 'Add Commission Release';
   document.getElementById('recI').value = '';
-  document.getElementById('recDeveloper').innerHTML = receivablesDevsCache.map(d=>`<option value="${d.id}">${d.name}</option>`).join('');
-  document.getElementById('recBuyer').innerHTML = `<option value="">— None —</option>` + receivablesBuyersCache.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+  document.getElementById('recDeveloper').value = '';
+  document.getElementById('recDevPreview').textContent = '';
+  populateRecBuyerOptions('');
   document.getElementById('recAmount').value = '';
+  document.getElementById('recMonthlyAmount').value = '';
+  document.getElementById('recTrancheMonths').value = '';
   document.getElementById('recDate').value = '';
   document.getElementById('recType').value = 'Monthly Tranche';
   document.getElementById('recNotes').value = '';
   document.getElementById('recErr').classList.add('hidden');
+  onRecTypeChange();
   openModal('receivableModal');
 }
 function openEditReceivableModal(id){
@@ -3222,32 +3293,47 @@ function openEditReceivableModal(id){
   if(!r) return;
   document.getElementById('receivableModalTitle').textContent = 'Edit Commission Release';
   document.getElementById('recI').value = r.id;
-  document.getElementById('recDeveloper').innerHTML = receivablesDevsCache.map(d=>`<option value="${d.id}">${d.name}</option>`).join('');
   document.getElementById('recDeveloper').value = r.developer_id;
-  document.getElementById('recBuyer').innerHTML = `<option value="">— None —</option>` + receivablesBuyersCache.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
-  document.getElementById('recBuyer').value = r.buyer_id || '';
+  populateRecBuyerOptions(r.buyer_id || '');
+  const buyer = receivablesBuyersCache.find(b=>b.id===r.buyer_id);
+  const dev = receivablesDevsCache.find(d=>d.id===r.developer_id);
+  document.getElementById('recDevPreview').textContent = dev ? `Developer: ${dev.name}` : '';
   document.getElementById('recAmount').value = r.amount ? Number(r.amount).toLocaleString('en-US') : '';
+  document.getElementById('recMonthlyAmount').value = r.monthly_amount ? Number(r.monthly_amount).toLocaleString('en-US') : '';
+  document.getElementById('recTrancheMonths').value = r.tranche_months || '';
   document.getElementById('recDate').value = r.release_date;
   document.getElementById('recType').value = r.release_type;
   document.getElementById('recNotes').value = r.notes || '';
   document.getElementById('recErr').classList.add('hidden');
+  onRecTypeChange();
   openModal('receivableModal');
 }
 async function saveReceivable(){
   const id = document.getElementById('recI').value;
+  const buyer_id = document.getElementById('recBuyer').value;
   const developer_id = document.getElementById('recDeveloper').value;
+  const release_type = document.getElementById('recType').value;
+  const isTranche = release_type === 'Monthly Tranche';
+  const monthly_amount = isTranche ? parseMoney(document.getElementById('recMonthlyAmount').value) : null;
+  const tranche_months = isTranche ? (parseInt(document.getElementById('recTrancheMonths').value, 10) || null) : null;
   const amount = parseMoney(document.getElementById('recAmount').value);
   const release_date = document.getElementById('recDate').value;
-  if(!developer_id || !amount || !release_date){ document.getElementById('recErr').classList.remove('hidden'); return; }
+
+  if(!buyer_id || !developer_id || !amount || !release_date || (isTranche && (!monthly_amount || !tranche_months))){
+    document.getElementById('recErr').classList.remove('hidden');
+    return;
+  }
   document.getElementById('recErr').classList.add('hidden');
 
   const token = localStorage.getItem('token');
   const payload = {
     developer_id,
-    buyer_id: document.getElementById('recBuyer').value || null,
+    buyer_id,
     amount,
     release_date,
-    release_type: document.getElementById('recType').value,
+    release_type,
+    monthly_amount,
+    tranche_months,
     notes: document.getElementById('recNotes').value.trim(),
   };
   try {
