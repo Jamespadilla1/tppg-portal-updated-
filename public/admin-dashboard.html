@@ -156,15 +156,13 @@ tr:hover td{background:rgba(0,0,0,.02)}
             <option value="Pre-selling">Pre-selling</option>
           </select></div>
           <div class="flex-1 min-w-[140px]"><label class="text-xs text-gray-400 mb-1 block">Location</label><input id="ovSearchLoc" type="text" placeholder="Type any location…" class="field" onkeydown="if(event.key==='Enter')searchPropertiesGlobal('ov')"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Min TCP (₱)</label><input id="ovSearchTCPMin" type="text" inputmode="numeric" placeholder="0" class="field w-28" oninput="formatMoneyInput(this)"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Max TCP (₱)</label><input id="ovSearchTCPMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-28" oninput="formatMoneyInput(this)"></div>
-          <button type="button" id="ovFullDPToggleBtn" onclick="toggleFullDPFields('ov')" class="text-xs text-orange-400 hover:underline whitespace-nowrap self-end mb-2.5">+ Full DP filter</button>
-          <div id="ovFullDPFields" class="hidden contents">
-            <div><label class="text-xs text-gray-400 mb-1 block">Min Full DP (₱)</label><input id="ovSearchFullDPMin" type="text" inputmode="numeric" placeholder="0" class="field w-28" oninput="formatMoneyInput(this)"></div>
-            <div><label class="text-xs text-gray-400 mb-1 block">Max Full DP (₱)</label><input id="ovSearchFullDPMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-28" oninput="formatMoneyInput(this)"></div>
-          </div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Min Monthly DP (₱)</label><input id="ovSearchMonthlyDPMin" type="text" inputmode="numeric" placeholder="0" class="field w-28" oninput="formatMoneyInput(this)"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Max Monthly DP (₱)</label><input id="ovSearchMonthlyDPMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-28" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Filter By</label><select id="ovSearchBudgetType" class="field w-32" onchange="updateBudgetLabels('ov')">
+            <option value="tcp">TCP</option>
+            <option value="dp">Monthly DP</option>
+            <option value="fulldp">Full DP</option>
+          </select></div>
+          <div><label class="text-xs text-gray-400 mb-1 block" id="ovSearchMinLabel">Min TCP (₱)</label><input id="ovSearchBudgetMin" type="text" inputmode="numeric" placeholder="0" class="field w-32" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block" id="ovSearchMaxLabel">Max TCP (₱)</label><input id="ovSearchBudgetMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-32" oninput="formatMoneyInput(this)"></div>
           <button onclick="searchPropertiesGlobal('ov')" class="bg-orange-500 hover:bg-orange-600 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">Search</button>
         </div>
         <div id="ovSearchResults" class="mt-3"></div>
@@ -233,15 +231,13 @@ tr:hover td{background:rgba(0,0,0,.02)}
               <option value="Pre-selling">Pre-selling</option>
             </select></div>
             <div class="flex-1 min-w-[140px]"><label class="text-xs text-gray-400 mb-1 block">Location</label><input id="plSearchLoc" type="text" placeholder="Type any location…" class="field" onkeydown="if(event.key==='Enter')searchPropertiesGlobal('pl')"></div>
-            <div><label class="text-xs text-gray-400 mb-1 block">Min TCP (₱)</label><input id="plSearchTCPMin" type="text" inputmode="numeric" placeholder="0" class="field w-28" oninput="formatMoneyInput(this)"></div>
-            <div><label class="text-xs text-gray-400 mb-1 block">Max TCP (₱)</label><input id="plSearchTCPMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-28" oninput="formatMoneyInput(this)"></div>
-            <button type="button" id="plFullDPToggleBtn" onclick="toggleFullDPFields('pl')" class="text-xs text-orange-400 hover:underline whitespace-nowrap self-end mb-2.5">+ Full DP filter</button>
-            <div id="plFullDPFields" class="hidden contents">
-              <div><label class="text-xs text-gray-400 mb-1 block">Min Full DP (₱)</label><input id="plSearchFullDPMin" type="text" inputmode="numeric" placeholder="0" class="field w-28" oninput="formatMoneyInput(this)"></div>
-              <div><label class="text-xs text-gray-400 mb-1 block">Max Full DP (₱)</label><input id="plSearchFullDPMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-28" oninput="formatMoneyInput(this)"></div>
-            </div>
-            <div><label class="text-xs text-gray-400 mb-1 block">Min Monthly DP (₱)</label><input id="plSearchMonthlyDPMin" type="text" inputmode="numeric" placeholder="0" class="field w-28" oninput="formatMoneyInput(this)"></div>
-            <div><label class="text-xs text-gray-400 mb-1 block">Max Monthly DP (₱)</label><input id="plSearchMonthlyDPMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-28" oninput="formatMoneyInput(this)"></div>
+            <div><label class="text-xs text-gray-400 mb-1 block">Filter By</label><select id="plSearchBudgetType" class="field w-32" onchange="updateBudgetLabels('pl')">
+              <option value="tcp">TCP</option>
+              <option value="dp">Monthly DP</option>
+              <option value="fulldp">Full DP</option>
+            </select></div>
+            <div><label class="text-xs text-gray-400 mb-1 block" id="plSearchMinLabel">Min TCP (₱)</label><input id="plSearchBudgetMin" type="text" inputmode="numeric" placeholder="0" class="field w-32" oninput="formatMoneyInput(this)"></div>
+            <div><label class="text-xs text-gray-400 mb-1 block" id="plSearchMaxLabel">Max TCP (₱)</label><input id="plSearchBudgetMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-32" oninput="formatMoneyInput(this)"></div>
             <button onclick="searchPropertiesGlobal('pl')" class="bg-orange-500 hover:bg-orange-600 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">Search</button>
           </div>
           <div id="plSearchResults" class="mt-3"></div>
@@ -1152,29 +1148,27 @@ async function renderOverview(){
 }
 
 // ── Global property search (Overview + Property Listings) ──
+function updateBudgetLabels(context){
+  const budgetType = document.getElementById(context+'SearchBudgetType').value;
+  const label = budgetType==='dp' ? 'Monthly DP' : (budgetType==='fulldp' ? 'Full DP' : 'TCP');
+  document.getElementById(context+'SearchMinLabel').textContent = `Min ${label} (₱)`;
+  document.getElementById(context+'SearchMaxLabel').textContent = `Max ${label} (₱)`;
+}
+
 async function searchPropertiesGlobal(context){
   const type = document.getElementById(context==='ov'?'ovSearchType':'plSearchType').value;
   const selling = document.getElementById(context==='ov'?'ovSearchSelling':'plSearchSelling').value;
   const loc  = document.getElementById(context==='ov'?'ovSearchLoc':'plSearchLoc').value.trim().toLowerCase();
-
-  const tcpMinRaw = document.getElementById(context+'SearchTCPMin').value;
-  const tcpMaxRaw = document.getElementById(context+'SearchTCPMax').value;
-  const fullDPMinRaw = document.getElementById(context+'SearchFullDPMin').value;
-  const fullDPMaxRaw = document.getElementById(context+'SearchFullDPMax').value;
-  const monthlyDPMinRaw = document.getElementById(context+'SearchMonthlyDPMin').value;
-  const monthlyDPMaxRaw = document.getElementById(context+'SearchMonthlyDPMax').value;
-
-  const tcpMin = parseMoney(tcpMinRaw), tcpMax = tcpMaxRaw ? parseMoney(tcpMaxRaw) : Infinity;
-  const fullDPMin = parseMoney(fullDPMinRaw), fullDPMax = fullDPMaxRaw ? parseMoney(fullDPMaxRaw) : Infinity;
-  const monthlyDPMin = parseMoney(monthlyDPMinRaw), monthlyDPMax = monthlyDPMaxRaw ? parseMoney(monthlyDPMaxRaw) : Infinity;
-
-  const anyTCP = tcpMinRaw!=='' || tcpMaxRaw!=='';
-  const anyFullDP = fullDPMinRaw!=='' || fullDPMaxRaw!=='';
-  const anyMonthlyDP = monthlyDPMinRaw!=='' || monthlyDPMaxRaw!=='';
+  const budgetType = document.getElementById(context+'SearchBudgetType').value; // 'tcp', 'dp', or 'fulldp'
+  const budgetMinRaw = document.getElementById(context+'SearchBudgetMin').value;
+  const budgetMaxRaw = document.getElementById(context+'SearchBudgetMax').value;
+  const budgetMin = parseMoney(budgetMinRaw);
+  const budgetMax = budgetMaxRaw ? parseMoney(budgetMaxRaw) : Infinity;
+  const anyBudget = budgetMinRaw!=='' || budgetMaxRaw!=='';
 
   const resultsEl = document.getElementById(context==='ov'?'ovSearchResults':'plSearchResults');
 
-  if(!type && !selling && !loc && !anyTCP && !anyFullDP && !anyMonthlyDP){ resultsEl.innerHTML = '<p class="text-xs text-gray-500">Enter a filter to search.</p>'; return; }
+  if(!type && !selling && !loc && !anyBudget){ resultsEl.innerHTML = '<p class="text-xs text-gray-500">Enter a filter to search.</p>'; return; }
 
   const token = localStorage.getItem('token');
   const headers = { 'Authorization': 'Bearer ' + token };
@@ -1194,23 +1188,19 @@ async function searchPropertiesGlobal(context){
       const ml = !loc || (p.location||'').toLowerCase().includes(loc) || p.name.toLowerCase().includes(loc);
       if(!mt || !ms || !ml) return false;
 
-      if(anyTCP || anyFullDP || anyMonthlyDP){
+      if(anyBudget){
         const propUnits = allUnits.filter(u=>u.property_id===p.id);
         const hasMatch = propUnits.some(u=>{
-          if(anyTCP){
-            const tcp = Number(u.tcp) || 0;
-            if(!(tcp >= tcpMin && tcp <= tcpMax)) return false;
-          }
-          if(anyFullDP){
-            const fullDP = Number(u.downpayment) || 0;
-            if(!(fullDP >= fullDPMin && fullDP <= fullDPMax)) return false;
-          }
-          if(anyMonthlyDP){
+          let value;
+          if(budgetType==='dp'){
             const terms = u.downpayment_terms_months || 24;
-            const monthlyDP = u.downpayment ? Number(u.downpayment)/terms : 0;
-            if(!(monthlyDP >= monthlyDPMin && monthlyDP <= monthlyDPMax)) return false;
+            value = u.downpayment ? Number(u.downpayment)/terms : 0;
+          } else if(budgetType==='fulldp'){
+            value = Number(u.downpayment) || 0;
+          } else {
+            value = Number(u.tcp) || 0;
           }
-          return true;
+          return value >= budgetMin && value <= budgetMax;
         });
         if(!hasMatch) return false;
       }
@@ -2116,16 +2106,6 @@ function parseMoney(str){
 function bedroomLabel(n){
   if(n===null || n===undefined || n==='') return '—';
   return Number(n)===0 ? 'Studio' : n;
-}
-function toggleFullDPFields(context){
-  const fieldsEl = document.getElementById(context+'FullDPFields');
-  const btnEl = document.getElementById(context+'FullDPToggleBtn');
-  const showing = fieldsEl.classList.toggle('hidden') === false;
-  btnEl.textContent = showing ? '− Hide Full DP filter' : '+ Full DP filter';
-  if(!showing){
-    document.getElementById(context+'SearchFullDPMin').value = '';
-    document.getElementById(context+'SearchFullDPMax').value = '';
-  }
 }
 function formatMoneyInput(el){
   const cursorFromEnd = el.value.length - el.selectionStart;
