@@ -211,6 +211,18 @@
         </div>
       </div>
       <div class="card overflow-hidden">
+        <div class="px-6 py-4 border-b border-white/8 flex items-center justify-between">
+          <div><h3 class="font-semibold">My Incentives</h3><p class="text-xs text-gray-500 mt-0.5">Incentive amounts set by Admin for your sales. Visible only to you.</p></div>
+          <div class="text-right"><p class="text-xs text-gray-500">Total</p><p class="font-bold text-purple-400" id="incentiveTotalVal">₱0</p></div>
+        </div>
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase tracking-wide border-b border-white/8">
+            <th class="text-left px-6 py-3">Client</th><th class="text-left px-6 py-3">Property / Unit</th><th class="text-left px-6 py-3">TCP</th><th class="text-left px-6 py-3">Incentive</th>
+          </tr></thead>
+          <tbody id="incentiveBody" class="divide-y divide-white/6 text-gray-300"></tbody>
+        </table></div>
+      </div>
+      <div class="card overflow-hidden">
         <div class="px-6 py-4 border-b border-white/8"><h3 class="font-semibold">My Commission Releases</h3><p class="text-xs text-gray-500 mt-0.5">Commission payouts recorded by Admin for sales you made.</p></div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase tracking-wide border-b border-white/8">
@@ -235,7 +247,7 @@
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase tracking-wide border-b border-white/8">
-            <th class="text-left px-4 py-3">Client Name</th><th class="text-left px-4 py-3">Email</th><th class="text-left px-4 py-3">Phone</th><th class="text-left px-4 py-3">Developer</th><th class="text-left px-4 py-3">Property</th><th class="text-left px-4 py-3">Type</th><th class="text-left px-4 py-3">Unit</th><th class="text-left px-4 py-3">Bedrooms</th><th class="text-left px-4 py-3">Furnishing</th><th class="text-left px-4 py-3">TCP</th><th class="text-left px-4 py-3">Added By</th><th class="text-left px-4 py-3">Reports To</th><th class="text-left px-4 py-3">Incentive</th>
+            <th class="text-left px-4 py-3">Client Name</th><th class="text-left px-4 py-3">Email</th><th class="text-left px-4 py-3">Phone</th><th class="text-left px-4 py-3">Developer</th><th class="text-left px-4 py-3">Property</th><th class="text-left px-4 py-3">Type</th><th class="text-left px-4 py-3">Unit</th><th class="text-left px-4 py-3">Bedrooms</th><th class="text-left px-4 py-3">Furnishing</th><th class="text-left px-4 py-3">TCP</th><th class="text-left px-4 py-3">Added By</th><th class="text-left px-4 py-3">Reports To</th>
           </tr></thead>
           <tbody id="salesBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
@@ -692,6 +704,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('commWithVal').textContent = '-' + peso(withholding);
     document.getElementById('commPercVal').textContent = '-' + peso(percTax);
     document.getElementById('commNetVal').textContent = peso(net);
+
+    const withIncentive = buyers.filter(b=>b.incentive_amount);
+    const totalIncentive = withIncentive.reduce((s,b)=> s + (Number(b.incentive_amount)||0), 0);
+    document.getElementById('incentiveTotalVal').textContent = peso(totalIncentive);
+    document.getElementById('incentiveBody').innerHTML = withIncentive.map(b => `
+      <tr>
+        <td class="px-6 py-3 font-medium text-white text-xs">${b.name}</td>
+        <td class="px-6 py-3 text-gray-400 text-xs">${b.property ? b.property.name : '—'}${b.unit ? ' / ' + b.unit.unit_name : ''}</td>
+        <td class="px-6 py-3 text-orange-400 text-xs">${b.unit ? peso(b.unit.tcp) : '—'}</td>
+        <td class="px-6 py-3 text-purple-400 font-semibold text-xs">${peso(b.incentive_amount)}</td>
+      </tr>`).join('') || `<tr><td colspan="4" class="px-6 py-5 text-center text-gray-500 text-xs">No incentives recorded yet.</td></tr>`;
+
     renderMyReceivables();
   }
 
@@ -793,8 +817,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="px-4 py-4 text-orange-400">${b.unit ? peso(b.unit.tcp) : '—'}</td>
           <td class="px-4 py-4 text-gray-400">${agentName} (Agent)</td>
           <td class="px-4 py-4 text-gray-400">${reportsTo}</td>
-          <td class="px-4 py-4 text-purple-400 font-semibold">${b.incentive_amount ? peso(b.incentive_amount) : '—'}</td>
-        </tr>`).join('') || `<tr><td colspan="13" class="px-4 py-6 text-center text-gray-500 text-sm">No clients added yet.</td></tr>`;
+        </tr>`).join('') || `<tr><td colspan="12" class="px-4 py-6 text-center text-gray-500 text-sm">No clients added yet.</td></tr>`;
 
       document.getElementById('bUnit').innerHTML = `<option value="">— None selected —</option>` +
         myUnitsCache.map(u=>`<option value="${u.id}">${u.unit_name} (${peso(u.tcp)})</option>`).join('');
