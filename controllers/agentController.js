@@ -129,6 +129,15 @@ const promoteAgent = async (req, res) => {
       .single();
     if (insertErr) throw insertErr;
 
+    // Carry the promoted person's sales/commission history forward: buyers they recorded
+    // as an Agent now belong to their new role, so it keeps counting toward their new dashboard.
+    const { error: reassignErr } = await supabase
+      .from('buyers')
+      .update({ input_by_role: target_role, input_by_id: newRecord.id })
+      .eq('input_by_role', 'agent')
+      .eq('input_by_id', req.params.id);
+    if (reassignErr) console.error('Failed to carry over sales history on promotion:', reassignErr);
+
     const { error: deleteErr } = await supabase.from('agents').delete().eq('id', req.params.id);
     if (deleteErr) throw deleteErr;
 

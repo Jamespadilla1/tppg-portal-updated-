@@ -551,6 +551,24 @@ tr:hover td{background:rgba(0,0,0,.02)}
 <!-- MODALS -->
 <!-- ═══════════════════════════════════════════════════ -->
 
+<!-- PROMOTE AGENT TO TEAM LEADER -->
+<div id="promoteModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('promoteModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-1">Promote to Team Leader</h3>
+    <p class="text-xs text-gray-500 mb-4">Are you sure you want to promote <span id="promoteAgentName" class="text-white font-semibold"></span> to Team Leader? Their sales and commission history will carry over. They'll get a new TL-ID but keep their existing password.</p>
+    <div class="space-y-3">
+      <input id="promoteAgentId" type="hidden">
+      <div><label class="text-xs text-gray-400 mb-1 block">Sales Manager (optional)</label><select id="promoteSM" class="field"><option value="">— None —</option></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Unit Manager (optional)</label><select id="promoteUM" class="field"><option value="">— None —</option></select></div>
+      <div class="flex gap-3 pt-2">
+        <button onclick="closeModal('promoteModal')" class="flex-1 bg-white/5 hover:bg-white/10 py-2.5 rounded-lg font-semibold text-sm transition-colors">No, cancel</button>
+        <button onclick="confirmPromoteAgent()" class="flex-1 bg-green-600 hover:bg-green-500 py-2.5 rounded-lg font-semibold text-sm transition-colors">Yes, promote</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ADD PROPERTY -->
 <!-- ADD DEVELOPER -->
 <!-- ADD UNIT MANAGER -->
@@ -2362,6 +2380,38 @@ function renderTeamsView(){
     renderTeamsAgents();
   }
 }
+function openPromoteModal(agentId, agentName){
+  document.getElementById('promoteAgentId').value = agentId;
+  document.getElementById('promoteAgentName').textContent = agentName;
+  document.getElementById('promoteSM').innerHTML = `<option value="">— None —</option>` + smCache.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('promoteUM').innerHTML = `<option value="">— None —</option>` + umCache.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+  openModal('promoteModal');
+}
+async function confirmPromoteAgent(){
+  const id = document.getElementById('promoteAgentId').value;
+  const sales_manager_id = document.getElementById('promoteSM').value || null;
+  const unit_manager_id = document.getElementById('promoteUM').value || null;
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch(`/api/agents/${id}/promote`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target_role: 'team_leader', sales_manager_id, unit_manager_id })
+    });
+    if(!res.ok) throw new Error('Promotion failed');
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Agent promoted to Team Leader`, actor: 'Admin', role: 'admin' })
+    });
+    closeModal('promoteModal');
+    renderTeamsAgents();
+  } catch(err) {
+    console.error('Error promoting agent:', err);
+    alert('Failed to promote agent.');
+  }
+}
+
 async function renderTeamsAgents(){
   const token = localStorage.getItem('token');
   try {
@@ -2387,6 +2437,7 @@ async function renderTeamsAgents(){
           <p class="text-xs text-gray-500">Reports to: <span class="text-gray-300">${reportsTo}</span></p>
           <div class="flex gap-2 shrink-0">
             <button onclick="viewAgent('${a.id}')" class="text-xs text-blue-400 hover:text-blue-300">View</button>
+            <button onclick="openPromoteModal('${a.id}','${a.name.replace(/'/g,"\\'")}')" class="text-xs text-green-400 hover:text-green-300">Promote</button>
             <button onclick="agentAction('${a.id}','suspended')" class="text-xs text-purple-400 hover:text-purple-300">Suspend</button>
           </div>
         </div>
@@ -2847,7 +2898,7 @@ function switchSBTab(tab){
 
 function personalSalesValue(role, id){
   return sbBuyersCache.filter(b=>b.input_by_role===role && b.input_by_id===id)
-    .reduce((s,b)=>{ const u = sbUnitsCache.find(x=>x.id===b.unit_id); return s + (u? Number(u.tcp)||0 : 0); }, 0);
+    .reduce((s,b)=>{ const u = sbUnitsCache.find(x=>x.id===b.unit_id); return s + (u ? Number(u.tcp)||0 : (Number(b.manual_tcp)||0)); }, 0);
 }
 function personalClientCount(role, id){
   return sbBuyersCache.filter(b=>b.input_by_role===role && b.input_by_id===id).length;
@@ -3017,12 +3068,17 @@ async function renderBuyers(){
       const developer = property ? sbDevsCache.find(d=>d.id===property.developer_id) : null;
       return { ...b, unit, property, developer };
     });
-    const totalValue = withUnit.reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
-    const best = withUnit.length ? withUnit.reduce((a,b)=> (b.unit && (!a.unit || Number(b.unit.tcp)>Number(a.unit.tcp))) ? b : a) : null;
+    function saleTCP(b){
+      if(b.unit) return Number(b.unit.tcp) || 0;
+      if(b.manual_tcp) return Number(b.manual_tcp) || 0;
+      return 0;
+    }
+    const totalValue = withUnit.reduce((s,b)=>s + saleTCP(b), 0);
+    const best = withUnit.length ? withUnit.reduce((a,b)=> (saleTCP(b) > saleTCP(a)) ? b : a) : null;
 
     document.getElementById('sbClientCount').textContent = withUnit.length;
     document.getElementById('sbTotalValue').textContent  = peso(totalValue);
-    document.getElementById('sbTopSale').textContent     = best && best.unit ? best.unit.unit_name : '—';
+    document.getElementById('sbTopSale').textContent     = best ? (best.unit ? best.unit.unit_name : (best.manual_unit_name || best.manual_property_name || '—')) : '—';
 
     function resolvePerson(role, id){
       const map = { agent: teamAgentsCache, team_leader: tlCache, sales_manager: smCache, unit_manager: umCache };
@@ -3071,12 +3127,12 @@ async function renderBuyers(){
         <td class="px-5 py-3 text-gray-400 text-xs">${b.email||'—'}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${b.phone||'—'}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${b.developer ? b.developer.name : '—'}</td>
-        <td class="px-5 py-3 text-gray-400 text-xs">${b.property ? b.property.name : '—'}</td>
-        <td class="px-5 py-3 text-gray-400 text-xs">${b.property ? b.property.property_type : '—'}</td>
-        <td class="px-5 py-3 text-gray-400 text-xs">${b.unit ? b.unit.unit_name : '—'}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${b.property ? b.property.name : (b.manual_property_name || '—')}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${b.property ? b.property.property_type : (b.manual_tcp ? 'Manual' : '—')}</td>
+        <td class="px-5 py-3 text-gray-400 text-xs">${b.unit ? b.unit.unit_name : (b.manual_unit_name || '—')}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${b.unit ? bedroomLabel(b.unit.bedrooms) : '—'}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${b.unit ? (b.unit.furnishing||'—') : '—'}</td>
-        <td class="px-5 py-3 text-orange-400 text-xs">${b.unit ? peso(b.unit.tcp) : '—'}</td>
+        <td class="px-5 py-3 text-orange-400 text-xs">${saleTCP(b) ? peso(saleTCP(b)) : '—'}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${addedBy}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${reportsTo}</td>
         <td class="px-5 py-3 flex gap-2"><button onclick="deleteBuyerAdmin('${b.id}')" class="text-xs text-red-400 hover:text-red-300">Delete</button></td>
