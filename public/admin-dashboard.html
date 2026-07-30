@@ -399,26 +399,20 @@ tr:hover td{background:rgba(0,0,0,.02)}
             <option value="Annual">Annual</option>
           </select></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Notes</label><textarea id="recNotes" class="field" rows="2"></textarea></div>
+
+          <div class="border-t border-white/8 pt-3 mt-1">
+            <p class="text-xs text-gray-400 font-semibold mb-2">Overrides &amp; Incentive</p>
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="text-xs text-gray-400 mb-1 block">Team Leader Override (₱)</label><input id="recOvTL" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
+              <div><label class="text-xs text-gray-400 mb-1 block">Sales Manager Override (₱)</label><input id="recOvSM" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
+              <div><label class="text-xs text-gray-400 mb-1 block">Unit Manager Override (₱)</label><input id="recOvUM" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
+              <div><label class="text-xs text-gray-400 mb-1 block">Incentive (₱)</label><input id="recOvIncentive" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
+            </div>
+            <p class="text-xs text-gray-600 italic mt-2">Each manager/Team Leader sees only their own override amount. Incentive is visible only to the agent who made this sale.</p>
+          </div>
+
           <p id="recErr" class="text-red-400 text-xs hidden">Linked sale, amount, and release date are required.</p>
           <button onclick="saveReceivable()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- OVERRIDES & INCENTIVE -->
-    <div id="overridesModal" class="modal-backdrop">
-      <div class="modal-box">
-        <button onclick="closeModal('overridesModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
-        <h3 class="font-bold text-lg mb-1">Overrides &amp; Incentive</h3>
-        <p class="text-xs text-gray-500 mb-4" id="overridesModalSub"></p>
-        <div class="space-y-3">
-          <input id="ovI" type="hidden">
-          <div><label class="text-xs text-gray-400 mb-1 block">Team Leader Override (₱)</label><input id="ovTL" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Sales Manager Override (₱)</label><input id="ovSM" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Unit Manager Override (₱)</label><input id="ovUM" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Incentive (₱)</label><input id="ovIncentive" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
-          <p class="text-xs text-gray-600 italic">Only the relevant manager/Team Leader for this sale can see their own override amount.</p>
-          <button onclick="saveOverrides()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save</button>
         </div>
       </div>
     </div>
@@ -3235,7 +3229,6 @@ async function renderReceivables(){
         <td class="px-5 py-3 text-xs text-green-400">${ovSummary}${incentiveSummary ? `<div class="text-purple-400 font-semibold mt-0.5">${incentiveSummary}</div>` : ''}</td>
         <td class="px-5 py-3 flex gap-2">
           <button onclick="openEditReceivableModal('${r.id}')" class="text-xs text-orange-400 hover:text-orange-300">Edit</button>
-          ${buyer ? `<button onclick="openOverridesModal('${buyer.id}','${buyer.name.replace(/'/g,"\\'")}')" class="text-xs text-blue-400 hover:text-blue-300">Overrides</button>` : ''}
           <button onclick="deleteReceivable('${r.id}')" class="text-xs text-red-400 hover:text-red-300">Delete</button>
         </td>
       </tr>`;
@@ -3258,6 +3251,10 @@ function onRecBuyerChange(){
   const dev = prop ? receivablesDevsCache.find(d=>d.id===prop.developer_id) : null;
   document.getElementById('recDeveloper').value = dev ? dev.id : '';
   document.getElementById('recDevPreview').textContent = dev ? `Developer: ${dev.name}` : (buyer ? 'No developer could be determined from this sale — check the unit/property.' : '');
+  document.getElementById('recOvTL').value = buyer && buyer.override_team_leader ? Number(buyer.override_team_leader).toLocaleString('en-US') : '';
+  document.getElementById('recOvSM').value = buyer && buyer.override_sales_manager ? Number(buyer.override_sales_manager).toLocaleString('en-US') : '';
+  document.getElementById('recOvUM').value = buyer && buyer.override_unit_manager ? Number(buyer.override_unit_manager).toLocaleString('en-US') : '';
+  document.getElementById('recOvIncentive').value = buyer && buyer.incentive_amount ? Number(buyer.incentive_amount).toLocaleString('en-US') : '';
 }
 
 function onRecTypeChange(){
@@ -3292,6 +3289,10 @@ function openAddReceivableModal(){
   document.getElementById('recDate').value = '';
   document.getElementById('recType').value = 'Monthly Tranche';
   document.getElementById('recNotes').value = '';
+  document.getElementById('recOvTL').value = '';
+  document.getElementById('recOvSM').value = '';
+  document.getElementById('recOvUM').value = '';
+  document.getElementById('recOvIncentive').value = '';
   document.getElementById('recErr').classList.add('hidden');
   onRecTypeChange();
   openModal('receivableModal');
@@ -3312,6 +3313,10 @@ function openEditReceivableModal(id){
   document.getElementById('recDate').value = r.release_date;
   document.getElementById('recType').value = r.release_type;
   document.getElementById('recNotes').value = r.notes || '';
+  document.getElementById('recOvTL').value = buyer && buyer.override_team_leader ? Number(buyer.override_team_leader).toLocaleString('en-US') : '';
+  document.getElementById('recOvSM').value = buyer && buyer.override_sales_manager ? Number(buyer.override_sales_manager).toLocaleString('en-US') : '';
+  document.getElementById('recOvUM').value = buyer && buyer.override_unit_manager ? Number(buyer.override_unit_manager).toLocaleString('en-US') : '';
+  document.getElementById('recOvIncentive').value = buyer && buyer.incentive_amount ? Number(buyer.incentive_amount).toLocaleString('en-US') : '';
   document.getElementById('recErr').classList.add('hidden');
   onRecTypeChange();
   openModal('receivableModal');
@@ -3351,6 +3356,16 @@ async function saveReceivable(){
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
+    await fetch(`/api/buyers/${buyer_id}/overrides`, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        override_team_leader: parseMoney(document.getElementById('recOvTL').value) || null,
+        override_sales_manager: parseMoney(document.getElementById('recOvSM').value) || null,
+        override_unit_manager: parseMoney(document.getElementById('recOvUM').value) || null,
+        incentive_amount: parseMoney(document.getElementById('recOvIncentive').value) || null,
+      })
+    });
     await fetch('/api/logs', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
@@ -3372,48 +3387,6 @@ async function deleteReceivable(id){
   } catch(err) {
     console.error('Error deleting receivable:', err);
     alert('Failed to delete.');
-  }
-}
-
-// ══════════════════════════════════════
-// OVERRIDES & INCENTIVE (per sale)
-// ══════════════════════════════════════
-function openOverridesModal(buyerId, buyerName){
-  const b = receivablesBuyersCache.find(x=>x.id===buyerId) || sbBuyersCache?.find(x=>x.id===buyerId);
-  document.getElementById('ovI').value = buyerId;
-  document.getElementById('overridesModalSub').textContent = `For sale: ${buyerName}`;
-  document.getElementById('ovTL').value = b && b.override_team_leader ? Number(b.override_team_leader).toLocaleString('en-US') : '';
-  document.getElementById('ovSM').value = b && b.override_sales_manager ? Number(b.override_sales_manager).toLocaleString('en-US') : '';
-  document.getElementById('ovUM').value = b && b.override_unit_manager ? Number(b.override_unit_manager).toLocaleString('en-US') : '';
-  document.getElementById('ovIncentive').value = b && b.incentive_amount ? Number(b.incentive_amount).toLocaleString('en-US') : '';
-  openModal('overridesModal');
-}
-async function saveOverrides(){
-  const id = document.getElementById('ovI').value;
-  const token = localStorage.getItem('token');
-  const payload = {
-    override_team_leader: parseMoney(document.getElementById('ovTL').value) || null,
-    override_sales_manager: parseMoney(document.getElementById('ovSM').value) || null,
-    override_unit_manager: parseMoney(document.getElementById('ovUM').value) || null,
-    incentive_amount: parseMoney(document.getElementById('ovIncentive').value) || null,
-  };
-  try {
-    await fetch(`/api/buyers/${id}/overrides`, {
-      method: 'PATCH',
-      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    await fetch('/api/logs', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: `Overrides/incentive updated for a sale`, actor: 'Admin', role: 'admin' })
-    });
-    closeModal('overridesModal');
-    if(document.getElementById('sec-commission')?.classList.contains('active')) renderReceivables();
-    if(typeof renderBuyers === 'function' && document.getElementById('sec-buyers')?.classList.contains('active')) renderBuyers();
-  } catch(err) {
-    console.error('Error saving overrides:', err);
-    alert('Failed to save overrides.');
   }
 }
 
