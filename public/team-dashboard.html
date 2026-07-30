@@ -730,7 +730,7 @@ window.searchPropsGlobal = async function(){
   if(!propAllProps.length) await fetchAllPropData();
   const filtered = propAllProps.filter(p=>{
     const mt = !type || p.property_type===type;
-    const ms = !selling || p.selling_status===selling;
+    const ms = !selling || p.selling_status===selling || propAllUnits.some(u=>u.property_id===p.id && u.construction_status===selling);
     const ml = !loc || (p.location||'').toLowerCase().includes(loc) || p.name.toLowerCase().includes(loc);
     if(!mt || !ms || !ml) return false;
     if(budgetMin || budgetMaxRaw!==''){

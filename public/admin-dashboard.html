@@ -1184,7 +1184,7 @@ async function searchPropertiesGlobal(context){
 
     const filtered = allProps.filter(p => {
       const mt = !type || p.property_type === type;
-      const ms = !selling || p.selling_status === selling;
+      const ms = !selling || p.selling_status === selling || allUnits.some(u=>u.property_id===p.id && u.construction_status===selling);
       const ml = !loc || (p.location||'').toLowerCase().includes(loc) || p.name.toLowerCase().includes(loc);
       if(!mt || !ms || !ml) return false;
 
