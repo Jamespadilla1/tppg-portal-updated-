@@ -751,17 +751,35 @@ window.searchPropsGlobal = async function(){
     }
     return true;
   });
+  function matchingUnitFor(p){
+    if(!(budgetMin || budgetMaxRaw!=='')) return null;
+    const propUnits = propAllUnits.filter(u=>u.property_id===p.id);
+    return propUnits.find(u=>{
+      let value;
+      if(budgetType==='dp'){
+        const terms = u.downpayment_terms_months || 24;
+        value = u.downpayment ? Number(u.downpayment)/terms : 0;
+      } else if(budgetType==='fulldp'){
+        value = Number(u.downpayment) || 0;
+      } else {
+        value = Number(u.tcp) || 0;
+      }
+      return value >= budgetMin && value <= budgetMax;
+    }) || null;
+  }
   resultsEl.innerHTML = filtered.length ? `
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       ${filtered.map(p=>{
         const dev = propAllDevs.find(d=>d.id===p.developer_id);
         const propUnits = propAllUnits.filter(u=>u.property_id===p.id);
         const startingPrice = propUnits.length ? Math.min(...propUnits.map(u=>Number(u.tcp)||Infinity)) : null;
-        return `<div onclick="propViewDeveloper('${p.developer_id}','${dev?dev.name.replace(/'/g,"\\'"):''}');propViewProperty('${p.id}','${p.name.replace(/'/g,"\\'")}')" class="card p-3 cursor-pointer">
+        const matchUnit = matchingUnitFor(p);
+        const jumpCall = `propViewDeveloper('${p.developer_id}','${dev?dev.name.replace(/'/g,"\\'"):''}');propViewProperty('${p.id}','${p.name.replace(/'/g,"\\'")}')${matchUnit ? `;viewUnitDetail('${matchUnit.id}')` : ''}`;
+        return `<div onclick="${jumpCall}" class="card p-3 cursor-pointer">
           <p class="font-semibold text-sm">${p.name}</p>
           <p class="text-xs text-gray-500">${p.location||'—'} · ${p.property_type} · ${p.selling_status||'—'}</p>
           <p class="text-xs text-gray-500">Developer: ${dev?dev.name:'—'}</p>
-          ${startingPrice && startingPrice!==Infinity ? `<p class="text-xs text-orange-600 font-semibold mt-1">Starting from ${peso(startingPrice)}</p>` : ''}
+          ${matchUnit ? `<p class="text-xs text-orange-600 font-semibold mt-1">${matchUnit.unit_name}: ${peso(matchUnit.tcp)}</p>` : (startingPrice && startingPrice!==Infinity ? `<p class="text-xs text-orange-600 font-semibold mt-1">Starting from ${peso(startingPrice)}</p>` : '')}
         </div>`;
       }).join('')}
     </div>

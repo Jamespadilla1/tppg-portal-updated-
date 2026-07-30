@@ -1207,6 +1207,24 @@ async function searchPropertiesGlobal(context){
       return true;
     });
 
+    // For each result, find the specific unit that matched (if a budget filter was used) so clicking jumps straight to it
+    function matchingUnitFor(p){
+      if(!anyBudget) return null;
+      const propUnits = allUnits.filter(u=>u.property_id===p.id);
+      return propUnits.find(u=>{
+        let value;
+        if(budgetType==='dp'){
+          const terms = u.downpayment_terms_months || 24;
+          value = u.downpayment ? Number(u.downpayment)/terms : 0;
+        } else if(budgetType==='fulldp'){
+          value = Number(u.downpayment) || 0;
+        } else {
+          value = Number(u.tcp) || 0;
+        }
+        return value >= budgetMin && value <= budgetMax;
+      }) || null;
+    }
+
     resultsEl.innerHTML = filtered.length ? `
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         ${filtered.map(p => {
@@ -1215,12 +1233,13 @@ async function searchPropertiesGlobal(context){
           const pName = p.name.replace(/'/g,"\\'");
           const propUnits = allUnits.filter(u=>u.property_id===p.id);
           const startingPrice = propUnits.length ? Math.min(...propUnits.map(u=>Number(u.tcp)||Infinity)) : null;
+          const matchUnit = matchingUnitFor(p);
           return `
-          <div onclick="jumpToProperty('${p.id}','${pName}','${p.property_type}','${p.developer_id||''}','${devName}')" class="card p-3 cursor-pointer hover:border-orange-500/40 transition-colors">
+          <div onclick="jumpToProperty('${p.id}','${pName}','${p.property_type}','${p.developer_id||''}','${devName}','${matchUnit?matchUnit.id:''}')" class="card p-3 cursor-pointer hover:border-orange-500/40 transition-colors">
             <p class="font-semibold text-white text-sm">${p.name}</p>
             <p class="text-xs text-gray-500">${p.location||'—'} · ${p.property_type} · ${p.selling_status||'—'}</p>
             <p class="text-xs text-gray-500">Developer: ${dev ? dev.name : '—'}</p>
-            ${startingPrice && startingPrice!==Infinity ? `<p class="text-xs text-orange-400 font-semibold mt-1">Starting from ${peso(startingPrice)}</p>` : ''}
+            ${matchUnit ? `<p class="text-xs text-orange-400 font-semibold mt-1">${matchUnit.unit_name}: ${peso(matchUnit.tcp)}</p>` : (startingPrice && startingPrice!==Infinity ? `<p class="text-xs text-orange-400 font-semibold mt-1">Starting from ${peso(startingPrice)}</p>` : '')}
           </div>`;
         }).join('')}
       </div>
@@ -1230,8 +1249,8 @@ async function searchPropertiesGlobal(context){
   }
 }
 
-// Jump straight into a property's Units page from a search result
-function jumpToProperty(propId, propName, propType, devId, devName){
+// Jump straight into a property's Units page from a search result — opens the matching unit's detail if one was found
+async function jumpToProperty(propId, propName, propType, devId, devName, matchUnitId){
   currentDevId = devId;
   currentDevName = devName;
   currentPropId = propId;
@@ -1242,7 +1261,8 @@ function jumpToProperty(propId, propName, propType, devId, devName){
   document.getElementById('devPropsView').classList.add('hidden');
   document.getElementById('unitsView').classList.remove('hidden');
   document.getElementById('unitsViewTitle').textContent = propName;
-  renderUnits();
+  await renderUnits();
+  if(matchUnitId) viewUnit(matchUnitId);
 }
 
 // ══════════════════════════════════════
