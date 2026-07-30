@@ -71,4 +71,45 @@ const deleteTeamLeader = async (req, res) => {
   }
 };
 
-module.exports = { getTeamLeaders, createTeamLeader, updateTeamLeader, deleteTeamLeader };
+// POST /api/team-leaders/:id/promote — promote a Team Leader to Sales Manager (admin only)
+// Migrates the record into sales_managers, reusing the hashed password, and carries their
+// sales/commission history forward by reassigning their buyer records to the new role/id.
+const promoteTeamLeader = async (req, res) => {
+  try {
+    const { unit_manager_id } = req.body;
+    const { data: tl, error: fetchErr } = await supabase.from('team_leaders').select('*').eq('id', req.params.id).single();
+    if (fetchErr || !tl) return res.status(404).json({ message: 'Team Leader not found.' });
+
+    const sm_id = 'SM-' + String(Date.now()).slice(-5);
+    const { data: newRecord, error: insertErr } = await supabase
+      .from('sales_managers')
+      .insert([{
+        sm_id, name: tl.name, email: tl.email, phone: tl.phone,
+        unit_manager_id: unit_manager_id || null,
+        password: tl.password,
+        status: 'active',
+        commission_rank: 'Sales Manager',
+        commission_rate: 3.25,
+      }])
+      .select()
+      .single();
+    if (insertErr) throw insertErr;
+
+    const { error: reassignErr } = await supabase
+      .from('buyers')
+      .update({ input_by_role: 'sales_manager', input_by_id: newRecord.id })
+      .eq('input_by_role', 'team_leader')
+      .eq('input_by_id', req.params.id);
+    if (reassignErr) console.error('Failed to carry over sales history on promotion:', reassignErr);
+
+    const { error: deleteErr } = await supabase.from('team_leaders').delete().eq('id', req.params.id);
+    if (deleteErr) throw deleteErr;
+
+    res.json({ message: 'Promoted to Sales Manager.', record: newRecord });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getTeamLeaders, createTeamLeader, updateTeamLeader, deleteTeamLeader, promoteTeamLeader };

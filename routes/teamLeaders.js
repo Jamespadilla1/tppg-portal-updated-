@@ -1,10 +1,11 @@
 const express = require('express');
 const router  = express.Router();
 const { protect, adminOnly } = require('../middleware/auth');
-const { getTeamLeaders, createTeamLeader, updateTeamLeader, deleteTeamLeader } = require('../controllers/teamLeaderController');
+const { getTeamLeaders, createTeamLeader, updateTeamLeader, deleteTeamLeader, promoteTeamLeader } = require('../controllers/teamLeaderController');
 
 router.get('/',       protect, getTeamLeaders);
 router.post('/',      protect, adminOnly, createTeamLeader);
+router.post('/:id/promote', protect, adminOnly, promoteTeamLeader);
 router.put('/:id',    protect, adminOnly, updateTeamLeader);
 router.delete('/:id', protect, adminOnly, deleteTeamLeader);
 

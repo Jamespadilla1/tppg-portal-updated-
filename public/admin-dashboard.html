@@ -559,12 +559,44 @@ tr:hover td{background:rgba(0,0,0,.02)}
     <p class="text-xs text-gray-500 mb-4">Are you sure you want to promote <span id="promoteAgentName" class="text-white font-semibold"></span> to Team Leader? Their sales and commission history will carry over. They'll get a new TL-ID but keep their existing password.</p>
     <div class="space-y-3">
       <input id="promoteAgentId" type="hidden">
-      <div><label class="text-xs text-gray-400 mb-1 block">Sales Manager (optional)</label><select id="promoteSM" class="field"><option value="">— None —</option></select></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Unit Manager (optional)</label><select id="promoteUM" class="field"><option value="">— None —</option></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Sales Manager (optional)</label><select id="promoteSM" class="field" onchange="onPromoteSMChange()"><option value="">— None —</option></select></div>
+      <div id="promoteUMRow"><label class="text-xs text-gray-400 mb-1 block">Unit Manager (optional)</label><select id="promoteUM" class="field"><option value="">— None —</option></select></div>
+      <p id="promoteUMLockedNote" class="hidden text-xs text-gray-600 italic -mt-2">This Team Leader will follow their Sales Manager's own reporting chain — no separate Unit Manager needed.</p>
       <div class="flex gap-3 pt-2">
         <button onclick="closeModal('promoteModal')" class="flex-1 bg-white/5 hover:bg-white/10 py-2.5 rounded-lg font-semibold text-sm transition-colors">No, cancel</button>
         <button onclick="confirmPromoteAgent()" class="flex-1 bg-green-600 hover:bg-green-500 py-2.5 rounded-lg font-semibold text-sm transition-colors">Yes, promote</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROMOTE TEAM LEADER TO SALES MANAGER -->
+<div id="promoteTLModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('promoteTLModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-1">Promote to Sales Manager</h3>
+    <p class="text-xs text-gray-500 mb-4">Are you sure you want to promote <span id="promoteTLName" class="text-white font-semibold"></span> to Sales Manager? Their sales and commission history will carry over. They'll get a new SM-ID but keep their existing password.</p>
+    <div class="space-y-3">
+      <input id="promoteTLId" type="hidden">
+      <div><label class="text-xs text-gray-400 mb-1 block">Unit Manager (optional — leave blank for Solo)</label><select id="promoteTLUM" class="field"><option value="">— Solo (no Unit Manager) —</option></select></div>
+      <div class="flex gap-3 pt-2">
+        <button onclick="closeModal('promoteTLModal')" class="flex-1 bg-white/5 hover:bg-white/10 py-2.5 rounded-lg font-semibold text-sm transition-colors">No, cancel</button>
+        <button onclick="confirmPromoteTL()" class="flex-1 bg-green-600 hover:bg-green-500 py-2.5 rounded-lg font-semibold text-sm transition-colors">Yes, promote</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROMOTE SALES MANAGER TO UNIT MANAGER -->
+<div id="promoteSMModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('promoteSMModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-1">Promote to Unit Manager</h3>
+    <p class="text-xs text-gray-500 mb-4">Are you sure you want to promote <span id="promoteSMName" class="text-white font-semibold"></span> to Unit Manager? Their sales and commission history will carry over. They'll get a new UM-ID but keep their existing password. Unit Manager is the top of the hierarchy, so there's nothing else to assign.</p>
+    <input id="promoteSMId" type="hidden">
+    <div class="flex gap-3 pt-2">
+      <button onclick="closeModal('promoteSMModal')" class="flex-1 bg-white/5 hover:bg-white/10 py-2.5 rounded-lg font-semibold text-sm transition-colors">No, cancel</button>
+      <button onclick="confirmPromoteSM()" class="flex-1 bg-green-600 hover:bg-green-500 py-2.5 rounded-lg font-semibold text-sm transition-colors">Yes, promote</button>
     </div>
   </div>
 </div>
@@ -2385,7 +2417,27 @@ function openPromoteModal(agentId, agentName){
   document.getElementById('promoteAgentName').textContent = agentName;
   document.getElementById('promoteSM').innerHTML = `<option value="">— None —</option>` + smCache.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   document.getElementById('promoteUM').innerHTML = `<option value="">— None —</option>` + umCache.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+  document.getElementById('promoteUM').value = '';
+  document.getElementById('promoteUMRow').classList.remove('hidden');
+  document.getElementById('promoteUMLockedNote').classList.add('hidden');
   openModal('promoteModal');
+}
+function onPromoteSMChange(){
+  const smId = document.getElementById('promoteSM').value;
+  const umRow = document.getElementById('promoteUMRow');
+  const lockedNote = document.getElementById('promoteUMLockedNote');
+  const umSel = document.getElementById('promoteUM');
+  if(!smId){
+    umRow.classList.remove('hidden');
+    lockedNote.classList.add('hidden');
+    return;
+  }
+  // Any Sales Manager chosen — whether they have their own Unit Manager or are solo —
+  // the Team Leader just follows that Sales Manager's chain. No separate direct UM link.
+  const sm = smCache.find(s=>s.id===smId);
+  umSel.value = sm && sm.unit_manager_id ? sm.unit_manager_id : '';
+  umRow.classList.add('hidden');
+  lockedNote.classList.remove('hidden');
 }
 async function confirmPromoteAgent(){
   const id = document.getElementById('promoteAgentId').value;
@@ -2411,6 +2463,64 @@ async function confirmPromoteAgent(){
     alert('Failed to promote agent.');
   }
 }
+
+function openPromoteTLModal(tlId, tlName){
+  document.getElementById('promoteTLId').value = tlId;
+  document.getElementById('promoteTLName').textContent = tlName;
+  document.getElementById('promoteTLUM').innerHTML = `<option value="">— Solo (no Unit Manager) —</option>` + umCache.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+  openModal('promoteTLModal');
+}
+async function confirmPromoteTL(){
+  const id = document.getElementById('promoteTLId').value;
+  const unit_manager_id = document.getElementById('promoteTLUM').value || null;
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch(`/api/team-leaders/${id}/promote`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ unit_manager_id })
+    });
+    if(!res.ok) throw new Error('Promotion failed');
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Team Leader promoted to Sales Manager`, actor: 'Admin', role: 'admin' })
+    });
+    closeModal('promoteTLModal');
+    renderTeamLeaders();
+  } catch(err) {
+    console.error('Error promoting Team Leader:', err);
+    alert('Failed to promote Team Leader.');
+  }
+}
+
+function openPromoteSMModal(smId, smName){
+  document.getElementById('promoteSMId').value = smId;
+  document.getElementById('promoteSMName').textContent = smName;
+  openModal('promoteSMModal');
+}
+async function confirmPromoteSM(){
+  const id = document.getElementById('promoteSMId').value;
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch(`/api/sales-managers/${id}/promote`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    });
+    if(!res.ok) throw new Error('Promotion failed');
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Sales Manager promoted to Unit Manager`, actor: 'Admin', role: 'admin' })
+    });
+    closeModal('promoteSMModal');
+    renderSalesManagers();
+  } catch(err) {
+    console.error('Error promoting Sales Manager:', err);
+    alert('Failed to promote Sales Manager.');
+  }
+}
+
 
 async function renderTeamsAgents(){
   const token = localStorage.getItem('token');
@@ -2697,8 +2807,9 @@ async function renderSalesManagers(){
     return `
       <div class="card p-4 relative cursor-pointer" onclick="teamsDrillInto('sales_manager','${sm.id}','${sm.name.replace(/'/g,"\\'")}')">
         <button onclick="event.stopPropagation();toggleGenMenu('sm-${sm.id}')" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full hover:bg-black/5 text-gray-400 text-xs flex items-center justify-center">⋯</button>
-        <div id="genMenu-sm-${sm.id}" class="hidden absolute top-8 right-1.5 z-20 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden text-left w-28">
+        <div id="genMenu-sm-${sm.id}" class="hidden absolute top-8 right-1.5 z-20 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden text-left w-32">
           <button onclick="event.stopPropagation();closeGenMenus();openEditSM('${sm.id}')" class="w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 text-left">Edit</button>
+          <button onclick="event.stopPropagation();closeGenMenus();openPromoteSMModal('${sm.id}','${sm.name.replace(/'/g,"\\'")}')" class="w-full px-3 py-2 text-xs text-green-600 hover:bg-gray-50 text-left">Promote</button>
           <button onclick="event.stopPropagation();closeGenMenus();deleteSalesManager('${sm.id}','${sm.name.replace(/'/g,"\\'")}')" class="w-full px-3 py-2 text-xs text-red-500 hover:bg-gray-50 text-left">Delete</button>
         </div>
         <div class="w-10 h-10 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold mb-2">${sm.name[0]}</div>
@@ -2791,8 +2902,9 @@ async function renderTeamLeaders(){
     return `
       <div class="card p-4 relative cursor-pointer" onclick="teamsDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')">
         <button onclick="event.stopPropagation();toggleGenMenu('tl-${tl.id}')" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full hover:bg-black/5 text-gray-400 text-xs flex items-center justify-center">⋯</button>
-        <div id="genMenu-tl-${tl.id}" class="hidden absolute top-8 right-1.5 z-20 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden text-left w-28">
+        <div id="genMenu-tl-${tl.id}" class="hidden absolute top-8 right-1.5 z-20 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden text-left w-32">
           <button onclick="event.stopPropagation();closeGenMenus();openEditTL('${tl.id}')" class="w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 text-left">Edit</button>
+          <button onclick="event.stopPropagation();closeGenMenus();openPromoteTLModal('${tl.id}','${tl.name.replace(/'/g,"\\'")}')" class="w-full px-3 py-2 text-xs text-green-600 hover:bg-gray-50 text-left">Promote</button>
           <button onclick="event.stopPropagation();closeGenMenus();deleteTeamLeader('${tl.id}','${tl.name.replace(/'/g,"\\'")}')" class="w-full px-3 py-2 text-xs text-red-500 hover:bg-gray-50 text-left">Delete</button>
         </div>
         <div class="w-10 h-10 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold mb-2">${tl.name[0]}</div>
