@@ -634,17 +634,24 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
       <p class="text-gray-500 text-sm mb-3">${propCurrentPropName}</p>
       <div class="grid grid-cols-2 gap-3 mb-3">
-        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">TCP</p><p class="font-bold">${peso(u.tcp)}</p></div>
         <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Bedrooms</p><p class="font-bold">${bedroomLabel(u.bedrooms)}</p></div>
         <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Square Meters</p><p class="font-bold">${u.square_meters??'—'}</p></div>
+        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Lot Position</p><p class="font-bold">${u.lot_type||'—'}</p></div>
         <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Furnishing</p><p class="font-bold">${u.furnishing||'Bare Unit'}</p></div>
+        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Construction Status</p><p class="font-bold">${u.construction_status||'RFO'}</p></div>
+        ${['Under Construction','Pre-selling'].includes(u.construction_status) && u.estimated_finish_date ? `<div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Est. Finish Date</p><p class="font-bold">${new Date(u.estimated_finish_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})}</p></div>` : ''}
       </div>
-      <div class="grid grid-cols-2 gap-3 mb-3">
-        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Reservation Fee</p><p class="font-bold">${u.reservation_fee ? peso(u.reservation_fee) : '—'}</p></div>
-        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Full Downpayment</p><p class="font-bold">${u.downpayment ? peso(u.downpayment) : '—'}</p></div>
-        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Monthly DP</p><p class="font-bold">${monthlyDP ? peso(monthlyDP) : '—'}</p></div>
-        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Downpayment Terms</p><p class="font-bold">${u.downpayment ? terms + ' months' : '—'}</p></div>
+      <div class="rounded-xl bg-orange-50 border border-orange-200 p-4 mb-3 space-y-2">
+        <div class="flex justify-between items-center"><p class="text-xs text-gray-500 uppercase tracking-wide">TCP (Total Contract Price)</p><p class="text-lg font-bold text-orange-600">${peso(u.tcp)}</p></div>
+        <div class="flex justify-between items-center"><p class="text-xs text-gray-500">Reservation Fee</p><p class="text-sm font-semibold">${u.reservation_fee ? peso(u.reservation_fee) : '—'}</p></div>
+        <div class="flex justify-between items-center"><p class="text-xs text-gray-500">Full Downpayment</p><p class="text-sm font-semibold">${u.downpayment ? peso(u.downpayment) : '—'}</p></div>
+        <div class="flex justify-between items-center"><p class="text-xs text-gray-500">Monthly DP</p><p class="text-sm font-semibold">${monthlyDP ? peso(monthlyDP) : '—'}</p></div>
+        <div class="flex justify-between items-center"><p class="text-xs text-gray-500">Downpayment Terms</p><p class="text-sm font-semibold">${u.downpayment ? terms + ' months' : '—'}</p></div>
       </div>
+      ${u.computation_image_url ? `
+      <p class="text-gray-500 text-xs mb-1">Computation</p>
+      <img src="${u.computation_image_url}" class="w-full rounded-lg border border-gray-200 mb-4">
+      ` : ''}
       <p class="text-gray-500 text-xs mb-1">Description</p>
       <p class="text-gray-700 text-sm">${u.description||'No description provided.'}</p>
     `;
