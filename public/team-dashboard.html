@@ -203,6 +203,18 @@
         </div>
       </div>
       <div class="card overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <div><h3 class="font-semibold">My Incentives</h3><p class="text-xs text-gray-500 mt-0.5">Incentive amounts set by Admin for your own sales. Visible only to you.</p></div>
+          <div class="text-right"><p class="text-xs text-gray-500">Total</p><p class="font-bold text-purple-600" id="incentiveTotalVal">₱0</p></div>
+        </div>
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
+            <th class="text-left px-5 py-2">Client</th><th class="text-left px-5 py-2">Property / Unit</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Incentive</th>
+          </tr></thead>
+          <tbody id="incentiveBody" class="divide-y divide-gray-200 text-gray-700"></tbody>
+        </table></div>
+      </div>
+      <div class="card overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200"><h3 class="font-semibold">My Commission Releases</h3><p class="text-xs text-gray-500 mt-0.5">Commission payouts recorded by Admin for sales you made.</p></div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
@@ -774,6 +786,18 @@ async function renderCommissionPersonal(){
   document.getElementById('commWithVal').textContent = '-' + peso(withholding);
   document.getElementById('commPercVal').textContent = '-' + peso(percTax);
   document.getElementById('commNetVal').textContent = peso(net);
+
+  const withIncentive = buyers.filter(b=>b.incentive_amount);
+  const totalIncentive = withIncentive.reduce((s,b)=> s + (Number(b.incentive_amount)||0), 0);
+  document.getElementById('incentiveTotalVal').textContent = peso(totalIncentive);
+  document.getElementById('incentiveBody').innerHTML = withIncentive.map(b => `
+    <tr>
+      <td class="px-5 py-3 text-xs font-medium text-gray-900">${b.name}</td>
+      <td class="px-5 py-3 text-xs text-gray-500">${b.property ? b.property.name : '—'}${b.unit ? ' / ' + b.unit.unit_name : ''}</td>
+      <td class="px-5 py-3 text-xs text-orange-600">${b.unit ? peso(b.unit.tcp) : '—'}</td>
+      <td class="px-5 py-3 text-xs text-purple-600 font-semibold">${peso(b.incentive_amount)}</td>
+    </tr>`).join('') || `<tr><td colspan="4" class="px-5 py-5 text-center text-gray-400 text-xs">No incentives recorded yet.</td></tr>`;
+
   renderMyReceivables();
 }
 
