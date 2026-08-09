@@ -642,7 +642,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div><label class="text-xs text-gray-400 mb-1 block">Email * (used for login)</label><input id="smEmail" type="email" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="smPhone" type="text" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Password *</label><input id="smPassword" type="password" class="field" placeholder="Set a login password"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Reports to (Unit Manager) *</label><select id="smUM" class="field"></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Reports to (Unit Manager) — optional, leave blank for Solo</label><select id="smUM" class="field"></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Commission Rank</label><select id="smRank" class="field"><option value="Sales Manager" data-rate="3.25">Sales Manager (3.25%)</option><option value="Junior SM" data-rate="3.5">Junior SM (3.5%)</option><option value="Senior SM" data-rate="3.7">Senior SM (3.7%)</option></select></div>
       <p id="smErr" class="text-red-400 text-xs hidden">Name and Unit Manager are required.</p>
       <button onclick="saveSalesManager()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Sales Manager</button>
@@ -658,7 +658,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div><label class="text-xs text-gray-400 mb-1 block">Full Name</label><input id="eSMName" type="text" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="eSMEmail" type="email" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="eSMPhone" type="text" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Reports to (Unit Manager)</label><select id="eSMUM" class="field"></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Reports to (Unit Manager) — optional, leave blank for Solo</label><select id="eSMUM" class="field"></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Commission Rank</label><select id="eSMRank" class="field"><option value="Sales Manager" data-rate="3.25">Sales Manager (3.25%)</option><option value="Junior SM" data-rate="3.5">Junior SM (3.5%)</option><option value="Senior SM" data-rate="3.7">Senior SM (3.7%)</option></select></div>
       <button onclick="updateSalesManager()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Sales Manager</button>
     </div>
@@ -2796,7 +2796,7 @@ async function deleteUnitManager(id,name){
 async function renderSalesManagers(){
   await fetchTeamStructureData();
   const umOptions = umCache.map(um=>`<option value="${um.id}">${um.name}</option>`).join('');
-  ['smUM','eSMUM'].forEach(id=>document.getElementById(id).innerHTML = `<option value="">— Select Unit Manager —</option>` + umOptions);
+  ['smUM','eSMUM'].forEach(id=>document.getElementById(id).innerHTML = `<option value="">— None (Solo) —</option>` + umOptions);
 
   document.getElementById('teamsGrid').innerHTML = smCache.map(sm => {
     const directTL = tlCache.filter(tl=>tl.sales_manager_id===sm.id);
@@ -2807,9 +2807,8 @@ async function renderSalesManagers(){
     return `
       <div class="card p-4 relative cursor-pointer" onclick="teamsDrillInto('sales_manager','${sm.id}','${sm.name.replace(/'/g,"\\'")}')">
         <button onclick="event.stopPropagation();toggleGenMenu('sm-${sm.id}')" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full hover:bg-black/5 text-gray-400 text-xs flex items-center justify-center">⋯</button>
-        <div id="genMenu-sm-${sm.id}" class="hidden absolute top-8 right-1.5 z-20 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden text-left w-32">
+        <div id="genMenu-sm-${sm.id}" class="hidden absolute top-8 right-1.5 z-20 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden text-left w-28">
           <button onclick="event.stopPropagation();closeGenMenus();openEditSM('${sm.id}')" class="w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 text-left">Edit</button>
-          <button onclick="event.stopPropagation();closeGenMenus();openPromoteSMModal('${sm.id}','${sm.name.replace(/'/g,"\\'")}')" class="w-full px-3 py-2 text-xs text-green-600 hover:bg-gray-50 text-left">Promote</button>
           <button onclick="event.stopPropagation();closeGenMenus();deleteSalesManager('${sm.id}','${sm.name.replace(/'/g,"\\'")}')" class="w-full px-3 py-2 text-xs text-red-500 hover:bg-gray-50 text-left">Delete</button>
         </div>
         <div class="w-10 h-10 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold mb-2">${sm.name[0]}</div>
@@ -2817,9 +2816,12 @@ async function renderSalesManagers(){
         <p class="text-xs text-gray-500 font-mono">${sm.sm_id||'—'}</p>
         <p class="text-xs text-gray-500 mb-1">${sm.email||'No email on file'}</p>
         <p class="text-xs text-gray-500 mb-3">Reports to: ${um?um.name:'—'}</p>
-        <div class="grid grid-cols-2 gap-2 text-center border-t border-white/8 pt-3">
+        <div class="grid grid-cols-2 gap-2 text-center border-t border-white/8 pt-3 pb-3">
           <div><p class="text-sm font-bold text-white">${directTL.length}</p><p class="text-xs text-gray-500">Team Leads</p></div>
           <div><p class="text-sm font-bold text-white">${teamAgents.length}</p><p class="text-xs text-gray-500">Agents</p></div>
+        </div>
+        <div class="border-t border-white/8 pt-3">
+          <button onclick="event.stopPropagation();openPromoteSMModal('${sm.id}','${sm.name.replace(/'/g,"\\'")}')" class="text-xs text-green-400 hover:text-green-300">Promote to Unit Manager</button>
         </div>
       </div>`;
   }).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No Sales Managers yet — click "+ Add Sales Manager" to start.</p>`;
@@ -2829,7 +2831,7 @@ async function saveSalesManager(){
   const email = document.getElementById('smEmail').value.trim();
   const password = document.getElementById('smPassword').value;
   const um = document.getElementById('smUM').value;
-  if(!name || !um || !email || !password){ document.getElementById('smErr').classList.remove('hidden'); return; }
+  if(!name || !email || !password){ document.getElementById('smErr').classList.remove('hidden'); return; }
   document.getElementById('smErr').classList.add('hidden');
   const token = localStorage.getItem('token');
   const rankSelect = document.getElementById('smRank');
@@ -2902,9 +2904,8 @@ async function renderTeamLeaders(){
     return `
       <div class="card p-4 relative cursor-pointer" onclick="teamsDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')">
         <button onclick="event.stopPropagation();toggleGenMenu('tl-${tl.id}')" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full hover:bg-black/5 text-gray-400 text-xs flex items-center justify-center">⋯</button>
-        <div id="genMenu-tl-${tl.id}" class="hidden absolute top-8 right-1.5 z-20 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden text-left w-32">
+        <div id="genMenu-tl-${tl.id}" class="hidden absolute top-8 right-1.5 z-20 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden text-left w-28">
           <button onclick="event.stopPropagation();closeGenMenus();openEditTL('${tl.id}')" class="w-full px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 text-left">Edit</button>
-          <button onclick="event.stopPropagation();closeGenMenus();openPromoteTLModal('${tl.id}','${tl.name.replace(/'/g,"\\'")}')" class="w-full px-3 py-2 text-xs text-green-600 hover:bg-gray-50 text-left">Promote</button>
           <button onclick="event.stopPropagation();closeGenMenus();deleteTeamLeader('${tl.id}','${tl.name.replace(/'/g,"\\'")}')" class="w-full px-3 py-2 text-xs text-red-500 hover:bg-gray-50 text-left">Delete</button>
         </div>
         <div class="w-10 h-10 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold mb-2">${tl.name[0]}</div>
@@ -2912,8 +2913,11 @@ async function renderTeamLeaders(){
         <p class="text-xs text-gray-500 font-mono">${tl.tl_id||'—'}</p>
         <p class="text-xs text-gray-500 mb-1">${tl.email||'No email on file'}</p>
         <p class="text-xs text-gray-500 mb-3">Reports to: ${reportsTo}</p>
-        <div class="text-center border-t border-white/8 pt-3">
+        <div class="text-center border-t border-white/8 pt-3 pb-3">
           <p class="text-sm font-bold text-white">${directAgents.length}</p><p class="text-xs text-gray-500">Recruited Agents</p>
+        </div>
+        <div class="border-t border-white/8 pt-3">
+          <button onclick="event.stopPropagation();openPromoteTLModal('${tl.id}','${tl.name.replace(/'/g,"\\'")}')" class="text-xs text-green-400 hover:text-green-300">Promote to Sales Manager</button>
         </div>
       </div>`;
   }).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No Team Leaders yet — click "+ Add Team Leader" to start.</p>`;
