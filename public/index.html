@@ -5,241 +5,865 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TPPG Portal</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          gray: {
+            50:'#f7f7f7', 100:'#e8e8e8', 200:'#d1d1d1', 300:'#b0b0b0',
+            400:'#8a8a8a', 500:'#6b6b6b', 600:'#4e4e4e', 700:'#383838',
+            800:'#262626', 900:'#1a1a1a', 950:'#0d0d0d'
+          }
+        }
+      }
+    }
+  }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
 <style>
   * { font-family: 'DM Sans', sans-serif; }
-  .role-btn { flex:1; padding:10px; border-radius:8px; border:1px solid #e5e7eb; font-size:.875rem; color:#6b7280; cursor:pointer; transition:all .15s; background:white; }
-  .role-btn:hover { border-color:#f97316; color:#f97316; }
-  .role-btn.selected { background:#f97316; color:white; border-color:#f97316; }
-  .field { width:100%; padding:11px 14px; border:1px solid #e5e7eb; border-radius:8px; font-size:.875rem; color:#111827; transition:border-color .15s,box-shadow .15s; outline:none; }
-  .field:focus { border-color:#f97316; box-shadow:0 0 0 3px rgba(249,115,22,.12); }
-  .field::placeholder { color:#9ca3af; }
+  .ph { color:#9ca3af; }
+  .field { width:100%; padding:11px 14px; border:1px solid #e5e7eb; border-radius:8px; font-size:.875rem; color:#111827; outline:none; }
+  .card { background:white; border-radius:16px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+  .num-tag { font-size:11px; letter-spacing:.05em; color:#f97316; font-weight:600; }
+</style>
+</head>
+<body class="bg-gray-950 text-white overflow-x-hidden">
+
+<!-- ===== NAV ===== -->
+<nav class="sticky top-0 z-50 bg-gray-950/80 backdrop-blur border-b border-white/10">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="h-10 flex items-center justify-center">
+        <img src="imgs/logo.jpg" class="h-full w-auto object-contain" onerror="this.style.display='none'">
+      </div>
+      <span class="font-semibold text-lg">TPPG Portal</span>
+    </div>
+    <div class="hidden md:flex items-center gap-8 text-sm text-gray-400">
+      <a href="#listings" class="hover:text-white transition">Listings</a>
+      <a href="#why" class="hover:text-white transition">Why Us</a>
+      <a href="#how" class="hover:text-white transition">How It Works</a>
+      <a href="#contact" class="hover:text-white transition">Contact</a>
+    </div>
+    <div class="flex items-center gap-3">
+      <button onclick="openLogin()" class="text-sm text-gray-300 hover:text-white transition px-4 py-2">[Login]</button>
+      <button onclick="openLogin()" class="text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-lg transition">[CTA]</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== HERO (split layout — login panel slides in from the right on click) ===== -->
+<section id="heroSection" class="relative min-h-[calc(100vh-73px)] flex items-center overflow-hidden">
+  <div class="absolute inset-0 -z-10">
+    <img src="https://images.unsplash.com/photo-1539657428515-b57a1abdd9f7?fm=jpg&q=80&w=2000&auto=format&fit=crop" class="w-full h-full object-cover opacity-10" alt="">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-gray-950/60 to-gray-950"></div>
+  </div>
+
+  <div id="heroInner" class="relative max-w-6xl mx-auto px-6 flex flex-col lg:flex-row items-center gap-10 lg:gap-12">
+
+    <!-- Left: headline content — shifts left and left-aligns once login opens -->
+    <div id="heroContent" class="hero-content flex-1 min-w-0 text-center">
+      <p class="num-tag mb-4">The Premier Property Group</p>
+      <h1 class="text-4xl md:text-6xl font-bold leading-tight mb-6">
+        Find your next property<br>with confidence.
+      </h1>
+      <p class="hero-subtext text-gray-400 text-base leading-relaxed max-w-lg mx-auto mb-10">
+        The Premier Property Group's listing and management platform — for agents, managers, and admins alike.
+      </p>
+      <div class="hero-cta-row flex flex-wrap gap-4 justify-center mb-14">
+        <a href="#listings" class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-7 py-3.5 rounded-lg transition">Browse Listings</a>
+        <button onclick="openLogin()" class="border border-white/15 hover:border-white/30 text-white font-medium px-7 py-3.5 rounded-lg transition">Agent Login →</button>
+      </div>
+      <div class="hero-stats-row flex gap-12 justify-center border-t border-white/10 pt-8 max-w-lg mx-auto">
+        <div><div class="text-2xl font-bold">5</div><div class="text-xs text-gray-500 mt-1">Role-Based Dashboards</div></div>
+        <div><div class="text-2xl font-bold">3-Tier</div><div class="text-xs text-gray-500 mt-1">Listing Structure</div></div>
+        <div><div class="text-2xl font-bold">Live</div><div class="text-xs text-gray-500 mt-1">Inventory Status</div></div>
+      </div>
+    </div>
+
+    <!-- Right: login/register panel — collapsed & invisible by default, slides in on open -->
+    <div id="loginPane" class="login-pane shrink-0">
+      <div class="auth-card relative w-[23rem] max-h-[85vh] overflow-y-auto">
+        <button onclick="closeLogin()" aria-label="Close" class="absolute top-6 right-6 w-7 h-7 rounded-full border border-white/10 hover:border-white/25 flex items-center justify-center text-gray-500 hover:text-white transition-colors text-xs z-10">✕</button>
+
+        <div class="px-8 pt-9 pb-8">
+          <!-- LOGIN VIEW -->
+          <div id="loginView" class="panel-content">
+            <div class="auth-stepper flex items-center gap-2.5 mb-8 pr-9">
+              <span class="auth-index active" id="stepOneIndex">01</span>
+              <span class="h-px flex-1 bg-white/10"></span>
+              <span class="auth-index" id="stepTwoIndex">02</span>
+            </div>
+
+            <!-- STEP 1: role selection -->
+            <div id="roleStep" class="wizard-step">
+              <h2 class="auth-heading mb-2">Welcome<br>back.</h2>
+              <p class="text-gray-500 text-sm mb-7">Choose your role to continue.</p>
+
+              <div class="space-y-2">
+                <button onclick="selectRole('admin')" id="roleAdmin" class="role-row">
+                  <span class="role-row-label">Admin</span>
+                  <span class="role-row-dot"></span>
+                </button>
+                <button onclick="selectRole('agent')" id="roleAgent" class="role-row">
+                  <span class="role-row-label">Agent</span>
+                  <span class="role-row-dot"></span>
+                </button>
+                <button onclick="selectRole('team_leader')" id="roleTeam_leader" class="role-row">
+                  <span class="role-row-label">Team Leader</span>
+                  <span class="role-row-dot"></span>
+                </button>
+                <button onclick="selectRole('unit_manager')" id="roleUnit_manager" class="role-row">
+                  <span class="role-row-label">Unit Manager</span>
+                  <span class="role-row-dot"></span>
+                </button>
+                <button onclick="selectRole('sales_manager')" id="roleSales_manager" class="role-row">
+                  <span class="role-row-label">Sales Manager</span>
+                  <span class="role-row-dot"></span>
+                </button>
+              </div>
+            </div>
+
+            <!-- STEP 2: credentials, shown after a role is picked -->
+            <div id="credsStep" class="wizard-step hidden">
+              <button onclick="goBackToRoleStep()" class="back-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5"><path d="M15 18l-6-6 6-6"/></svg>
+                Back
+              </button>
+
+              <h2 class="auth-heading mb-2" id="credsGreeting">Hello<br>there.</h2>
+              <p class="text-gray-500 text-sm mb-7">Enter your credentials to continue.</p>
+
+              <div id="loginFields" class="space-y-5">
+                <div class="uline-wrap">
+                  <label class="uline-label">ID</label>
+                  <input id="loginId" type="text" placeholder="Admin ID / Agent ID" class="uline-field" autocomplete="off">
+                </div>
+                <div class="uline-wrap">
+                  <label class="uline-label">Email</label>
+                  <input id="email" type="email" placeholder="name@email.com" class="uline-field">
+                </div>
+                <div class="uline-wrap">
+                  <label class="uline-label">Password</label>
+                  <input id="password" type="password" placeholder="••••••••" class="uline-field">
+                </div>
+                <button onclick="handleLogin()" class="auth-submit">Log In</button>
+                <p id="loginError" class="text-red-400 text-xs text-center hidden"></p>
+              </div>
+            </div>
+
+            <p class="text-xs text-center text-gray-500 mt-7">
+              No account yet? <button onclick="showRegister()" class="text-orange-400 font-medium hover:text-orange-300">Register</button>
+            </p>
+          </div>
+
+          <!-- REGISTER VIEW -->
+          <div id="registerView" class="hidden panel-content">
+            <div class="flex items-center gap-2.5 mb-8 pr-9">
+              <span class="auth-index active">01</span>
+              <span class="h-px flex-1 bg-white/10"></span>
+              <span class="text-[10px] uppercase tracking-[0.2em] text-gray-500">Apply</span>
+            </div>
+
+            <h2 class="auth-heading mb-2">Join the<br>team.</h2>
+            <p class="text-gray-500 text-sm mb-7">Reviewed by the administrator before approval.</p>
+
+            <div class="space-y-5">
+              <div class="uline-wrap">
+                <label class="uline-label">Full Name</label>
+                <input id="regName" type="text" placeholder="Juan Dela Cruz" class="uline-field">
+              </div>
+              <div class="uline-wrap">
+                <label class="uline-label">Email</label>
+                <input id="regEmail" type="email" placeholder="name@email.com" class="uline-field">
+              </div>
+              <div class="uline-wrap">
+                <label class="uline-label">Contact Number</label>
+                <input id="regNumber" type="text" placeholder="09XX XXX XXXX" class="uline-field">
+              </div>
+              <div class="uline-wrap">
+                <label class="uline-label">Password</label>
+                <input id="regPassword" type="password" placeholder="••••••••" class="uline-field">
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label class="block text-[10px] uppercase tracking-wider text-gray-500 mb-2">Valid ID — Front</label>
+                  <input id="idFront" type="file" accept="image/*" class="file-field">
+                </div>
+                <div>
+                  <label class="block text-[10px] uppercase tracking-wider text-gray-500 mb-2">Valid ID — Back</label>
+                  <input id="idBack" type="file" accept="image/*" class="file-field">
+                </div>
+              </div>
+
+              <button onclick="handleRegister()" class="auth-submit">Submit Application</button>
+              <p class="text-xs text-center text-gray-500">Already have an account? <button onclick="showLogin()" class="text-orange-400 font-medium hover:text-orange-300">Log In</button></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .auth-card {
+    background: linear-gradient(160deg, #17171a 0%, #101012 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
+    color: #f5f4f1;
+  }
+  .auth-index {
+    font-family: 'Fraunces', serif;
+    font-size: 12px;
+    color: #4a4a4a;
+    transition: color .3s;
+  }
+  .auth-index.active { color: #fb923c; }
+  .auth-heading {
+    font-family: 'Fraunces', serif;
+    font-size: 34px;
+    font-weight: 600;
+    line-height: 1.02;
+    letter-spacing: -0.5px;
+    color: #f5f4f1;
+  }
+  .role-row {
+    width: 100%;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    background: transparent;
+    color: #a8a6a0;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .role-row:hover { border-color: rgba(251,146,60,0.4); color: #f5f4f1; }
+  .role-row-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    transition: all .15s;
+  }
+  .role-row.selected {
+    border-color: rgba(251,146,60,0.6);
+    background: rgba(251,146,60,0.06);
+    color: #f5f4f1;
+  }
+  .role-row.selected .role-row-label { font-weight: 600; }
+  .role-row.selected .role-row-dot {
+    background: #f97316; border-color: #f97316;
+    box-shadow: 0 0 0 3px rgba(249,115,22,0.2);
+  }
+  .uline-wrap { position: relative; }
+  .uline-label {
+    display: block;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em;
+    color: #6b6b6b; margin-bottom: 6px;
+  }
+  .uline-field {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+    padding: 4px 2px 10px;
+    font-size: 14.5px;
+    color: #f5f4f1;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .uline-field::placeholder { color: #4a4a4a; }
+  .uline-field:focus { border-color: #f97316; }
+  .file-field {
+    width: 100%; font-size: 11px; color: #8a8a8a;
+    border: 1px dashed rgba(255,255,255,0.15); border-radius: 8px; padding: 8px;
+  }
+  .file-field::file-selector-button {
+    margin-right: 8px; padding: 5px 10px; border-radius: 6px; border: 0;
+    background: rgba(251,146,60,0.12); color: #fb923c; font-size: 10px; font-weight: 500;
+    cursor: pointer;
+  }
+  .auth-submit {
+    width: 100%;
+    background: linear-gradient(120deg, #fb923c, #f97316);
+    color: #1a0d02;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 14px;
+    border-radius: 12px;
+    transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 8px 20px -8px rgba(249,115,22,0.5);
+  }
+  .auth-submit:hover { transform: translateY(-1px); box-shadow: 0 12px 26px -8px rgba(249,115,22,0.65); }
+  .auth-submit:active { transform: translateY(0); }
+
+  /* Hero split animation — static CSS instead of toggled Tailwind utilities,
+     so the transition is guaranteed to exist on first open, not just on close. */
+  .login-pane {
+    width: 0;
+    opacity: 0;
+    transform: translateX(4rem);
+    pointer-events: none;
+    overflow: hidden;
+    transition: width .5s cubic-bezier(.16,1,.3,1),
+                opacity .4s ease,
+                transform .5s cubic-bezier(.16,1,.3,1);
+  }
+  .login-pane.open {
+    width: 23rem;
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+  .wizard-step { animation: step-in .35s ease both; }
+  @keyframes step-in {
+    from { opacity: 0; transform: translateX(10px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; color: #8a8a8a;
+    margin-bottom: 18px;
+    transition: color .15s;
+  }
+  .back-link:hover { color: #fb923c; }
+  .hero-content { transition: max-width .5s ease; }
+  .hero-content.split { text-align: left; }
+  .hero-content.split .hero-subtext,
+  .hero-content.split .hero-stats-row { margin-left: 0; }
+  .hero-content.split .hero-cta-row,
+  .hero-content.split .hero-stats-row { justify-content: flex-start; }
+  @media (min-width: 1024px) {
+    .hero-content.split { max-width: 36rem; }
+  }
+</style>
+
+<style>
   .panel-content { animation:fadeIn .4s ease both; }
   @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 </style>
-</head>
-<body class="bg-gray-950 overflow-x-hidden">
-
-<div class="min-h-screen flex">
-
-  <!-- LEFT: Background photo panel (drop your image at public/images/login-bg.jpg) -->
-  <div class="hidden lg:flex lg:w-1/2 relative">
-    <img src="images/login-bg.jpg" class="absolute inset-0 w-full h-full object-cover" onerror="this.style.display='none'">
-    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10"></div>
-    <div class="relative z-10 flex flex-col justify-end p-12 text-white">
-      <div class="flex items-center gap-3 mb-6">
-        <div class="w-10 h-10 rounded-lg bg-orange-500 overflow-hidden flex items-center justify-center border border-white/20">
-          <img src="images/TPPG.jpg" class="w-full h-full object-cover" onerror="this.style.display='none'">
-        </div>
-        <span class="font-semibold text-xl">TPPG Portal</span>
-      </div>
-      <h1 class="text-3xl font-bold mb-2 leading-tight">Find your next property with confidence.</h1>
-      <p class="text-white/70 text-sm max-w-md">The Premier Property Group's listing and management platform — for agents and admins alike.</p>
-    </div>
-  </div>
-
-  <!-- RIGHT: Login / Register panel — visible immediately, no click required -->
-  <div class="w-full lg:w-1/2 flex items-center justify-center p-6 bg-gray-950 relative">
-    <!-- subtle mobile-only background so small screens aren't pure black -->
-    <img src="images/login-bg.jpg" class="lg:hidden absolute inset-0 w-full h-full object-cover opacity-20" onerror="this.style.display='none'">
-    <div class="absolute inset-0 lg:hidden bg-gradient-to-b from-black/70 to-black/90"></div>
-
-    <div class="relative z-10 w-full max-w-sm bg-white rounded-2xl p-7 shadow-2xl">
-
-      <!-- LOGIN VIEW -->
-      <div id="loginView" class="panel-content">
-        <h2 class="text-xl font-bold text-gray-900 mb-1">Welcome back</h2>
-        <p class="text-gray-400 text-xs mb-5">Select your role to continue</p>
-        <div class="flex gap-2 mb-5 flex-wrap">
-          <button onclick="selectRole('admin')" id="roleAdmin" class="role-btn">Admin</button>
-          <button onclick="selectRole('agent')" id="roleAgent" class="role-btn">Agent</button>
-          <button onclick="selectRole('unit_manager')" id="roleUnit_manager" class="role-btn">Unit Manager</button>
-          <button onclick="selectRole('sales_manager')" id="roleSales_manager" class="role-btn">Sales Manager</button>
-          <button onclick="selectRole('team_leader')" id="roleTeam_leader" class="role-btn">Team Leader</button>
-        </div>
-        <div id="loginFields" class="hidden space-y-3">
-          <input id="loginId"  type="text"     placeholder="Admin ID / Agent ID" class="field" autocomplete="off">
-          <input id="email"    type="email"    placeholder="Email address"        class="field">
-          <input id="password" type="password" placeholder="Password"             class="field">
-          <button onclick="handleLogin()" class="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white py-3 rounded-lg font-semibold transition-colors">Log In</button>
-          <p id="loginError" class="text-red-500 text-xs text-center hidden"></p>
-        </div>
-        <p class="text-xs text-center text-gray-400 mt-4">
-          No account yet? <button onclick="showRegister()" class="text-orange-500 font-medium hover:underline">Register</button>
-        </p>
-      </div>
-
-      <!-- REGISTER VIEW -->
-      <div id="registerView" class="hidden panel-content max-h-[85vh] overflow-y-auto">
-        <h2 class="text-xl font-bold text-gray-900 mb-1">Agent Application</h2>
-        <p class="text-xs text-gray-400 mb-5">Your application will be reviewed by the administrator.</p>
-        <div class="space-y-3">
-          <input id="regName"     type="text"     placeholder="Full Name"       class="field">
-          <input id="regEmail"    type="email"    placeholder="Email Address"   class="field">
-          <input id="regNumber"   type="text"     placeholder="Contact Number"  class="field">
-          <input id="regPassword" type="password" placeholder="Password"        class="field">
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Valid ID — Front</label>
-            <input id="idFront" type="file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-orange-50 file:text-orange-600 file:text-xs file:font-medium hover:file:bg-orange-100 border border-gray-200 rounded-lg p-1">
-          </div>
-          <div>
-            <label class="block text-xs text-gray-500 mb-1">Valid ID — Back</label>
-            <input id="idBack" type="file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-orange-50 file:text-orange-600 file:text-xs file:font-medium hover:file:bg-orange-100 border border-gray-200 rounded-lg p-1">
-          </div>
-          <button onclick="handleRegister()" class="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white py-3 rounded-lg font-semibold transition-colors">Submit Application</button>
-          <p class="text-xs text-center text-gray-400">Already have an account? <button onclick="showLogin()" class="text-orange-500 font-medium hover:underline">Log In</button></p>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-</div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+  function openLogin(){
+    // Scroll the hero into view first so the reveal animation is visible,
+    // in case Login/CTA was clicked from further down the page.
+    const heroSection = document.getElementById('heroSection');
+    if (heroSection) heroSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-let selectedRole = '';
+    document.getElementById('heroContent').classList.add('split');
+    document.getElementById('loginPane').classList.add('open');
+  }
 
-window.showLogin = () => {
-  document.getElementById('registerView').classList.add('hidden');
-  document.getElementById('loginView').classList.remove('hidden');
-};
-window.showRegister = () => {
-  document.getElementById('loginView').classList.add('hidden');
-  document.getElementById('registerView').classList.remove('hidden');
-};
+  function closeLogin(){
+    document.getElementById('heroContent').classList.remove('split');
+    document.getElementById('loginPane').classList.remove('open');
+  }
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeLogin();
+  });
 
-const ALL_ROLES = ['admin','agent','unit_manager','sales_manager','team_leader'];
-const ROLES_WITHOUT_ID = [];
+  let selectedRole = '';
 
-function resetLogin() {
-  selectedRole = '';
-  document.getElementById('loginFields').classList.add('hidden');
-  document.getElementById('loginError').classList.add('hidden');
-  ALL_ROLES.forEach(r => document.getElementById('role'+r[0].toUpperCase()+r.slice(1)).classList.remove('selected'));
-  ['loginId','email','password'].forEach(id => document.getElementById(id).value = '');
-}
-
-window.selectRole = (role) => {
-  selectedRole = role;
-  document.getElementById('loginFields').classList.remove('hidden');
-  document.getElementById('loginError').classList.add('hidden');
-  ALL_ROLES.forEach(r => document.getElementById('role'+r[0].toUpperCase()+r.slice(1)).classList.remove('selected'));
-  document.getElementById('role' + role[0].toUpperCase() + role.slice(1)).classList.add('selected');
-
-  const idField = document.getElementById('loginId');
-  idField.classList.remove('hidden');
-  const PLACEHOLDERS = {
-    admin: 'Admin ID (ADMIN-001)',
-    agent: 'Agent ID (e.g. AGT-00142)',
-    unit_manager: 'Unit Manager ID (e.g. UM-00142)',
-    sales_manager: 'Sales Manager ID (e.g. SM-00142)',
-    team_leader: 'Team Leader ID (e.g. TL-00142)',
+  const ROLE_LABELS = {
+    admin: 'Admin',
+    agent: 'Agent',
+    unit_manager: 'Unit Manager',
+    sales_manager: 'Sales Manager',
+    team_leader: 'Team Leader',
   };
-  idField.placeholder = PLACEHOLDERS[role];
-  ['loginId','email','password'].forEach(id => document.getElementById(id).value = '');
-};
 
-window.handleLogin = async () => {
-  const loginId  = document.getElementById('loginId').value.trim();
-  const email    = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value.trim();
-  const needsId  = !ROLES_WITHOUT_ID.includes(selectedRole);
-
-  if (!selectedRole) return;
-  if ((needsId && !loginId) || !email || !password) return showError('Please fill in all fields.');
-
-  try {
-    const res  = await fetch('/api/auth/login', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ loginId, email, password, role: selectedRole }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) return showError(data.message || 'Login failed.');
-
-    // Save token and user info
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('role',  data.role);
-    localStorage.setItem('name',  data.name);
-    localStorage.setItem('email', data.email);
-
-    if (data.role === 'admin') {
-      localStorage.setItem('adminId', data.adminId);
-      window.location.href = 'admin-dashboard.html';
-    } else if (data.role === 'agent') {
-      localStorage.setItem('agentId',    data.agentId);
-      localStorage.setItem('agentPhone', data.phone || '');
-      localStorage.setItem('teamLeaderId', data.teamLeaderId || '');
-      localStorage.setItem('salesManagerId', data.salesManagerId || '');
-      localStorage.setItem('unitManagerId', data.unitManagerId || '');
-      localStorage.setItem('commissionRank', data.commissionRank || '');
-      localStorage.setItem('commissionRate', data.commissionRate || '');
-      window.location.href = 'agent-dashboard.html';
+  window.showLogin = () => {
+    document.getElementById('registerView').classList.add('hidden');
+    document.getElementById('loginView').classList.remove('hidden');
+    // resume wherever the person left off in the login flow
+    if (selectedRole) {
+      document.getElementById('roleStep').classList.add('hidden');
+      document.getElementById('credsStep').classList.remove('hidden');
     } else {
-      localStorage.setItem('personId', data.personId || '');
-      localStorage.setItem('unitManagerId', data.unitManagerId || '');
-      localStorage.setItem('salesManagerId', data.salesManagerId || '');
-      localStorage.setItem('commissionRank', data.commissionRank || '');
-      localStorage.setItem('commissionRate', data.commissionRate || '');
-      window.location.href = 'team-dashboard.html';
+      document.getElementById('credsStep').classList.add('hidden');
+      document.getElementById('roleStep').classList.remove('hidden');
+    }
+  };
+  window.showRegister = () => {
+    document.getElementById('loginView').classList.add('hidden');
+    document.getElementById('registerView').classList.remove('hidden');
+  };
+
+  const ALL_ROLES = ['admin','agent','unit_manager','sales_manager','team_leader'];
+  const ROLES_WITHOUT_ID = [];
+
+  window.selectRole = (role) => {
+    selectedRole = role;
+    document.getElementById('loginError').classList.add('hidden');
+    document.getElementById('stepOneIndex').classList.remove('active');
+    document.getElementById('stepTwoIndex').classList.add('active');
+    ALL_ROLES.forEach(r => document.getElementById('role'+r[0].toUpperCase()+r.slice(1)).classList.remove('selected'));
+    document.getElementById('role' + role[0].toUpperCase() + role.slice(1)).classList.add('selected');
+
+    // move from step 1 (role list) to step 2 (credentials), with a personalized greeting
+    document.getElementById('roleStep').classList.add('hidden');
+    const credsStep = document.getElementById('credsStep');
+    credsStep.classList.remove('hidden');
+    credsStep.classList.remove('wizard-step'); // restart the slide-in animation
+    void credsStep.offsetWidth; // force reflow so the animation replays
+    credsStep.classList.add('wizard-step');
+
+    document.getElementById('credsGreeting').innerHTML = `Hello<br>${ROLE_LABELS[role]}.`;
+
+    const idField = document.getElementById('loginId');
+    idField.classList.remove('hidden');
+    const PLACEHOLDERS = {
+      admin: 'Admin ID (ADMIN-001)',
+      agent: 'Agent ID (e.g. AGT-00142)',
+      unit_manager: 'Unit Manager ID (e.g. UM-00142)',
+      sales_manager: 'Sales Manager ID (e.g. SM-00142)',
+      team_leader: 'Team Leader ID (e.g. TL-00142)',
+    };
+    idField.placeholder = PLACEHOLDERS[role];
+    ['loginId','email','password'].forEach(id => document.getElementById(id).value = '');
+  };
+
+  window.goBackToRoleStep = () => {
+    document.getElementById('credsStep').classList.add('hidden');
+    const roleStep = document.getElementById('roleStep');
+    roleStep.classList.remove('hidden');
+    roleStep.classList.remove('wizard-step');
+    void roleStep.offsetWidth;
+    roleStep.classList.add('wizard-step');
+
+    document.getElementById('stepTwoIndex').classList.remove('active');
+    document.getElementById('stepOneIndex').classList.add('active');
+  };
+
+  window.handleLogin = async () => {
+    const loginId  = document.getElementById('loginId').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const needsId  = !ROLES_WITHOUT_ID.includes(selectedRole);
+
+    if (!selectedRole) return;
+    if ((needsId && !loginId) || !email || !password) return showError('Please fill in all fields.');
+
+    try {
+      const res  = await fetch('/api/auth/login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ loginId, email, password, role: selectedRole }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) return showError(data.message || 'Login failed.');
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('role',  data.role);
+      localStorage.setItem('name',  data.name);
+      localStorage.setItem('email', data.email);
+
+      if (data.role === 'admin') {
+        localStorage.setItem('adminId', data.adminId);
+        window.location.href = 'admin-dashboard.html';
+      } else if (data.role === 'agent') {
+        localStorage.setItem('agentId',    data.agentId);
+        localStorage.setItem('agentPhone', data.phone || '');
+        localStorage.setItem('teamLeaderId', data.teamLeaderId || '');
+        localStorage.setItem('salesManagerId', data.salesManagerId || '');
+        localStorage.setItem('unitManagerId', data.unitManagerId || '');
+        localStorage.setItem('commissionRank', data.commissionRank || '');
+        localStorage.setItem('commissionRate', data.commissionRate || '');
+        window.location.href = 'agent-dashboard.html';
+      } else {
+        localStorage.setItem('personId', data.personId || '');
+        localStorage.setItem('unitManagerId', data.unitManagerId || '');
+        localStorage.setItem('salesManagerId', data.salesManagerId || '');
+        localStorage.setItem('commissionRank', data.commissionRank || '');
+        localStorage.setItem('commissionRate', data.commissionRate || '');
+        window.location.href = 'team-dashboard.html';
+      }
+
+    } catch (err) {
+      showError('Server error. Please try again.');
+    }
+  };
+
+  window.handleRegister = async () => {
+    const name     = document.getElementById('regName').value.trim();
+    const email    = document.getElementById('regEmail').value.trim();
+    const number   = document.getElementById('regNumber').value.trim();
+    const password = document.getElementById('regPassword').value.trim();
+    const idFront  = document.getElementById('idFront').files[0];
+    const idBack   = document.getElementById('idBack').files[0];
+
+    if (!name || !email || !number || !password || !idFront || !idBack) {
+      alert('Please complete all fields including ID uploads.'); return;
     }
 
-  } catch (err) {
-    showError('Server error. Please try again.');
+    try {
+      const formData = new FormData();
+      formData.append('name',     name);
+      formData.append('email',    email);
+      formData.append('phone',    number);
+      formData.append('password', password);
+      formData.append('idFront',  idFront);
+      formData.append('idBack',   idBack);
+
+      const res  = await fetch('/api/auth/register', {
+        method: 'POST',
+        body:   formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) return alert(data.message || 'Registration failed.');
+
+      alert('Application submitted!\n\nYour Agent ID is: ' + data.agentId + '\n\nSave this ID — you will need it to log in once approved.');
+      showLogin();
+      ['regName','regEmail','regNumber','regPassword'].forEach(id => document.getElementById(id).value = '');
+
+    } catch (err) {
+      alert('Server error. Please try again.');
+    }
+  };
+
+  function showError(msg) {
+    const el = document.getElementById('loginError');
+    el.textContent = msg;
+    el.classList.remove('hidden');
   }
-};
-
-window.handleRegister = async () => {
-  const name     = document.getElementById('regName').value.trim();
-  const email    = document.getElementById('regEmail').value.trim();
-  const number   = document.getElementById('regNumber').value.trim();
-  const password = document.getElementById('regPassword').value.trim();
-  const idFront  = document.getElementById('idFront').files[0];
-  const idBack   = document.getElementById('idBack').files[0];
-
-  if (!name || !email || !number || !password || !idFront || !idBack) {
-    alert('Please complete all fields including ID uploads.'); return;
-  }
-
-  try {
-    const formData = new FormData();
-    formData.append('name',     name);
-    formData.append('email',    email);
-    formData.append('phone',    number);
-    formData.append('password', password);
-    formData.append('idFront',  idFront);
-    formData.append('idBack',   idBack);
-
-    const res  = await fetch('/api/auth/register', {
-      method: 'POST',
-      body:   formData,
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) return alert(data.message || 'Registration failed.');
-
-    alert('Application submitted!\n\nYour Agent ID is: ' + data.agentId + '\n\nSave this ID — you will need it to log in once approved.');
-    showLogin();
-    ['regName','regEmail','regNumber','regPassword'].forEach(id => document.getElementById(id).value = '');
-
-  } catch (err) {
-    alert('Server error. Please try again.');
-  }
-};
-
-function showError(msg) {
-  const el = document.getElementById('loginError');
-  el.textContent = msg;
-  el.classList.remove('hidden');
-}
-
-}); // end DOMContentLoaded
 </script>
+
+
+<!-- ===== LISTINGS ===== -->
+<section id="listings" class="max-w-7xl mx-auto px-6 py-24">
+  <div class="flex items-end justify-between mb-10 flex-wrap gap-4">
+    <div>
+      <p class="num-tag mb-3">Live Inventory</p>
+      <h2 class="text-3xl font-bold">Browse by developer, property, and unit</h2>
+    </div>
+    <p class="text-gray-400 text-sm max-w-sm">Search by type, selling status, location, or budget — every unit is pulled straight from the portal.</p>
+  </div>
+  <div class="grid md:grid-cols-3 gap-5">
+    <div class="card p-0 overflow-hidden text-gray-900">
+      <div class="h-40 bg-gray-100 flex items-center justify-center text-xs text-gray-400">[Image]</div>
+      <div class="p-5">
+        <span class="inline-block text-[10px] font-semibold uppercase tracking-wide bg-orange-50 text-orange-600 px-2.5 py-1 rounded-full mb-3">[Status]</span>
+        <h3 class="font-semibold text-lg mb-1">[Property name]</h3>
+        <p class="text-xs text-gray-400 mb-4">[Location]</p>
+        <div class="flex items-center justify-between border-t border-gray-100 pt-4">
+          <span class="font-bold text-orange-600">[Price]</span>
+          <span class="text-gray-300">→</span>
+        </div>
+      </div>
+    </div>
+    <div class="card p-0 overflow-hidden text-gray-900">
+      <div class="h-40 bg-gray-100 flex items-center justify-center text-xs text-gray-400">[Image]</div>
+      <div class="p-5">
+        <span class="inline-block text-[10px] font-semibold uppercase tracking-wide bg-orange-50 text-orange-600 px-2.5 py-1 rounded-full mb-3">[Status]</span>
+        <h3 class="font-semibold text-lg mb-1">[Property name]</h3>
+        <p class="text-xs text-gray-400 mb-4">[Location]</p>
+        <div class="flex items-center justify-between border-t border-gray-100 pt-4">
+          <span class="font-bold text-orange-600">[Price]</span>
+          <span class="text-gray-300">→</span>
+        </div>
+      </div>
+    </div>
+    <div class="card p-0 overflow-hidden text-gray-900">
+      <div class="h-40 bg-gray-100 flex items-center justify-center text-xs text-gray-400">[Image]</div>
+      <div class="p-5">
+        <span class="inline-block text-[10px] font-semibold uppercase tracking-wide bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full mb-3">[Status]</span>
+        <h3 class="font-semibold text-lg mb-1">[Property name]</h3>
+        <p class="text-xs text-gray-400 mb-4">[Location]</p>
+        <div class="flex items-center justify-between border-t border-gray-100 pt-4">
+          <span class="font-bold text-orange-600">[Price]</span>
+          <span class="text-gray-300">→</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== WHY US ===== -->
+<section id="why" class="bg-white text-gray-900 py-24">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="mb-12">
+      <p class="num-tag mb-3">Why Premier</p>
+      <h2 class="text-3xl font-bold max-w-xl">Built for agents who close, and clients who trust</h2>
+    </div>
+    <div class="grid md:grid-cols-4 gap-px bg-gray-100 rounded-2xl overflow-hidden border border-gray-100">
+      <div class="bg-white p-8">
+        <div class="text-orange-500 text-xs font-semibold mb-5">01</div>
+        <h3 class="font-semibold mb-2">Verified Inventory</h3>
+        <p class="text-sm text-gray-500 leading-relaxed">Every unit is logged Developer → Property → Unit, with live status (Available / Hold / Sold) — no ghost listings.</p>
+      </div>
+      <div class="bg-white p-8">
+        <div class="text-orange-500 text-xs font-semibold mb-5">02</div>
+        <h3 class="font-semibold mb-2">Role-Based Portal</h3>
+        <p class="text-sm text-gray-500 leading-relaxed">Admins, Unit Managers, Sales Managers, Team Leaders, and Agents each get a dashboard scoped to their own team and sales.</p>
+      </div>
+      <div class="bg-white p-8">
+        <div class="text-orange-500 text-xs font-semibold mb-5">03</div>
+        <h3 class="font-semibold mb-2">Transparent Commission</h3>
+        <p class="text-sm text-gray-500 leading-relaxed">Clear rate tiers by rank, auto-computed net payouts, and override/incentive visibility that's scoped fairly.</p>
+      </div>
+      <div class="bg-white p-8">
+        <div class="text-orange-500 text-xs font-semibold mb-5">04</div>
+        <h3 class="font-semibold mb-2">Real-Time Team View</h3>
+        <p class="text-sm text-gray-500 leading-relaxed">Org-chart team visibility and personal vs. team sales tracking, so every level sees exactly where they stand.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== HOW IT WORKS (hierarchy) ===== -->
+<section id="how" class="max-w-7xl mx-auto px-6 py-24">
+  <div class="mb-14">
+    <p class="num-tag mb-3">How The Portal Works</p>
+    <h2 class="text-3xl font-bold mb-3">One hierarchy, five dashboards, full visibility</h2>
+    <p class="text-gray-400 text-sm max-w-md">Every application starts as an agent applicant — Admin reviews and places you into the structure.</p>
+  </div>
+  <div class="grid md:grid-cols-5 gap-4">
+    <div class="card bg-gray-900 border border-white/10 p-6 text-center">
+      <div class="w-10 h-10 mx-auto mb-4 rounded-full bg-orange-500 flex items-center justify-center text-xs font-bold">A</div>
+      <h3 class="font-semibold mb-2 text-sm">Admin</h3>
+      <p class="text-xs text-gray-500 leading-relaxed">Full org chart. Approves applicants, manages listings & commission releases.</p>
+    </div>
+    <div class="card bg-gray-900 border border-white/10 p-6 text-center">
+      <div class="w-10 h-10 mx-auto mb-4 rounded-full bg-orange-500 flex items-center justify-center text-xs font-bold">UM</div>
+      <h3 class="font-semibold mb-2 text-sm">Unit Manager</h3>
+      <p class="text-xs text-gray-500 leading-relaxed">4.0% base rate. Oversees a downward team, adds clients directly.</p>
+    </div>
+    <div class="card bg-gray-900 border border-white/10 p-6 text-center">
+      <div class="w-10 h-10 mx-auto mb-4 rounded-full bg-orange-500 flex items-center justify-center text-xs font-bold">SM</div>
+      <h3 class="font-semibold mb-2 text-sm">Sales Manager</h3>
+      <p class="text-xs text-gray-500 leading-relaxed">3.25%–3.7% by rank. Can report to a UM, or stand solo.</p>
+    </div>
+    <div class="card bg-gray-900 border border-white/10 p-6 text-center">
+      <div class="w-10 h-10 mx-auto mb-4 rounded-full bg-orange-500 flex items-center justify-center text-xs font-bold">TL</div>
+      <h3 class="font-semibold mb-2 text-sm">Team Leader</h3>
+      <p class="text-xs text-gray-500 leading-relaxed">3.0% base rate. Manages a team of agents, records own sales.</p>
+    </div>
+    <div class="card bg-gray-900 border border-white/10 p-6 text-center">
+      <div class="w-10 h-10 mx-auto mb-4 rounded-full bg-orange-500 flex items-center justify-center text-xs font-bold">AG</div>
+      <h3 class="font-semibold mb-2 text-sm">Agent</h3>
+      <p class="text-xs text-gray-500 leading-relaxed">2.0%–2.75% by rank. Reports to a TL, SM, or UM directly.</p>
+    </div>
+  </div>
+  <div class="mt-8 flex flex-wrap gap-4 justify-center">
+    <div class="border border-white/10 rounded-lg px-6 py-4 text-center">
+      <div class="font-mono text-sm">Gross = TCN × Rate%</div>
+      <div class="text-xs text-gray-500 mt-2">Rate set per person, per rank, by Admin</div>
+    </div>
+    <div class="border border-white/10 rounded-lg px-6 py-4 text-center">
+      <div class="font-mono text-sm">Net = Gross − 10% WT − 3% PT</div>
+      <div class="text-xs text-gray-500 mt-2">Auto-computed on every recorded sale</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TEAM SPOTLIGHT ===== -->
+<section id="team" class="bg-white text-gray-900 py-24">
+  <div class="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-14 items-center">
+    <div class="rounded-2xl bg-gray-950 text-white p-10 aspect-[4/5] flex flex-col justify-between relative overflow-hidden">
+      <div>
+        <div class="text-4xl font-bold">[Stat — pending confirmation]</div>
+        <div class="text-xs text-gray-400 mt-2 uppercase tracking-wide">[Label]</div>
+      </div>
+      <div class="border-t border-white/10 pt-4">
+        <div class="font-semibold">[Name — pending confirmation]</div>
+        <div class="text-xs text-orange-400 uppercase tracking-wide mt-1">[Role]</div>
+      </div>
+    </div>
+    <div>
+      <p class="num-tag mb-3">Top Performer</p>
+      <h2 class="text-3xl font-bold mb-5">We celebrate the agents who make it happen</h2>
+      <p class="text-gray-500 leading-relaxed mb-8">Every closed reservation is a milestone we share with the whole network — tracked transparently through the portal, from first client record to final net payout. Join a team that recognizes hustle.</p>
+      <div class="flex gap-10">
+        <div><div class="text-xl font-bold text-orange-600">[Stat — pending confirmation]</div><div class="text-xs text-gray-400 mt-1">[Label]</div></div>
+        <div><div class="text-xl font-bold text-orange-600">[Stat — pending confirmation]</div><div class="text-xs text-gray-400 mt-1">[Label]</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<section id="contact" class="max-w-7xl mx-auto px-6 py-24">
+  <div class="bg-orange-500 rounded-2xl px-10 py-14 flex flex-wrap items-center justify-between gap-6">
+    <h2 class="text-2xl md:text-3xl font-bold text-white max-w-lg">Ready to find your next property, or build your career with us?</h2>
+    <button onclick="openLogin()" class="bg-gray-950 text-white font-semibold px-8 py-3.5 rounded-lg">Apply as an Agent →</button>
+  </div>
+</section>
+
+<!-- ===== PARTNERS (static, dynamic — pulled from /api/developers/public) ===== -->
+<section class="max-w-7xl mx-auto px-6 pb-20">
+  <p class="text-center text-xs uppercase tracking-widest text-gray-500 mb-8">Developer Partners</p>
+  <div id="trustTrack" class="flex flex-wrap justify-center gap-x-10 gap-y-6 items-center">
+    <!-- populated by loadDevelopers() below; falls back to placeholders if the fetch fails -->
+    <div class="trust-logo-card border border-dashed border-white/15 rounded-lg"><span class="text-xs uppercase tracking-widest text-gray-500 px-1 text-center">[Partner]</span></div>
+    <div class="trust-logo-card border border-dashed border-white/15 rounded-lg"><span class="text-xs uppercase tracking-widest text-gray-500 px-1 text-center">[Partner]</span></div>
+    <div class="trust-logo-card border border-dashed border-white/15 rounded-lg"><span class="text-xs uppercase tracking-widest text-gray-500 px-1 text-center">[Partner]</span></div>
+    <div class="trust-logo-card border border-dashed border-white/15 rounded-lg"><span class="text-xs uppercase tracking-widest text-gray-500 px-1 text-center">[Partner]</span></div>
+    <div class="trust-logo-card border border-dashed border-white/15 rounded-lg"><span class="text-xs uppercase tracking-widest text-gray-500 px-1 text-center">[Partner]</span></div>
+    <div class="trust-logo-card border border-dashed border-white/15 rounded-lg"><span class="text-xs uppercase tracking-widest text-gray-500 px-1 text-center">[Partner]</span></div>
+  </div>
+</section>
+
+<style>
+  .trust-logo-card {
+    height: 128px; width: 210px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 8px;
+    transition: transform .15s;
+  }
+  .trust-logo-card:hover { transform: scale(1.08); }
+  .trust-logo {
+    max-height: 100%; max-width: 100%; width: auto; height: auto;
+    object-fit: contain;
+    opacity: 0;
+    animation: logo-fade-in .25s ease forwards;
+  }
+  .logo-skeleton {
+    width: 70%; height: 45%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #1a1a1a 25%, #232323 37%, #1a1a1a 63%);
+    background-size: 400% 100%;
+    animation: skeleton-pulse 1.4s ease infinite;
+  }
+  @keyframes skeleton-pulse {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+  }
+  @keyframes logo-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+</style>
+
+<script>
+  // Strips near-white background pixels from a logo image at runtime and
+  // returns a transparent-background PNG data URL. Handles logos that have
+  // a solid white background baked into the file (not real transparency).
+  function stripWhiteBackground(url) {
+    return new Promise((resolve) => {
+      const src = new Image();
+      src.crossOrigin = 'anonymous';
+      src.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = src.naturalWidth;
+          canvas.height = src.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(src, 0, 0);
+
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          const WHITE_THRESHOLD = 235; // pixels lighter than this (per channel) get faded out
+
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i], g = data[i + 1], b = data[i + 2];
+            if (r > WHITE_THRESHOLD && g > WHITE_THRESHOLD && b > WHITE_THRESHOLD) {
+              data[i + 3] = 0; // fully transparent
+            }
+          }
+          ctx.putImageData(imageData, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        } catch (err) {
+          // canvas gets "tainted" if the image host doesn't send CORS headers —
+          // resolve null so the caller falls back to the original image
+          console.warn('Could not strip background (likely a CORS restriction on the image host):', err);
+          resolve(null);
+        }
+      };
+      src.onerror = () => resolve(null);
+      src.src = url;
+    });
+  }
+
+  async function loadDevelopers() {
+    const track = document.getElementById('trustTrack');
+    try {
+      const res = await fetch('/api/developers/public');
+      if (!res.ok) throw new Error('Failed to load developers');
+      const developers = await res.json();
+
+      if (!Array.isArray(developers) || developers.length === 0) return; // keep placeholders
+
+      // Show lightweight skeleton cards immediately (no raw white-bg images ever shown)
+      track.innerHTML = developers.map((d, i) =>
+        `<div class="trust-logo-card" id="logoSlot-${i}">
+           <div class="logo-skeleton"></div>
+         </div>`
+      ).join('');
+
+      // Process every logo (fetch → strip white bg → data URL) BEFORE showing anything,
+      // so the visible result is only ever the final, clean version — no flash, no swap.
+      await Promise.all(developers.map(async (d, i) => {
+        const slot = document.getElementById(`logoSlot-${i}`);
+        if (!slot) return;
+
+        if (!d.logo_url) {
+          slot.classList.add('border', 'border-dashed', 'border-white/15', 'rounded-lg');
+          slot.innerHTML = `<span class="text-xs uppercase tracking-widest text-gray-500 px-1 text-center">${d.name}</span>`;
+          return;
+        }
+
+        const cleaned = await stripWhiteBackground(d.logo_url);
+        const finalSrc = cleaned || d.logo_url; // fall back to original only if stripping failed (e.g. CORS)
+        slot.innerHTML = `<img src="${finalSrc}" alt="${d.name}" title="${d.name}" class="trust-logo logo-ready">`;
+      }));
+    } catch (err) {
+      console.error('Error loading developers for partner grid:', err);
+      // leave placeholder cards in place
+    }
+  }
+  document.addEventListener('DOMContentLoaded', loadDevelopers);
+</script>
+
+<!-- ===== FOOTER ===== -->
+<footer class="border-t border-white/10 py-14">
+  <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-10 mb-10">
+    <div>
+      <div class="flex items-center gap-3 mb-4">
+        <div class="h-9 flex items-center justify-center">
+          <img src="imgs/logo.jpg" class="h-full w-auto object-contain" onerror="this.style.display='none'">
+        </div>
+        <span class="font-semibold">TPPG Portal</span>
+      </div>
+      <p class="text-sm text-gray-500 max-w-xs">Connecting agents and families to verified real estate across the Philippines.</p>
+    </div>
+    <div>
+      <h4 class="text-xs uppercase tracking-widest text-orange-500 mb-4">Explore</h4>
+      <div class="space-y-2 text-sm text-gray-400">
+        <p><a href="#listings" class="hover:text-white transition">Listings</a></p>
+        <p><a href="#why" class="hover:text-white transition">Why Us</a></p>
+        <p><a href="#how" class="hover:text-white transition">How It Works</a></p>
+      </div>
+    </div>
+    <div>
+      <h4 class="text-xs uppercase tracking-widest text-orange-500 mb-4">Portal</h4>
+      <div class="space-y-2 text-sm text-gray-400">
+        <p><button onclick="openLogin()" class="hover:text-white transition text-left">Agent Login</button></p>
+        <p><button onclick="openLogin()" class="hover:text-white transition text-left">Admin Login</button></p>
+        <p><button onclick="openLogin()" class="hover:text-white transition text-left">Register</button></p>
+      </div>
+    </div>
+    <div>
+      <h4 class="text-xs uppercase tracking-widest text-orange-500 mb-4">Contact</h4>
+      <div class="space-y-2 text-sm text-gray-400">
+        <p>[Contact email — pending confirmation]</p><p>[Contact number — pending confirmation]</p>
+      </div>
+    </div>
+  </div>
+  <div class="max-w-7xl mx-auto px-6 border-t border-white/10 pt-6 flex justify-between text-xs text-gray-500">
+    <span>© 2026 The Premier Property Group. All rights reserved.</span>
+    <span>Designed for a network built on trust.</span>
+  </div>
+</footer>
+
 </body>
 </html>

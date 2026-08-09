@@ -79,4 +79,20 @@ const deleteDeveloper = async (req, res) => {
   }
 };
 
-module.exports = { getDevelopers, createDeveloper, updateDeveloper, deleteDeveloper };
+// GET /api/developers/public (no auth — used by the public landing page trust bar)
+const getPublicDevelopers = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('developers')
+      .select('id, name, logo_url')
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    console.error('getPublicDevelopers error:', err);
+    res.status(500).json({ message: 'Failed to load developers.' });
+  }
+};
+
+module.exports = { getDevelopers, getPublicDevelopers, createDeveloper, updateDeveloper, deleteDeveloper };
