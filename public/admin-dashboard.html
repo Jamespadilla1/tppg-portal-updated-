@@ -3101,9 +3101,9 @@ function sbRenderDrill(){
 
   if(!sbDrillStack.length){
     backBtn.classList.add('hidden');
-    titleEl.textContent = 'Unit Managers';
+    titleEl.textContent = 'Unit Managers & Solo Sales Managers';
     grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4';
-    grid.innerHTML = umCache.map(um => {
+    const umCards = umCache.map(um => {
       const directSM = smCache.filter(s=>s.unit_manager_id===um.id);
       const allTL = tlsUnderUM(um.id);
       const directAgents = teamAgentsCache.filter(a=>a.unit_manager_id===um.id && !a.team_leader_id && !a.sales_manager_id);
@@ -3115,7 +3115,20 @@ function sbRenderDrill(){
         subLabel: `${directSM.length} Sales Mgrs · ${allTL.length} Team Leads · ${agCount} Agents`,
         clickable: true, onclick: `sbDrillInto('unit_manager','${um.id}','${um.name.replace(/'/g,"\\'")}')`
       });
-    }).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No Unit Managers yet.</p>`;
+    });
+    const soloSMCards = smCache.filter(sm=>!sm.unit_manager_id).map(sm => {
+      const directTL = tlCache.filter(tl=>tl.sales_manager_id===sm.id);
+      const directAgents = teamAgentsCache.filter(a=>a.sales_manager_id===sm.id);
+      const agCount = directAgents.length + agentsUnderTLs(directTL.map(t=>t.id)).length;
+      return sbCard({
+        name: sm.name, roleId: sm.sm_id, roleLabel: 'Sales Manager (Solo)',
+        personal: personalSalesValue('sales_manager', sm.id),
+        team: teamSalesOfSM(sm.id),
+        subLabel: `${directTL.length} Team Leads · ${agCount} Agents`,
+        clickable: true, onclick: `sbDrillInto('sales_manager','${sm.id}','${sm.name.replace(/'/g,"\\'")}')`
+      });
+    });
+    grid.innerHTML = [...umCards, ...soloSMCards].join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No Unit Managers or Solo Sales Managers yet.</p>`;
     return;
   }
 
