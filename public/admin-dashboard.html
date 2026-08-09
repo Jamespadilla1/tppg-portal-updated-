@@ -141,9 +141,21 @@ tr:hover td{background:rgba(0,0,0,.02)}
 
     <!-- ══ DASHBOARD OVERVIEW ══ -->
     <div id="sec-overview" class="section active space-y-5">
-      <!-- Property search bar -->
+      <!-- Simple search bar with collapsible advanced filters -->
       <div class="card p-4">
-        <div class="flex gap-2 flex-wrap items-end">
+        <div class="flex gap-2 items-center flex-wrap">
+          <div class="flex-1 min-w-[220px] relative">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="ovSearchLoc" type="text" placeholder="Search properties by location…" class="field pl-9" onkeydown="if(event.key==='Enter')searchPropertiesGlobal('ov')">
+          </div>
+          <button onclick="toggleOvFilters()" id="ovFiltersBtn" class="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm border border-gray-200 text-gray-500 hover:border-orange-300 hover:text-orange-600 transition-colors shrink-0">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            Filters
+            <svg id="ovFiltersChevron" class="w-3.5 h-3.5 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <button onclick="searchPropertiesGlobal('ov')" class="bg-orange-500 hover:bg-orange-600 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors shrink-0">Search</button>
+        </div>
+        <div id="ovFiltersPanel" class="hidden flex gap-2 flex-wrap items-end mt-3 pt-3 border-t border-gray-100">
           <div><label class="text-xs text-gray-400 mb-1 block">Type</label><select id="ovSearchType" class="field w-36">
             <option value="">All Types</option>
             <option value="Condo">Condo</option>
@@ -155,7 +167,6 @@ tr:hover td{background:rgba(0,0,0,.02)}
             <option value="RFO">RFO</option>
             <option value="Pre-selling">Pre-selling</option>
           </select></div>
-          <div class="flex-1 min-w-[140px]"><label class="text-xs text-gray-400 mb-1 block">Location</label><input id="ovSearchLoc" type="text" placeholder="Type any location…" class="field" onkeydown="if(event.key==='Enter')searchPropertiesGlobal('ov')"></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Filter By</label><select id="ovSearchBudgetType" class="field w-32" onchange="updateBudgetLabels('ov')">
             <option value="tcp">TCP</option>
             <option value="dp">Monthly DP</option>
@@ -163,34 +174,78 @@ tr:hover td{background:rgba(0,0,0,.02)}
           </select></div>
           <div><label class="text-xs text-gray-400 mb-1 block" id="ovSearchMinLabel">Min TCP (₱)</label><input id="ovSearchBudgetMin" type="text" inputmode="numeric" placeholder="0" class="field w-32" oninput="formatMoneyInput(this)"></div>
           <div><label class="text-xs text-gray-400 mb-1 block" id="ovSearchMaxLabel">Max TCP (₱)</label><input id="ovSearchBudgetMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-32" oninput="formatMoneyInput(this)"></div>
-          <button onclick="searchPropertiesGlobal('ov')" class="bg-orange-500 hover:bg-orange-600 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">Search</button>
         </div>
         <div id="ovSearchResults" class="mt-3"></div>
       </div>
 
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="overviewCards"></div>
+      <!-- Business snapshot: the two headline money metrics, given visual weight -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="ovHeroStats"></div>
+
+      <!-- Secondary operational stats -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3" id="ovSecondaryStats"></div>
 
       <div class="card p-5">
-        <h3 class="font-semibold text-sm mb-4">Units per Status</h3>
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <h3 class="font-semibold text-sm">Units per Status</h3>
+          <p class="text-xs text-gray-500" id="ovPortfolioScale"></p>
+        </div>
         <div class="flex gap-1 h-3 rounded-full overflow-hidden mb-3" id="unitsStatusBar"></div>
         <div class="grid grid-cols-3 gap-3 text-center" id="unitsStatusLegend"></div>
       </div>
 
-      <div class="card overflow-hidden">
-        <div class="px-5 py-3 border-b border-white/8 flex justify-between items-center">
-          <h3 class="font-semibold text-sm">Recently Added Units</h3>
-          <button onclick="go('properties',document.querySelectorAll('.nav-link')[2])" class="text-xs text-orange-400 hover:underline">View all →</button>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="card p-5">
+          <h3 class="font-semibold text-sm mb-3">Sales Trend (Last 6 Months)</h3>
+          <div style="height:260px"><canvas id="ovSalesTrendChart"></canvas></div>
         </div>
-        <div class="overflow-x-auto"><table class="w-full text-sm">
-          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
-            <th class="text-left px-5 py-2">Unit</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Status</th>
-          </tr></thead>
-          <tbody id="overviewTable" class="divide-y divide-white/6 text-gray-300"></tbody>
-        </table></div>
+        <div class="card p-5">
+          <h3 class="font-semibold text-sm mb-3">Portfolio by Property Type</h3>
+          <div style="height:260px"><canvas id="ovPortfolioChart"></canvas></div>
+        </div>
+      </div>
+      <p id="ovSalesTrendNote" class="hidden text-xs text-gray-600 -mt-2">Once a few more months of sales come in, the trend line will fill out.</p>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="card overflow-hidden">
+          <div class="px-5 py-3 border-b border-white/8 flex justify-between items-center">
+            <h3 class="font-semibold text-sm">Top Performers</h3>
+            <button onclick="go('reports',document.querySelectorAll('.nav-link')[7])" class="text-xs text-orange-400 hover:underline">View all →</button>
+          </div>
+          <div id="ovTopPerformers" class="divide-y divide-white/6"></div>
+        </div>
+        <div class="card overflow-hidden">
+          <div class="px-5 py-3 border-b border-white/8">
+            <h3 class="font-semibold text-sm">Low Inventory Alerts</h3>
+          </div>
+          <div id="ovLowStock" class="divide-y divide-white/6 max-h-64 overflow-y-auto"></div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="card overflow-hidden">
+          <div class="px-5 py-3 border-b border-white/8 flex justify-between items-center">
+            <h3 class="font-semibold text-sm">Recent Commission Receivables</h3>
+            <button onclick="go('commission',document.querySelectorAll('.nav-link')[5])" class="text-xs text-orange-400 hover:underline">View all →</button>
+          </div>
+          <div id="ovRecentReceivables" class="divide-y divide-white/6 max-h-64 overflow-y-auto"></div>
+        </div>
+
+        <div class="card overflow-hidden">
+          <div class="px-5 py-3 border-b border-white/8 flex justify-between items-center">
+            <h3 class="font-semibold text-sm">Recently Added Units</h3>
+            <button onclick="go('properties',document.querySelectorAll('.nav-link')[2])" class="text-xs text-orange-400 hover:underline">View all →</button>
+          </div>
+          <div class="overflow-x-auto max-h-64 overflow-y-auto"><table class="w-full text-sm">
+            <thead class="sticky top-0 bg-[#ffffff]"><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
+              <th class="text-left px-5 py-2">Unit</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Status</th>
+            </tr></thead>
+            <tbody id="overviewTable" class="divide-y divide-white/6 text-gray-300"></tbody>
+          </table></div>
+        </div>
       </div>
       <div class="card overflow-hidden">
         <div class="px-5 py-3 border-b border-white/8"><h3 class="font-semibold text-sm">Recent Activity</h3></div>
-        <div id="overviewLogs" class="divide-y divide-white/6 max-h-48 overflow-y-auto"></div>
+        <div id="overviewLogs" class="divide-y divide-white/6 max-h-40 overflow-y-auto"></div>
       </div>
     </div>
 
@@ -477,8 +532,8 @@ tr:hover td{background:rgba(0,0,0,.02)}
         </div>
         <div id="reportCards" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div class="bg-white/4 rounded-lg border border-white/8 p-4"><canvas id="reportChart1" height="220"></canvas></div>
-          <div class="bg-white/4 rounded-lg border border-white/8 p-4"><canvas id="reportChart2" height="220"></canvas></div>
+          <div class="bg-white/4 rounded-lg border border-white/8 p-4" style="height:290px"><canvas id="reportChart1"></canvas></div>
+          <div class="bg-white/4 rounded-lg border border-white/8 p-4" style="height:290px"><canvas id="reportChart2"></canvas></div>
         </div>
         <div id="reportTableWrap" class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8" id="reportTableHead"></tr></thead>
@@ -1110,11 +1165,59 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySele
 // ══════════════════════════════════════
 // OVERVIEW
 // ══════════════════════════════════════
+window.toggleOvFilters = () => {
+  const panel = document.getElementById('ovFiltersPanel');
+  const chevron = document.getElementById('ovFiltersChevron');
+  const btn = document.getElementById('ovFiltersBtn');
+  const opening = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden');
+  chevron.style.transform = opening ? 'rotate(180deg)' : 'rotate(0deg)';
+  btn.classList.toggle('border-orange-300', opening);
+  btn.classList.toggle('text-orange-600', opening);
+};
+
+// Small inline icon set for dashboard stat cards (no external icon library needed)
+const OV_ICONS = {
+  trendUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>',
+  banknote: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></svg>',
+  userCheck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 20v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="7" cy="8" r="4"/><polyline points="16 11 18 13 22 9"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>',
+  users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',
+};
+
+function ovHeroCard({icon, label, value, accent, sub}){
+  return `
+    <div class="card p-5 flex items-center gap-4" style="border-left:3px solid ${accent}">
+      <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style="background:${accent}1a;color:${accent}">
+        <span class="w-5 h-5 block">${icon}</span>
+      </div>
+      <div class="min-w-0">
+        <p class="text-gray-400 text-xs uppercase tracking-wide mb-1">${label}</p>
+        <p class="text-2xl font-bold truncate">${value}</p>
+        ${sub ? `<p class="text-xs text-gray-400 mt-0.5">${sub}</p>` : ''}
+      </div>
+    </div>`;
+}
+
+function ovSecondaryCard({icon, label, value, accent}){
+  return `
+    <div class="stat-card flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style="background:${accent}15;color:${accent}">
+        <span class="w-4 h-4 block">${icon}</span>
+      </div>
+      <div class="min-w-0">
+        <p class="text-gray-400 text-[11px] uppercase tracking-wide leading-tight">${label}</p>
+        <p class="text-lg font-bold leading-tight" style="${accent!=='#111827'?`color:${accent}`:''}">${value}</p>
+      </div>
+    </div>`;
+}
+
 async function renderOverview(){
   const token = localStorage.getItem('token');
   const headers = { 'Authorization': 'Bearer ' + token };
   try {
-    const [devsRes, propsRes, unitsRes, agentsRes, buyersRes, umRes, smRes, tlRes, logsRes] = await Promise.all([
+    const [devsRes, propsRes, unitsRes, agentsRes, buyersRes, umRes, smRes, tlRes, logsRes, recRes] = await Promise.all([
       fetch('/api/developers', {headers}),
       fetch('/api/properties', {headers}),
       fetch('/api/units', {headers}),
@@ -1124,6 +1227,7 @@ async function renderOverview(){
       fetch('/api/sales-managers', {headers}),
       fetch('/api/team-leaders', {headers}),
       fetch('/api/logs', {headers}),
+      fetch('/api/commission-receivables', {headers}),
     ]);
     const devs   = await devsRes.json();
     const props  = await propsRes.json();
@@ -1134,6 +1238,7 @@ async function renderOverview(){
     const sms    = await smRes.json();
     const tls    = await tlRes.json();
     const logs   = await logsRes.json();
+    const receivables = await recRes.json();
 
     const approvedAgents = agents.filter(a=>a.status==='approved');
     const pending = agents.filter(a=>a.status==='pending');
@@ -1142,21 +1247,32 @@ async function renderOverview(){
     const sold = units.filter(u=>u.status==='Sold');
     const totalSalesValue = buyers.reduce((s,b)=>{ const u = units.find(x=>x.id===b.unit_id); return s + (u ? Number(u.tcp)||0 : 0); }, 0);
 
-    document.getElementById('overviewCards').innerHTML = [
-      ['Total Developers', devs.length, ''],
-      ['Total Properties', props.length, ''],
-      ['Total Units', units.length, ''],
-      ['Approved Agents', approvedAgents.length, 'text-green-400'],
-      ['Pending Applications', pending.length, 'text-yellow-400'],
-      ['Total Clients', buyers.length, ''],
-      ['Total Sales Value', peso(totalSalesValue), 'text-orange-400'],
-      ['Team Managers', ums.length + sms.length + tls.length, ''],
-    ].map(([label,val,cls])=>`
-      <div class="stat-card">
-        <p class="text-gray-400 text-xs uppercase tracking-wide mb-1">${label}</p>
-        <p class="text-2xl font-bold ${cls}">${val}</p>
-      </div>
-    `).join('');
+    // Total Net Commission across all levels (same formula used in Reports > Commission Payout)
+    function ovUnitTCP(unitId){ const u = units.find(x=>x.id===unitId); return u ? Number(u.tcp)||0 : 0; }
+    function ovLevelNet(list, role, defaultRate){
+      let net = 0;
+      list.forEach(p=>{
+        const rate = p.commission_rate || defaultRate;
+        buyers.filter(b=>b.input_by_role===role && b.input_by_id===p.id).forEach(b=>{
+          const g = ovUnitTCP(b.unit_id) * rate/100;
+          net += g - (g*0.10) - (g*0.03);
+        });
+      });
+      return net;
+    }
+    const totalNetCommission = ovLevelNet(approvedAgents,'agent',2.0) + ovLevelNet(tls,'team_leader',3.0) + ovLevelNet(sms,'sales_manager',3.25) + ovLevelNet(ums,'unit_manager',4.0);
+
+    document.getElementById('ovHeroStats').innerHTML =
+      ovHeroCard({ icon: OV_ICONS.trendUp, label:'Total Sales Value', value: peso(totalSalesValue), accent:'#ea580c', sub: `${buyers.length} client${buyers.length===1?'':'s'} recorded` }) +
+      ovHeroCard({ icon: OV_ICONS.banknote, label:'Total Net Commission', value: peso(totalNetCommission), accent:'#16a34a', sub: 'After withholding & percentage tax' });
+
+    document.getElementById('ovSecondaryStats').innerHTML =
+      ovSecondaryCard({ icon: OV_ICONS.userCheck, label:'Approved Agents', value: approvedAgents.length, accent:'#16a34a' }) +
+      ovSecondaryCard({ icon: OV_ICONS.clock, label:'Pending Applications', value: pending.length, accent: pending.length>0?'#ca8a04':'#9ca3af' }) +
+      ovSecondaryCard({ icon: OV_ICONS.users, label:'Total Clients', value: buyers.length, accent:'#111827' }) +
+      ovSecondaryCard({ icon: OV_ICONS.layers, label:'Team Managers', value: ums.length + sms.length + tls.length, accent:'#111827' });
+
+    document.getElementById('ovPortfolioScale').textContent = `${devs.length} developers · ${props.length} properties · ${units.length} units`;
 
     // Units per Status bar
     const totalUnits = units.length || 1;
@@ -1171,6 +1287,85 @@ async function renderOverview(){
     document.getElementById('unitsStatusLegend').innerHTML = segs.map(s => `
       <div><p class="text-lg font-bold" style="color:${s.color}">${s.count}</p><p class="text-xs text-gray-500">${s.label}</p></div>
     `).join('');
+
+    // ── Sales Trend (last 6 months) ──
+    const salesByMonth = {};
+    buyers.forEach(b=>{
+      const d = new Date(b.created_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      salesByMonth[key] = (salesByMonth[key]||0) + ovUnitTCP(b.unit_id);
+    });
+    const monthKeys = Object.keys(salesByMonth).sort().slice(-6);
+    const monthLabels = monthKeys.map(k=>{
+      const [y,m] = k.split('-');
+      return new Date(Number(y), Number(m)-1, 1).toLocaleDateString('en-PH',{year:'numeric',month:'short'});
+    });
+    document.getElementById('ovSalesTrendNote').classList.toggle('hidden', monthKeys.length>=3);
+    ovSalesTrendChart = drawChart('ovSalesTrendChart', ovSalesTrendChart, {
+      type:'line',
+      data:{ labels: monthLabels, datasets:[{ label:'Sales Value', data: monthKeys.map(k=>salesByMonth[k]), borderColor:'#e2733a', backgroundColor:'rgba(226,115,58,.15)', fill:true, tension:.3, pointRadius:4 }] },
+      options:{ maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ticks:{color:'#9ca3af'}}, y:{beginAtZero:true, ticks:{color:'#9ca3af'}} } }
+    });
+
+    // ── Portfolio by Property Type ──
+    const byType = {};
+    props.forEach(p=>{ const t = p.property_type||'Unspecified'; byType[t] = (byType[t]||0)+1; });
+    ovPortfolioChart = drawChart('ovPortfolioChart', ovPortfolioChart, {
+      type:'doughnut',
+      data:{ labels: Object.keys(byType), datasets:[{ data: Object.values(byType), backgroundColor: ['#e2733a','#22c55e','#3b82f6','#a855f7','#eab308'] }] },
+      options:{ maintainAspectRatio:false, plugins:{ legend:{labels:{color:'#9ca3af'}} } }
+    });
+
+    // ── Top Performers (top 5 by personal sales value) ──
+    function ovPersonalValue(role, id){ return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id).reduce((s,b)=>s+ovUnitTCP(b.unit_id),0); }
+    const allPerformers = [
+      ...approvedAgents.map(a=>({ name:a.name, role:'Agent', value:ovPersonalValue('agent',a.id) })),
+      ...tls.map(t=>({ name:t.name, role:'Team Leader', value:ovPersonalValue('team_leader',t.id) })),
+      ...sms.map(s=>({ name:s.name, role:'Sales Manager', value:ovPersonalValue('sales_manager',s.id) })),
+      ...ums.map(u=>({ name:u.name, role:'Unit Manager', value:ovPersonalValue('unit_manager',u.id) })),
+    ].filter(p=>p.value>0).sort((a,b)=>b.value-a.value).slice(0,5);
+    document.getElementById('ovTopPerformers').innerHTML = allPerformers.map((p,i)=>`
+      <div class="px-5 py-2.5 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2.5">
+          <span class="w-5 h-5 rounded-full bg-orange-500/15 text-orange-400 flex items-center justify-center font-bold text-[10px]">${i+1}</span>
+          <div>
+            <p class="text-gray-200 font-medium">${p.name}</p>
+            <p class="text-gray-600">${p.role}</p>
+          </div>
+        </div>
+        <span class="text-orange-400 font-semibold">${peso(p.value)}</span>
+      </div>
+    `).join('') || '<div class="px-5 py-4 text-xs text-gray-600">No sales recorded yet.</div>';
+
+    // ── Low Inventory Alerts (properties with 2 or fewer Available units) ──
+    const lowStockProps = props.map(p=>{
+      const propUnits = units.filter(u=>u.property_id===p.id);
+      const availCount = propUnits.filter(u=>u.status==='Available').length;
+      const dev = devs.find(d=>d.id===p.developer_id);
+      return { name:p.name, devName: dev?dev.name:'—', avail: availCount, total: propUnits.length };
+    }).filter(p=>p.total>0 && p.avail<=2).sort((a,b)=>a.avail-b.avail);
+    document.getElementById('ovLowStock').innerHTML = lowStockProps.map(p=>`
+      <div class="px-5 py-2.5 flex items-center justify-between text-xs">
+        <div>
+          <p class="text-gray-200 font-medium">${p.name}</p>
+          <p class="text-gray-600">${p.devName}</p>
+        </div>
+        <span class="badge ${p.avail===0?'bg-red':'bg-yellow'}">${p.avail} of ${p.total} left</span>
+      </div>
+    `).join('') || '<div class="px-5 py-4 text-xs text-gray-600">No properties running low right now.</div>';
+
+    // ── Recent Commission Receivables (last 5 logged) ──
+    document.getElementById('ovRecentReceivables').innerHTML = receivables.slice(0,5).map(r=>{
+      const dev = devs.find(d=>d.id===r.developer_id);
+      return `
+      <div class="px-5 py-2.5 flex items-center justify-between text-xs">
+        <div>
+          <p class="text-gray-200 font-medium">${dev ? dev.name : '—'}</p>
+          <p class="text-gray-600">${new Date(r.release_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})} · ${r.release_type}</p>
+        </div>
+        <span class="text-orange-400 font-semibold">${peso(r.amount)}</span>
+      </div>`;
+    }).join('') || '<div class="px-5 py-4 text-xs text-gray-600">No commission releases logged yet.</div>';
 
     // Recently added units
     document.getElementById('overviewTable').innerHTML = units.slice(0,5).map(u=>`
@@ -3088,21 +3283,66 @@ function sbRenderDrill(){
 
   if(!sbDrillStack.length){
     backBtn.classList.add('hidden');
-    titleEl.textContent = 'Unit Managers';
-    grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4';
-    grid.innerHTML = umCache.map(um => {
-      const directSM = smCache.filter(s=>s.unit_manager_id===um.id);
-      const allTL = tlsUnderUM(um.id);
-      const directAgents = teamAgentsCache.filter(a=>a.unit_manager_id===um.id && !a.team_leader_id && !a.sales_manager_id);
-      const agCount = directAgents.length + agentsUnderTLs(allTL.map(t=>t.id)).length + agentsUnderSMs(directSM.map(s=>s.id)).length;
-      return sbCard({
-        name: um.name, roleId: um.um_id, roleLabel: 'Unit Manager',
-        personal: personalSalesValue('unit_manager', um.id),
-        team: teamSalesOfUM(um.id),
-        subLabel: `${directSM.length} Sales Mgrs · ${allTL.length} Team Leads · ${agCount} Agents`,
-        clickable: true, onclick: `sbDrillInto('unit_manager','${um.id}','${um.name.replace(/'/g,"\\'")}')`
-      });
-    }).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No Unit Managers yet.</p>`;
+    titleEl.textContent = 'Sales Teams';
+    grid.className = 'space-y-6';
+
+    const umSection = umCache.length ? `
+      <div>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Unit Managers</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${umCache.map(um => {
+            const directSM = smCache.filter(s=>s.unit_manager_id===um.id);
+            const allTL = tlsUnderUM(um.id);
+            const directAgents = teamAgentsCache.filter(a=>a.unit_manager_id===um.id && !a.team_leader_id && !a.sales_manager_id);
+            const agCount = directAgents.length + agentsUnderTLs(allTL.map(t=>t.id)).length + agentsUnderSMs(directSM.map(s=>s.id)).length;
+            return sbCard({
+              name: um.name, roleId: um.um_id, roleLabel: 'Unit Manager',
+              personal: personalSalesValue('unit_manager', um.id),
+              team: teamSalesOfUM(um.id),
+              subLabel: `${directSM.length} Sales Mgrs · ${allTL.length} Team Leads · ${agCount} Agents`,
+              clickable: true, onclick: `sbDrillInto('unit_manager','${um.id}','${um.name.replace(/'/g,"\\'")}')`
+            });
+          }).join('')}
+        </div>
+      </div>` : '';
+
+    // Sales Managers who don't report to any Unit Manager still record their own sales — surface them too
+    const soloSMs = smCache.filter(sm=>!sm.unit_manager_id);
+    const smSection = soloSMs.length ? `
+      <div>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Sales Managers (Solo)</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${soloSMs.map(sm => {
+            const directTL = tlCache.filter(tl=>tl.sales_manager_id===sm.id);
+            const directAgents = teamAgentsCache.filter(a=>a.sales_manager_id===sm.id);
+            const agCount = directAgents.length + agentsUnderTLs(directTL.map(t=>t.id)).length;
+            return sbCard({
+              name: sm.name, roleId: sm.sm_id, roleLabel: 'Sales Manager',
+              personal: personalSalesValue('sales_manager', sm.id),
+              team: teamSalesOfSM(sm.id),
+              subLabel: `${directTL.length} Team Leads · ${agCount} Agents`,
+              clickable: true, onclick: `sbDrillInto('sales_manager','${sm.id}','${sm.name.replace(/'/g,"\\'")}')`
+            });
+          }).join('')}
+        </div>
+      </div>` : '';
+
+    // Agents with no Team Leader, Sales Manager, or Unit Manager still record their own sales — surface them too
+    const unassignedAgents = teamAgentsCache.filter(a=>!a.unit_manager_id && !a.sales_manager_id && !a.team_leader_id);
+    const agSection = unassignedAgents.length ? `
+      <div>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Unassigned Agents</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${unassignedAgents.map(a => sbCard({
+            name: a.name, roleId: a.agent_id, roleLabel: 'Agent',
+            personal: personalSalesValue('agent', a.id),
+            team: personalSalesValue('agent', a.id),
+            clickable: false
+          })).join('')}
+        </div>
+      </div>` : '';
+
+    grid.innerHTML = (umSection + smSection + agSection) || `<p class="text-center text-gray-500 text-xs py-8">No team members yet.</p>`;
     return;
   }
 
@@ -3616,6 +3856,7 @@ function doCompute(){
 // ══════════════════════════════════════
 let currentReportTab = 'sales';
 let reportChart1 = null, reportChart2 = null;
+let ovSalesTrendChart = null, ovPortfolioChart = null;
 let currentReportRows = [], currentReportHeaders = [];
 const CHART_COLORS = ['#e2733a','#22c55e','#eab308','#3b82f6','#a855f7','#ef4444','#14b8a6','#f97316'];
 
@@ -3634,6 +3875,8 @@ function switchReportTab(tab){
 function drawChart(canvasId, existingChart, config){
   if(existingChart) existingChart.destroy();
   const ctx = document.getElementById(canvasId).getContext('2d');
+  config.options = config.options || {};
+  if(config.options.maintainAspectRatio === undefined) config.options.maintainAspectRatio = false;
   return new Chart(ctx, config);
 }
 function reportCard(label, value, cls){
