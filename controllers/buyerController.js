@@ -46,19 +46,36 @@ const getTeamBuyers = async (req, res) => {
   }
 };
 
+const ROLE_TABLE_MAP = { agent: 'agents', team_leader: 'team_leaders', sales_manager: 'sales_managers', unit_manager: 'unit_managers' };
+
+// Look up the current name of whoever is creating this record, so it can be frozen onto the
+// buyer row. This way, if that person is later promoted (and their old role record is deleted),
+// historic "Sold By" displays can still show who actually made the sale at the time.
+const lookupPersonName = async (role, id) => {
+  const table = ROLE_TABLE_MAP[role];
+  if (!table) return null;
+  const { data } = await supabase.from(table).select('name').eq('id', id).single();
+  return data ? data.name : null;
+};
+
 // POST /api/buyers — any logged-in role (agent, team_leader, sales_manager, unit_manager, admin) can add a buyer
 // Linking a unit automatically marks that unit as Sold
 const createBuyer = async (req, res) => {
   try {
-    const { name, email, phone, address, unit_id } = req.body;
+    const { name, email, phone, address, unit_id, manual_property_name, manual_unit_name, manual_tcp } = req.body;
+    const input_by_name = await lookupPersonName(req.user.role, req.user.id);
 
     const { data: buyer, error } = await supabase
       .from('buyers')
       .insert([{
         name, email, phone, address,
         unit_id: unit_id || null,
+        manual_property_name: unit_id ? null : (manual_property_name || null),
+        manual_unit_name: unit_id ? null : (manual_unit_name || null),
+        manual_tcp: unit_id ? null : (manual_tcp || null),
         input_by_role: req.user.role,
         input_by_id: req.user.id,
+        input_by_name,
       }])
       .select()
       .single();
@@ -90,10 +107,17 @@ const updateBuyer = async (req, res) => {
       return res.status(403).json({ message: 'You can only edit buyers you added.' });
     }
 
-    const { name, email, phone, address, unit_id } = req.body;
+    const { name, email, phone, address, unit_id, manual_property_name, manual_unit_name, manual_tcp } = req.body;
     const { data: buyer, error } = await supabase
       .from('buyers')
-      .update({ name, email, phone, address, unit_id: unit_id || null, updated_at: new Date() })
+      .update({
+        name, email, phone, address,
+        unit_id: unit_id || null,
+        manual_property_name: unit_id ? null : (manual_property_name || null),
+        manual_unit_name: unit_id ? null : (manual_unit_name || null),
+        manual_tcp: unit_id ? null : (manual_tcp || null),
+        updated_at: new Date()
+      })
       .eq('id', req.params.id)
       .select()
       .single();

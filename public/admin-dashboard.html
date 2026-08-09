@@ -556,7 +556,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
   <div class="modal-box">
     <button onclick="closeModal('promoteModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
     <h3 class="font-bold text-lg mb-1">Promote to Team Leader</h3>
-    <p class="text-xs text-gray-500 mb-4">Are you sure you want to promote <span id="promoteAgentName" class="text-white font-semibold"></span> to Team Leader? Their sales and commission history will carry over. They'll get a new TL-ID but keep their existing password.</p>
+    <p class="text-xs text-gray-500 mb-4">Are you sure you want to promote <span id="promoteAgentName" class="text-white font-semibold"></span> to Team Leader? Their past sales stay recorded under their agent-era history and won't count toward their new Team Leader commission — this is a clean break. They'll get a new TL-ID but keep their existing password.</p>
     <div class="space-y-3">
       <input id="promoteAgentId" type="hidden">
       <div><label class="text-xs text-gray-400 mb-1 block">Sales Manager (optional)</label><select id="promoteSM" class="field" onchange="onPromoteSMChange()"><option value="">— None —</option></select></div>
@@ -575,7 +575,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
   <div class="modal-box">
     <button onclick="closeModal('promoteTLModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
     <h3 class="font-bold text-lg mb-1">Promote to Sales Manager</h3>
-    <p class="text-xs text-gray-500 mb-4">Are you sure you want to promote <span id="promoteTLName" class="text-white font-semibold"></span> to Sales Manager? Their sales and commission history will carry over. They'll get a new SM-ID but keep their existing password.</p>
+    <p class="text-xs text-gray-500 mb-4">Are you sure you want to promote <span id="promoteTLName" class="text-white font-semibold"></span> to Sales Manager? Their past sales stay recorded under their Team Leader-era history and won't count toward their new Sales Manager commission — this is a clean break. They'll get a new SM-ID but keep their existing password.</p>
     <div class="space-y-3">
       <input id="promoteTLId" type="hidden">
       <div><label class="text-xs text-gray-400 mb-1 block">Unit Manager (optional — leave blank for Solo)</label><select id="promoteTLUM" class="field"><option value="">— Solo (no Unit Manager) —</option></select></div>
@@ -592,7 +592,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
   <div class="modal-box">
     <button onclick="closeModal('promoteSMModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
     <h3 class="font-bold text-lg mb-1">Promote to Unit Manager</h3>
-    <p class="text-xs text-gray-500 mb-4">Are you sure you want to promote <span id="promoteSMName" class="text-white font-semibold"></span> to Unit Manager? Their sales and commission history will carry over. They'll get a new UM-ID but keep their existing password. Unit Manager is the top of the hierarchy, so there's nothing else to assign.</p>
+    <p class="text-xs text-gray-500 mb-4">Are you sure you want to promote <span id="promoteSMName" class="text-white font-semibold"></span> to Unit Manager? Their past sales stay recorded under their Sales Manager-era history and won't count toward their new Unit Manager commission — this is a clean break. They'll get a new UM-ID but keep their existing password. Unit Manager is the top of the hierarchy, so there's nothing else to assign.</p>
     <input id="promoteSMId" type="hidden">
     <div class="flex gap-3 pt-2">
       <button onclick="closeModal('promoteSMModal')" class="flex-1 bg-white/5 hover:bg-white/10 py-2.5 rounded-lg font-semibold text-sm transition-colors">No, cancel</button>
@@ -3261,7 +3261,9 @@ async function renderBuyers(){
     // Raw client list (Buyer Dashboard tab)
     document.getElementById('buyersBody').innerHTML = withUnit.map(b => {
       const person = b.input_by_role ? resolvePerson(b.input_by_role, b.input_by_id) : null;
-      const addedBy = person ? `${person.name} (${ROLE_LABEL[b.input_by_role]})` : '—';
+      const addedBy = person
+        ? `${person.name} (${ROLE_LABEL[b.input_by_role]})`
+        : (b.input_by_name ? `${b.input_by_name} (former ${ROLE_LABEL[b.input_by_role]||'—'})` : '—');
       const reportsTo = b.input_by_role ? resolveReportsTo(b.input_by_role, b.input_by_id) : '—';
       return `
       <tr>
@@ -3399,11 +3401,12 @@ const REC_ROLE_LABEL = { agent:'Agent', team_leader:'Team Leader', sales_manager
 function sellerLabelForBuyer(b){
   if(!b.input_by_role) return '— Unknown seller —';
   const person = resolveSellerPerson(b.input_by_role, b.input_by_id);
-  const sellerName = person ? person.name : 'Unknown';
+  const sellerName = person ? person.name : (b.input_by_name || 'Unknown');
+  const roleTag = person ? REC_ROLE_LABEL[b.input_by_role] : `former ${REC_ROLE_LABEL[b.input_by_role]}`;
   const unit = receivablesUnitsCache.find(u=>u.id===b.unit_id);
   const prop = unit ? receivablesPropsCache.find(p=>p.id===unit.property_id) : null;
   const context = prop ? ` — ${prop.name}${unit ? ' / ' + unit.unit_name : ''}` : '';
-  return `${sellerName} (${REC_ROLE_LABEL[b.input_by_role]})${context}`;
+  return `${sellerName} (${roleTag})${context}`;
 }
 
 async function renderReceivables(){
