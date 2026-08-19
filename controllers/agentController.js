@@ -1,4 +1,5 @@
 const supabase = require('../config/db');
+const bcrypt = require('bcryptjs');
 
 // GET /api/agents — get all agents (admin only)
 const getAgents = async (req, res) => {
@@ -9,6 +10,32 @@ const getAgents = async (req, res) => {
 
     if (error) throw error;
     res.json(agents);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+// POST /api/agents — admin directly creates an already-approved agent
+// (bypasses the public Register -> Pending Agents approval flow)
+const createAgent = async (req, res) => {
+  try {
+    const { name, email, phone, password, team_leader_id, sales_manager_id, unit_manager_id, commission_rank, commission_rate } = req.body;
+    if (!name) return res.status(400).json({ message: 'Name is required.' });
+    const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
+    const agent_id = 'AGT-' + String(Date.now()).slice(-5);
+    const { data, error } = await supabase.from('agents').insert([{
+      agent_id, name, email, phone,
+      team_leader_id: team_leader_id || null,
+      sales_manager_id: sales_manager_id || null,
+      unit_manager_id: unit_manager_id || null,
+      password: hashedPassword,
+      status: 'approved',
+      commission_rank: commission_rank || 'Property Specialist',
+      commission_rate: commission_rate || 2.0,
+    }]).select('id, agent_id, name, email, phone, status, team_leader_id, sales_manager_id, unit_manager_id, commission_rank, commission_rate, created_at').single();
+    if (error) throw error;
+    res.status(201).json(data);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error.' });
@@ -129,15 +156,8 @@ const promoteAgent = async (req, res) => {
       .single();
     if (insertErr) throw insertErr;
 
-    // Carry the promoted person's sales/commission history forward: buyers they recorded
-    // as an Agent now belong to their new role, so it keeps counting toward their new dashboard.
-    const { error: reassignErr } = await supabase
-      .from('buyers')
-      .update({ input_by_role: target_role, input_by_id: newRecord.id })
-      .eq('input_by_role', 'agent')
-      .eq('input_by_id', req.params.id);
-    if (reassignErr) console.error('Failed to carry over sales history on promotion:', reassignErr);
-
+    // Deliberate clean break: sales/buyers this person recorded as an Agent stay attributed
+    // to their agent-era history and are NOT carried into their new role's commission totals.
     const { error: deleteErr } = await supabase.from('agents').delete().eq('id', req.params.id);
     if (deleteErr) throw deleteErr;
 
@@ -167,4 +187,4 @@ const setAgentRank = async (req, res) => {
   }
 };
 
-module.exports = { getAgents, updateStatus, deleteAgent, promoteAgent, setAgentRank };
+module.exports = { getAgents, createAgent, updateStatus, deleteAgent, promoteAgent, setAgentRank };

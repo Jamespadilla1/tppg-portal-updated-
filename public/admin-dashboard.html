@@ -700,6 +700,39 @@ tr:hover td{background:rgba(0,0,0,.02)}
   </div>
 </div>
 
+<!-- ADD AGENT (direct, admin-created, already approved) -->
+<div id="addAgentModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('addAgentModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Add Agent</h3>
+    <div class="space-y-3">
+      <div><label class="text-xs text-gray-400 mb-1 block">Full Name *</label><input id="agName" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Email * (used for login)</label><input id="agEmail" type="email" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="agPhone" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Password *</label><input id="agPassword" type="password" class="field" placeholder="Set a login password"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Reports To (optional)</label><select id="agReportType" class="field" onchange="toggleAgentReportTarget()">
+        <option value="">— Unassigned —</option>
+        <option value="team_leader">Team Leader</option>
+        <option value="sales_manager">Sales Manager</option>
+        <option value="unit_manager">Unit Manager</option>
+      </select></div>
+      <div id="agTLRow" class="hidden"><select id="agTL" class="field"></select></div>
+      <div id="agSMRow" class="hidden"><select id="agSM" class="field"></select></div>
+      <div id="agUMRow" class="hidden"><select id="agUM" class="field"></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Commission Rank</label>
+        <select id="agRank" class="field" onchange="document.getElementById('agRate').value = this.selectedOptions[0].dataset.rate">
+          <option value="Property Specialist" data-rate="2.0">Property Specialist (2.0%)</option>
+          <option value="Junior PS" data-rate="2.5">Junior PS (2.5%)</option>
+          <option value="Senior PS" data-rate="2.75">Senior PS (2.75%)</option>
+        </select>
+        <input id="agRate" type="hidden" value="2.0">
+      </div>
+      <p id="agErr" class="text-red-400 text-xs hidden">Name, email, and password are required.</p>
+      <button onclick="saveAgentDirect()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Agent</button>
+    </div>
+  </div>
+</div>
+
 <div id="addDevModal" class="modal-backdrop">
   <div class="modal-box">
     <button onclick="closeModal('addDevModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
@@ -2421,7 +2454,9 @@ function renderTeamsView(){
     renderTeamLeaders();
   } else {
     hint.textContent = 'Approved agents, grouped by who they report to.';
-    addBtn.style.display = 'none';
+    addBtn.textContent = '+ Add Agent';
+    addBtn.style.display = '';
+    addBtn.onclick = () => openAddAgentModal();
     renderTeamsAgents();
   }
 }
@@ -2902,6 +2937,60 @@ function toggleTLReportTarget(prefix){
   document.getElementById(prefix+'UMRow').classList.toggle('hidden', type!=='unit_manager');
   document.getElementById(prefix+'SMRow').classList.toggle('hidden', type!=='sales_manager');
 }
+
+async function openAddAgentModal(){
+  await fetchTeamStructureData();
+  document.getElementById('agTL').innerHTML = `<option value="">— Select Team Leader —</option>` + tlCache.map(tl=>`<option value="${tl.id}">${tl.name}</option>`).join('');
+  document.getElementById('agSM').innerHTML = `<option value="">— Select Sales Manager —</option>` + smCache.map(sm=>`<option value="${sm.id}">${sm.name}</option>`).join('');
+  document.getElementById('agUM').innerHTML = `<option value="">— Select Unit Manager —</option>` + umCache.map(um=>`<option value="${um.id}">${um.name}</option>`).join('');
+  ['agName','agEmail','agPhone','agPassword'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('agReportType').value = '';
+  document.getElementById('agRank').value = 'Property Specialist';
+  document.getElementById('agRate').value = '2.0';
+  toggleAgentReportTarget();
+  document.getElementById('agErr').classList.add('hidden');
+  openModal('addAgentModal');
+}
+function toggleAgentReportTarget(){
+  const type = document.getElementById('agReportType').value;
+  document.getElementById('agTLRow').classList.toggle('hidden', type!=='team_leader');
+  document.getElementById('agSMRow').classList.toggle('hidden', type!=='sales_manager');
+  document.getElementById('agUMRow').classList.toggle('hidden', type!=='unit_manager');
+}
+async function saveAgentDirect(){
+  const name = document.getElementById('agName').value.trim();
+  const email = document.getElementById('agEmail').value.trim();
+  const password = document.getElementById('agPassword').value;
+  if(!name || !email || !password){ document.getElementById('agErr').classList.remove('hidden'); return; }
+  document.getElementById('agErr').classList.add('hidden');
+
+  const reportType = document.getElementById('agReportType').value;
+  const payload = {
+    name, email,
+    phone: document.getElementById('agPhone').value.trim(),
+    password,
+    team_leader_id: reportType==='team_leader' ? (document.getElementById('agTL').value || null) : null,
+    sales_manager_id: reportType==='sales_manager' ? (document.getElementById('agSM').value || null) : null,
+    unit_manager_id: reportType==='unit_manager' ? (document.getElementById('agUM').value || null) : null,
+    commission_rank: document.getElementById('agRank').value,
+    commission_rate: parseFloat(document.getElementById('agRate').value),
+  };
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch('/api/agents', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error('Failed to save agent');
+    closeModal('addAgentModal');
+    renderTeamsAgents();
+  } catch(err) {
+    console.error('Error saving agent:', err);
+    alert('Failed to save agent.');
+  }
+}
+
 async function renderTeamLeaders(){
   await fetchTeamStructureData();
   const umOptions = umCache.map(um=>`<option value="${um.id}">${um.name}</option>`).join('');
