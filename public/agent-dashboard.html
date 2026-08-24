@@ -22,6 +22,13 @@
 <style>
   * { font-family:'DM Sans',sans-serif; }
   ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px}
+  #toastStack{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+  .toast{display:flex;align-items:center;gap:10px;background:#ffffff;border:1px solid #e5e7eb;border-left:4px solid #16a34a;border-radius:10px;padding:12px 16px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:260px;max-width:340px;opacity:0;transform:translateX(24px) scale(.96);transition:all .3s cubic-bezier(.34,1.56,.64,1);pointer-events:auto}
+  .toast.toast-in{opacity:1;transform:translateX(0) scale(1)}
+  .toast.toast-out{opacity:0;transform:translateX(24px) scale(.96)}
+  .toast-icon{width:26px;height:26px;border-radius:50%;background:rgba(34,197,94,.12);color:#16a34a;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;font-weight:700}
+  .toast-text{font-size:.82rem;color:#111827;font-weight:500;line-height:1.3}
+  .toast-sub{font-size:.72rem;color:#6b7280;margin-top:1px}
   .nav-link{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#6b7280;font-size:.875rem;cursor:pointer;transition:all .15s;user-select:none}
   .nav-link:hover{background:rgba(0,0,0,.045);color:#111827}
   .nav-link.active{background:rgba(249,115,22,.1);color:#ea580c}
@@ -41,10 +48,6 @@
   .modal-box{background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;width:100%;max-width:480px;padding:28px;position:relative;max-height:92vh;overflow-y:auto;color:#111827}
   .field:focus{border-color:#f97316}
   .field::placeholder{color:#9ca3af}
-  .combo-list{position:absolute;z-index:30;top:100%;left:0;right:0;margin-top:4px;max-height:190px;overflow-y:auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.1)}
-  .combo-item{padding:9px 13px;font-size:.875rem;color:#111827;cursor:pointer}
-  .combo-item:hover,.combo-item.active{background:#fff7ed;color:#c2410c}
-  .combo-empty{padding:10px 13px;font-size:.8rem;color:#9ca3af}
   tr:hover td{background:rgba(0,0,0,.02)}
   .org-wrap{display:flex;flex-direction:column;align-items:center;padding:20px 0 10px}
   .org-root{opacity:0;transform:translateY(-10px) scale(.95);transition:all .35s ease}
@@ -251,7 +254,7 @@
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase tracking-wide border-b border-white/8">
-            <th class="text-left px-4 py-3">Client Name</th><th class="text-left px-4 py-3">Email</th><th class="text-left px-4 py-3">Phone</th><th class="text-left px-4 py-3">Developer</th><th class="text-left px-4 py-3">Property</th><th class="text-left px-4 py-3">Type</th><th class="text-left px-4 py-3">TCP</th><th class="text-left px-4 py-3">Added By</th><th class="text-left px-4 py-3">Reports To</th>
+            <th class="text-left px-4 py-3">Client Name</th><th class="text-left px-4 py-3">Email</th><th class="text-left px-4 py-3">Phone</th><th class="text-left px-4 py-3">Developer</th><th class="text-left px-4 py-3">Property</th><th class="text-left px-4 py-3">Type</th><th class="text-left px-4 py-3">Unit</th><th class="text-left px-4 py-3">Bedrooms</th><th class="text-left px-4 py-3">Furnishing</th><th class="text-left px-4 py-3">TCP</th><th class="text-left px-4 py-3">Added By</th><th class="text-left px-4 py-3">Reports To</th>
           </tr></thead>
           <tbody id="salesBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
@@ -268,26 +271,16 @@
           <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="bEmail" type="email" class="field"></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="bPhone" type="text" class="field"></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Address</label><input id="bAddr" type="text" class="field"></div>
-          <div class="relative">
-            <label class="text-xs text-gray-400 mb-1 block">Developer</label>
-            <input id="bDeveloperSearch" type="text" placeholder="Type to search developer…" class="field" autocomplete="off"
-              oninput="onBuyerComboInput('bDeveloper', this.value)" onfocus="onBuyerComboInput('bDeveloper', this.value)">
-            <input type="hidden" id="bDeveloper" value="">
-            <div id="bDeveloperList" class="combo-list hidden"></div>
+          <div class="flex gap-2">
+            <button type="button" id="bModeListedBtn" onclick="setBuyerUnitMode('listed')" class="flex-1 text-xs py-1.5 rounded-lg border border-orange-500/50 bg-orange-500/10 text-orange-400">Select Listed Unit</button>
+            <button type="button" id="bModeManualBtn" onclick="setBuyerUnitMode('manual')" class="flex-1 text-xs py-1.5 rounded-lg border border-white/10 text-gray-400 hover:text-white">Manual Entry</button>
           </div>
-          <div class="relative">
-            <label class="text-xs text-gray-400 mb-1 block">Property</label>
-            <input id="bPropertySearch" type="text" placeholder="Select a developer first…" class="field" autocomplete="off" disabled
-              oninput="onBuyerComboInput('bProperty', this.value)" onfocus="onBuyerComboInput('bProperty', this.value)">
-            <input type="hidden" id="bProperty" value="">
-            <div id="bPropertyList" class="combo-list hidden"></div>
-          </div>
-          <div class="relative">
-            <label class="text-xs text-gray-400 mb-1 block">Unit</label>
-            <input id="bUnitSearch" type="text" placeholder="Select a property first…" class="field" autocomplete="off" disabled
-              oninput="onBuyerComboInput('bUnit', this.value)" onfocus="onBuyerComboInput('bUnit', this.value)">
-            <input type="hidden" id="bUnit" value="">
-            <div id="bUnitList" class="combo-list hidden"></div>
+          <div id="bListedRow"><label class="text-xs text-gray-400 mb-1 block">Unit Purchased</label><select id="bUnit" class="field"><option value="">— None selected —</option></select></div>
+          <div id="bManualRows" class="hidden space-y-3">
+            <p class="text-xs text-gray-600 italic -mt-1">Use this if the unit isn't listed in the system yet (off-catalog sale). This still counts toward your sales and commission.</p>
+            <div><label class="text-xs text-gray-400 mb-1 block">Property Name</label><input id="bManualProp" type="text" class="field" placeholder="e.g. Avenir Iloilo"></div>
+            <div><label class="text-xs text-gray-400 mb-1 block">Unit Name</label><input id="bManualUnit" type="text" class="field" placeholder="e.g. Unit 305"></div>
+            <div><label class="text-xs text-gray-400 mb-1 block">TCP (₱)</label><input id="bManualTCP" type="text" inputmode="numeric" class="field" placeholder="3,500,000" oninput="formatMoneyInput(this)"></div>
           </div>
           <p id="bErr" class="text-red-400 text-xs hidden">Name is required.</p>
           <button onclick="saveBuyer()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Client</button>
@@ -557,13 +550,9 @@ document.addEventListener('DOMContentLoaded', () => {
           ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-400 text-xs">No photo</span>`}
         </div>
         <div class="p-3 space-y-1">
-          <div class="flex items-start justify-between gap-2">
-            <p class="font-semibold text-sm leading-tight">${p.name}</p>
-            <span class="badge ${p.selling_status==='Pre-selling'?'badge-yellow':'badge-green'} shrink-0">${p.selling_status||'RFO'}</span>
-          </div>
+          <p class="font-semibold text-sm">${p.name}</p>
           <p class="text-xs text-gray-500">${p.location||'—'}</p>
           <p class="text-xs text-gray-500">${p.property_type||'Condo'}</p>
-          ${p.selling_status==='Pre-selling' && p.turnover_date ? `<p class="text-xs text-gray-500">Turnover: ${new Date(p.turnover_date).toLocaleDateString('en-PH',{year:'numeric',month:'short'})}</p>` : ''}
           ${(p.latitude && p.longitude) ? `
           <div class="pt-1">
             <iframe src="https://www.openstreetmap.org/export/embed.html?bbox=${(+p.longitude-0.01)}%2C${(+p.latitude-0.007)}%2C${(+p.longitude+0.01)}%2C${(+p.latitude+0.007)}&layer=mapnik&marker=${p.latitude}%2C${p.longitude}" class="w-full h-24 rounded-lg border border-gray-200 pointer-events-none" loading="lazy"></iframe>
@@ -605,12 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="badge ${SB[u.status]} shrink-0">${u.status}</span>
           </div>
           <p class="text-orange-600 font-bold text-sm">${peso(u.tcp)}</p>
-          <p class="text-gray-500 text-xs">${bedroomLabel(u.bedrooms)}${u.bedrooms!==0 ? ' BR' : ''} · ${u.square_meters??'—'} sqm${u.lot_type?' · '+u.lot_type:''}</p>
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="badge badge-blue text-xs">${u.furnishing||'Bare Unit'}</span>
-            <span class="badge ${u.construction_status==='Under Construction'?'badge-yellow':(u.construction_status==='Pre-selling'?'badge-blue':'badge-green')} text-xs">${u.construction_status||'RFO'}</span>
-          </div>
-          ${['Under Construction','Pre-selling'].includes(u.construction_status) && u.estimated_finish_date ? `<p class="text-gray-500 text-xs">Est. finish: ${new Date(u.estimated_finish_date).toLocaleDateString('en-PH',{year:'numeric',month:'short'})}</p>` : ''}
+          <p class="text-gray-500 text-xs">${bedroomLabel(u.bedrooms)}${u.bedrooms!==0 ? ' BR' : ''} · ${u.square_meters??'—'} sqm</p>
         </div>
       </div>`).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No units yet for ${propCurrentPropName}.</p>`;
     document.getElementById('unitsListCount').textContent = `Showing ${filtered.length} of ${all.length} units`;
@@ -643,24 +627,17 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
       <p class="text-gray-500 text-sm mb-3">${propCurrentPropName}</p>
       <div class="grid grid-cols-2 gap-3 mb-3">
+        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">TCP</p><p class="font-bold">${peso(u.tcp)}</p></div>
         <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Bedrooms</p><p class="font-bold">${bedroomLabel(u.bedrooms)}</p></div>
         <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Square Meters</p><p class="font-bold">${u.square_meters??'—'}</p></div>
-        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Lot Position</p><p class="font-bold">${u.lot_type||'—'}</p></div>
         <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Furnishing</p><p class="font-bold">${u.furnishing||'Bare Unit'}</p></div>
-        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Construction Status</p><p class="font-bold">${u.construction_status||'RFO'}</p></div>
-        ${['Under Construction','Pre-selling'].includes(u.construction_status) && u.estimated_finish_date ? `<div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Est. Finish Date</p><p class="font-bold">${new Date(u.estimated_finish_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})}</p></div>` : ''}
       </div>
-      <div class="rounded-xl bg-orange-50 border border-orange-200 p-4 mb-3 space-y-2">
-        <div class="flex justify-between items-center"><p class="text-xs text-gray-500 uppercase tracking-wide">TCP (Total Contract Price)</p><p class="text-lg font-bold text-orange-600">${peso(u.tcp)}</p></div>
-        <div class="flex justify-between items-center"><p class="text-xs text-gray-500">Reservation Fee</p><p class="text-sm font-semibold">${u.reservation_fee ? peso(u.reservation_fee) : '—'}</p></div>
-        <div class="flex justify-between items-center"><p class="text-xs text-gray-500">Full Downpayment</p><p class="text-sm font-semibold">${u.downpayment ? peso(u.downpayment) : '—'}</p></div>
-        <div class="flex justify-between items-center"><p class="text-xs text-gray-500">Monthly DP</p><p class="text-sm font-semibold">${monthlyDP ? peso(monthlyDP) : '—'}</p></div>
-        <div class="flex justify-between items-center"><p class="text-xs text-gray-500">Downpayment Terms</p><p class="text-sm font-semibold">${u.downpayment ? terms + ' months' : '—'}</p></div>
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Reservation Fee</p><p class="font-bold">${u.reservation_fee ? peso(u.reservation_fee) : '—'}</p></div>
+        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Full Downpayment</p><p class="font-bold">${u.downpayment ? peso(u.downpayment) : '—'}</p></div>
+        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Monthly DP</p><p class="font-bold">${monthlyDP ? peso(monthlyDP) : '—'}</p></div>
+        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Downpayment Terms</p><p class="font-bold">${u.downpayment ? terms + ' months' : '—'}</p></div>
       </div>
-      ${u.computation_image_url ? `
-      <p class="text-gray-500 text-xs mb-1">Computation</p>
-      <img src="${u.computation_image_url}" class="w-full rounded-lg border border-gray-200 mb-4">
-      ` : ''}
       <p class="text-gray-500 text-xs mb-1">Description</p>
       <p class="text-gray-700 text-sm">${u.description||'No description provided.'}</p>
     `;
@@ -745,11 +722,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── COMMISSION (real: rank/rate from Admin, computed from actual sales) ──
+  function saleTCP(b){
+    if(b.unit) return Number(b.unit.tcp) || 0;
+    if(b.manual_tcp) return Number(b.manual_tcp) || 0;
+    return 0;
+  }
+  function salePropertyLabel(b){
+    if(b.property) return `${b.property.name}${b.unit ? ' / ' + b.unit.unit_name : ''}`;
+    if(b.manual_property_name || b.manual_unit_name) return `${b.manual_property_name||'—'}${b.manual_unit_name ? ' / ' + b.manual_unit_name : ''} (manual)`;
+    return '—';
+  }
   async function renderCommission() {
     const rank = localStorage.getItem('commissionRank') || '—';
     const rate = parseFloat(localStorage.getItem('commissionRate')) || 0;
     const { buyers } = await fetchMyClientsData();
-    const tcn = buyers.reduce((s,b)=> s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
+
+  const tcn = buyers.reduce((s,b)=> s + saleTCP(b), 0);
     const gross = tcn * rate / 100;
     const withholding = gross * 0.10;
     const percTax = gross * 0.03;
@@ -769,8 +757,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('incentiveBody').innerHTML = withIncentive.map(b => `
       <tr>
         <td class="px-6 py-3 font-medium text-white text-xs">${b.name}</td>
-        <td class="px-6 py-3 text-gray-400 text-xs">${b.property ? b.property.name : '—'}${b.unit ? ' / ' + b.unit.unit_name : ''}</td>
-        <td class="px-6 py-3 text-orange-400 text-xs">${b.unit ? peso(b.unit.tcp) : '—'}</td>
+        <td class="px-6 py-3 text-gray-400 text-xs">${salePropertyLabel(b)}</td>
+        <td class="px-6 py-3 text-orange-400 text-xs">${saleTCP(b) ? peso(saleTCP(b)) : '—'}</td>
         <td class="px-6 py-3 text-purple-400 font-semibold text-xs">${peso(b.incentive_amount)}</td>
       </tr>`).join('') || `<tr><td colspan="4" class="px-6 py-5 text-center text-gray-500 text-xs">No incentives recorded yet.</td></tr>`;
 
@@ -811,8 +799,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── SALES / MY CLIENTS (real data) ──
-  let myUnitsCache = [], myBuyersWithUnit = [], myDevsCache = [], myPropsCache = [];
-  let buyerSelectData = { bDeveloper: [], bProperty: [], bUnit: [] };
+  let myUnitsCache = [], myBuyersWithUnit = [];
 
   async function fetchMyClientsData(){
     const [buyersRes, unitsRes, propsRes, devsRes] = await Promise.all([
@@ -825,8 +812,6 @@ document.addEventListener('DOMContentLoaded', () => {
     myUnitsCache = await unitsRes.json();
     const propsCache = await propsRes.json();
     const devsCache  = await devsRes.json();
-    myPropsCache = propsCache;
-    myDevsCache  = devsCache;
     myBuyersWithUnit = buyers.map(b => {
       const unit = myUnitsCache.find(u=>u.id===b.unit_id);
       const property = unit ? propsCache.find(p=>p.id===unit.property_id) : null;
@@ -857,12 +842,12 @@ document.addEventListener('DOMContentLoaded', () => {
       else if(mySMId){ const sm = smCache.find(s=>s.id===mySMId); if(sm) reportsTo = `${sm.name} (Sales Manager)`; }
       else if(myUMId){ const um = umCache.find(u=>u.id===myUMId); if(um) reportsTo = `${um.name} (Unit Manager)`; }
 
-      const totalValue = withUnit.reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
-      const best = withUnit.length ? withUnit.reduce((a,b)=> (b.unit && (!a.unit || Number(b.unit.tcp)>Number(a.unit.tcp))) ? b : a) : null;
+      const totalValue = withUnit.reduce((s,b)=>s + saleTCP(b), 0);
+      const best = withUnit.length ? withUnit.reduce((a,b)=> (saleTCP(b) > saleTCP(a)) ? b : a) : null;
 
       document.getElementById('salesCount').textContent = withUnit.length;
       document.getElementById('salesRev').textContent   = peso(totalValue);
-      document.getElementById('salesBest').textContent  = best && best.unit ? best.unit.unit_name : '—';
+      document.getElementById('salesBest').textContent  = best ? (best.unit ? best.unit.unit_name : (best.manual_unit_name || best.manual_property_name || '—')) : '—';
 
       document.getElementById('salesBody').innerHTML = withUnit.map(b => `
         <tr>
@@ -870,94 +855,22 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="px-4 py-4 text-gray-400">${b.email||'—'}</td>
           <td class="px-4 py-4 text-gray-400">${b.phone||'—'}</td>
           <td class="px-4 py-4 text-gray-400">${b.developer ? b.developer.name : '—'}</td>
-          <td class="px-4 py-4 text-gray-400">${b.property ? b.property.name : '—'}</td>
-          <td class="px-4 py-4 text-gray-400">${b.property ? b.property.property_type : '—'}</td>
-          <td class="px-4 py-4 text-orange-400">${b.unit ? peso(b.unit.tcp) : '—'}</td>
+          <td class="px-4 py-4 text-gray-400">${b.property ? b.property.name : (b.manual_property_name || '—')}</td>
+          <td class="px-4 py-4 text-gray-400">${b.property ? b.property.property_type : (b.manual_tcp ? 'Manual' : '—')}</td>
+          <td class="px-4 py-4 text-gray-400">${b.unit ? b.unit.unit_name : (b.manual_unit_name || '—')}</td>
+          <td class="px-4 py-4 text-gray-400">${b.unit ? bedroomLabel(b.unit.bedrooms) : '—'}</td>
+          <td class="px-4 py-4 text-gray-400">${b.unit ? (b.unit.furnishing||'—') : '—'}</td>
+          <td class="px-4 py-4 text-orange-400">${saleTCP(b) ? peso(saleTCP(b)) : '—'}</td>
           <td class="px-4 py-4 text-gray-400">${agentName} (Agent)</td>
           <td class="px-4 py-4 text-gray-400">${reportsTo}</td>
-        </tr>`).join('') || `<tr><td colspan="9" class="px-4 py-6 text-center text-gray-500 text-sm">No clients added yet.</td></tr>`;
+        </tr>`).join('') || `<tr><td colspan="12" class="px-4 py-6 text-center text-gray-500 text-sm">No clients added yet.</td></tr>`;
 
-      buyerSelectData.bDeveloper = myDevsCache.map(d=>({ value: d.id, label: d.name }));
+      document.getElementById('bUnit').innerHTML = `<option value="">— None selected —</option>` +
+        myUnitsCache.map(u=>`<option value="${u.id}">${u.unit_name} (${peso(u.tcp)})</option>`).join('');
     } catch(err) {
       console.error('Error loading sales/clients:', err);
     }
   }
-
-  const buyerComboPlaceholders = {
-    bDeveloper: { empty: 'No developers found', next: null },
-    bProperty:  { empty: 'No properties found', next: 'Select a developer first…' },
-    bUnit:      { empty: 'No units found', next: 'Select a property first…' },
-  };
-
-  window.onBuyerComboInput = (id, text) => {
-    const listEl = document.getElementById(id + 'List');
-    const term = (text||'').trim().toLowerCase();
-    const opts = buyerSelectData[id].filter(o=>!term || o.label.toLowerCase().includes(term));
-    if(!opts.length){
-      listEl.innerHTML = `<div class="combo-empty">${buyerComboPlaceholders[id].empty}</div>`;
-    } else {
-      listEl.innerHTML = opts.map(o=>`<div class="combo-item" onmousedown="selectBuyerCombo('${id}','${o.value}',\`${o.label.replace(/`/g,"'")}\`)">${o.label}</div>`).join('');
-    }
-    listEl.classList.remove('hidden');
-    // if the text no longer matches the previously selected value, clear the hidden value
-    const hidden = document.getElementById(id);
-    const stillMatches = buyerSelectData[id].some(o=>o.value===hidden.value && o.label===text);
-    if(!stillMatches) hidden.value = '';
-  };
-
-  window.selectBuyerCombo = (id, value, label) => {
-    document.getElementById(id).value = value;
-    document.getElementById(id + 'Search').value = label;
-    document.getElementById(id + 'List').classList.add('hidden');
-    if(id === 'bDeveloper') cascadeBuyerProperty();
-    if(id === 'bProperty')  cascadeBuyerUnit();
-  };
-
-  function cascadeBuyerProperty(){
-    const devId = document.getElementById('bDeveloper').value;
-    const propSearch = document.getElementById('bPropertySearch');
-    resetBuyerCombo('bUnit', 'Select a property first…');
-    if(!devId){
-      buyerSelectData.bProperty = [];
-      resetBuyerCombo('bProperty', 'Select a developer first…');
-      return;
-    }
-    buyerSelectData.bProperty = myPropsCache.filter(p=>p.developer_id===devId).map(p=>({ value: p.id, label: p.name }));
-    propSearch.value = '';
-    propSearch.disabled = false;
-    propSearch.placeholder = 'Type to search property…';
-  }
-
-  function cascadeBuyerUnit(){
-    const propId = document.getElementById('bProperty').value;
-    if(!propId){
-      buyerSelectData.bUnit = [];
-      resetBuyerCombo('bUnit', 'Select a property first…');
-      return;
-    }
-    buyerSelectData.bUnit = myUnitsCache.filter(u=>u.property_id===propId).map(u=>({ value: u.id, label: `${u.unit_name} (${peso(u.tcp)})` }));
-    const unitSearch = document.getElementById('bUnitSearch');
-    unitSearch.value = '';
-    unitSearch.disabled = false;
-    unitSearch.placeholder = 'Type to search unit…';
-  }
-
-  function resetBuyerCombo(id, placeholder){
-    document.getElementById(id).value = '';
-    const searchEl = document.getElementById(id + 'Search');
-    searchEl.value = '';
-    searchEl.disabled = (id !== 'bDeveloper');
-    searchEl.placeholder = placeholder;
-    document.getElementById(id + 'List').classList.add('hidden');
-  }
-
-  document.addEventListener('click', (e) => {
-    ['bDeveloper','bProperty','bUnit'].forEach(id=>{
-      const wrap = document.getElementById(id + 'Search');
-      const list = document.getElementById(id + 'List');
-      if(wrap && list && !wrap.contains(e.target) && !list.contains(e.target)) list.classList.add('hidden');
-    });
-  });
 
   window.openModal  = (id) => document.getElementById(id).classList.add('open');
   window.closeModal = (id) => document.getElementById(id).classList.remove('open');
@@ -965,12 +878,40 @@ document.addEventListener('DOMContentLoaded', () => {
     m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); });
   });
 
+  window.showToast = function(text, sub){
+    const stack = document.getElementById('toastStack');
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.innerHTML = `<div class="toast-icon">✓</div><div><div class="toast-text">${text}</div>${sub ? `<div class="toast-sub">${sub}</div>` : ''}</div>`;
+    stack.appendChild(el);
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('toast-in')));
+    setTimeout(() => {
+      el.classList.remove('toast-in');
+      el.classList.add('toast-out');
+      setTimeout(() => el.remove(), 300);
+    }, 3200);
+  };
+
+  let buyerUnitMode = 'listed';
+  window.setBuyerUnitMode = (mode) => {
+    buyerUnitMode = mode;
+    document.getElementById('bListedRow').classList.toggle('hidden', mode!=='listed');
+    document.getElementById('bManualRows').classList.toggle('hidden', mode!=='manual');
+    const listedBtn = document.getElementById('bModeListedBtn');
+    const manualBtn = document.getElementById('bModeManualBtn');
+    [listedBtn, manualBtn].forEach(b=>{ b.classList.remove('border-orange-500/50','bg-orange-500/10','text-orange-400'); b.classList.add('border-white/10','text-gray-400'); });
+    const activeBtn = mode==='listed' ? listedBtn : manualBtn;
+    activeBtn.classList.add('border-orange-500/50','bg-orange-500/10','text-orange-400'); activeBtn.classList.remove('border-white/10','text-gray-400');
+    if(mode==='listed'){ document.getElementById('bManualProp').value=''; document.getElementById('bManualUnit').value=''; document.getElementById('bManualTCP').value=''; }
+    else { document.getElementById('bUnit').value=''; }
+  };
+
   window.saveBuyer = async () => {
     const name = document.getElementById('bName').value.trim();
     if(!name){ document.getElementById('bErr').classList.remove('hidden'); return; }
     document.getElementById('bErr').classList.add('hidden');
     try {
-      await fetch('/api/buyers', {
+      const res = await fetch('/api/buyers', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -978,17 +919,18 @@ document.addEventListener('DOMContentLoaded', () => {
           email: document.getElementById('bEmail').value.trim(),
           phone: document.getElementById('bPhone').value.trim(),
           address: document.getElementById('bAddr').value.trim(),
-          unit_id: document.getElementById('bUnit').value || '',
+          unit_id: buyerUnitMode==='listed' ? (document.getElementById('bUnit').value || '') : '',
+          manual_property_name: buyerUnitMode==='manual' ? document.getElementById('bManualProp').value.trim() : '',
+          manual_unit_name: buyerUnitMode==='manual' ? document.getElementById('bManualUnit').value.trim() : '',
+          manual_tcp: buyerUnitMode==='manual' ? parseMoney(document.getElementById('bManualTCP').value) : '',
         })
       });
+      if(!res.ok) throw new Error('Save failed');
       closeModal('addBuyerModal');
-      ['bName','bEmail','bPhone','bAddr'].forEach(id=>document.getElementById(id).value='');
-      resetBuyerCombo('bDeveloper', 'Type to search developer…');
-      resetBuyerCombo('bProperty', 'Select a developer first…');
-      resetBuyerCombo('bUnit', 'Select a property first…');
-      buyerSelectData.bProperty = [];
-      buyerSelectData.bUnit = [];
+      ['bName','bEmail','bPhone','bAddr','bManualProp','bManualUnit','bManualTCP'].forEach(id=>document.getElementById(id).value='');
+      setBuyerUnitMode('listed');
       renderSales();
+      showToast('Client added successfully!', name);
     } catch(err) {
       console.error('Error saving client:', err);
       alert('Failed to save client.');
@@ -1046,5 +988,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 }); // end DOMContentLoaded
 </script>
+<div id="toastStack"></div>
 </body>
 </html>
