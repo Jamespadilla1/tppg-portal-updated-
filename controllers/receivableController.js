@@ -46,13 +46,13 @@ const getMyReceivables = async (req, res) => {
 const createReceivable = async (req, res) => {
   try {
     const { developer_id, buyer_id, amount, release_date, release_type, monthly_amount, tranche_months, notes } = req.body;
-    if (!developer_id || !buyer_id || !amount || !release_date) {
+    if (!buyer_id || !amount || !release_date) {
       return res.status(400).json({ message: 'Linked sale, amount, and release date are required.' });
     }
     const { data, error } = await supabase
       .from('commission_receivables')
       .insert([{
-        developer_id,
+        developer_id: developer_id || null,
         buyer_id,
         amount,
         release_date,
