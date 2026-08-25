@@ -254,7 +254,7 @@
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase tracking-wide border-b border-white/8">
-            <th class="text-left px-4 py-3">Client Name</th><th class="text-left px-4 py-3">Email</th><th class="text-left px-4 py-3">Phone</th><th class="text-left px-4 py-3">Developer</th><th class="text-left px-4 py-3">Property</th><th class="text-left px-4 py-3">Type</th><th class="text-left px-4 py-3">Unit</th><th class="text-left px-4 py-3">Bedrooms</th><th class="text-left px-4 py-3">Furnishing</th><th class="text-left px-4 py-3">TCP</th><th class="text-left px-4 py-3">Added By</th><th class="text-left px-4 py-3">Reports To</th>
+            <th class="text-left px-4 py-3">Client Name</th><th class="text-left px-4 py-3">Email</th><th class="text-left px-4 py-3">Phone</th><th class="text-left px-4 py-3">Project</th><th class="text-left px-4 py-3">Unit Purchased</th><th class="text-left px-4 py-3">Reservation Date</th><th class="text-left px-4 py-3">TCP</th><th class="text-left px-4 py-3">Net Selling Price</th><th class="text-left px-4 py-3">Payment Option</th><th class="text-left px-4 py-3">Booking Complete</th><th class="text-left px-4 py-3">Added By</th><th class="text-left px-4 py-3">Reports To</th>
           </tr></thead>
           <tbody id="salesBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
@@ -271,17 +271,16 @@
           <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="bEmail" type="email" class="field"></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="bPhone" type="text" class="field"></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Address</label><input id="bAddr" type="text" class="field"></div>
-          <div class="flex gap-2">
-            <button type="button" id="bModeListedBtn" onclick="setBuyerUnitMode('listed')" class="flex-1 text-xs py-1.5 rounded-lg border border-orange-500/50 bg-orange-500/10 text-orange-400">Select Listed Unit</button>
-            <button type="button" id="bModeManualBtn" onclick="setBuyerUnitMode('manual')" class="flex-1 text-xs py-1.5 rounded-lg border border-white/10 text-gray-400 hover:text-white">Manual Entry</button>
-          </div>
-          <div id="bListedRow"><label class="text-xs text-gray-400 mb-1 block">Unit Purchased</label><select id="bUnit" class="field"><option value="">— None selected —</option></select></div>
-          <div id="bManualRows" class="hidden space-y-3">
-            <p class="text-xs text-gray-600 italic -mt-1">Use this if the unit isn't listed in the system yet (off-catalog sale). This still counts toward your sales and commission.</p>
-            <div><label class="text-xs text-gray-400 mb-1 block">Property Name</label><input id="bManualProp" type="text" class="field" placeholder="e.g. Avenir Iloilo"></div>
-            <div><label class="text-xs text-gray-400 mb-1 block">Unit Name</label><input id="bManualUnit" type="text" class="field" placeholder="e.g. Unit 305"></div>
-            <div><label class="text-xs text-gray-400 mb-1 block">TCP (₱)</label><input id="bManualTCP" type="text" inputmode="numeric" class="field" placeholder="3,500,000" oninput="formatMoneyInput(this)"></div>
-          </div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Unit Purchased</label><input id="bManualUnit" type="text" class="field" placeholder="e.g. Unit 305"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Project</label><input id="bManualProp" type="text" class="field" placeholder="e.g. Avenir Iloilo"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Reservation Date</label><input id="bResDate" type="date" class="field"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Total Contract Price (₱)</label><input id="bManualTCP" type="text" inputmode="numeric" class="field" placeholder="3,500,000" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Net Selling Price (if available) (₱)</label><input id="bNSP" type="text" inputmode="numeric" class="field" placeholder="3,300,000" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Payment Option</label><input id="bPayOption" type="text" class="field" placeholder="e.g. Bank financing, 20% DP over 24 months"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Complete Booking Requirements?</label><select id="bBookingComplete" class="field">
+            <option value="false">No</option>
+            <option value="true">Yes</option>
+          </select></div>
           <p id="bErr" class="text-red-400 text-xs hidden">Name is required.</p>
           <button onclick="saveBuyer()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Client</button>
         </div>
@@ -722,14 +721,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── COMMISSION (real: rank/rate from Admin, computed from actual sales) ──
+  // Commission is computed off Net Selling Price when the agent provided one (the actual
+  // commissionable amount after adjustments); falls back to TCP/manual TCP otherwise.
   function saleTCP(b){
+    if(b.net_selling_price) return Number(b.net_selling_price) || 0;
     if(b.unit) return Number(b.unit.tcp) || 0;
     if(b.manual_tcp) return Number(b.manual_tcp) || 0;
     return 0;
   }
   function salePropertyLabel(b){
     if(b.property) return `${b.property.name}${b.unit ? ' / ' + b.unit.unit_name : ''}`;
-    if(b.manual_property_name || b.manual_unit_name) return `${b.manual_property_name||'—'}${b.manual_unit_name ? ' / ' + b.manual_unit_name : ''} (manual)`;
+    if(b.manual_property_name || b.manual_unit_name) return `${b.manual_property_name||'—'}${b.manual_unit_name ? ' / ' + b.manual_unit_name : ''}`;
     return '—';
   }
   async function renderCommission() {
@@ -854,19 +856,16 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="px-4 py-4 font-medium text-white">${b.name}</td>
           <td class="px-4 py-4 text-gray-400">${b.email||'—'}</td>
           <td class="px-4 py-4 text-gray-400">${b.phone||'—'}</td>
-          <td class="px-4 py-4 text-gray-400">${b.developer ? b.developer.name : '—'}</td>
           <td class="px-4 py-4 text-gray-400">${b.property ? b.property.name : (b.manual_property_name || '—')}</td>
-          <td class="px-4 py-4 text-gray-400">${b.property ? b.property.property_type : (b.manual_tcp ? 'Manual' : '—')}</td>
           <td class="px-4 py-4 text-gray-400">${b.unit ? b.unit.unit_name : (b.manual_unit_name || '—')}</td>
-          <td class="px-4 py-4 text-gray-400">${b.unit ? bedroomLabel(b.unit.bedrooms) : '—'}</td>
-          <td class="px-4 py-4 text-gray-400">${b.unit ? (b.unit.furnishing||'—') : '—'}</td>
-          <td class="px-4 py-4 text-orange-400">${saleTCP(b) ? peso(saleTCP(b)) : '—'}</td>
+          <td class="px-4 py-4 text-gray-400">${b.reservation_date ? new Date(b.reservation_date).toLocaleDateString() : '—'}</td>
+          <td class="px-4 py-4 text-orange-400">${b.unit ? peso(b.unit.tcp) : (b.manual_tcp ? peso(b.manual_tcp) : '—')}</td>
+          <td class="px-4 py-4 text-orange-400">${b.net_selling_price ? peso(b.net_selling_price) : '—'}</td>
+          <td class="px-4 py-4 text-gray-400">${b.payment_option || '—'}</td>
+          <td class="px-4 py-4">${b.booking_complete ? `<span class="badge badge-green">Yes</span>` : `<span class="badge badge-yellow">No</span>`}</td>
           <td class="px-4 py-4 text-gray-400">${agentName} (Agent)</td>
           <td class="px-4 py-4 text-gray-400">${reportsTo}</td>
         </tr>`).join('') || `<tr><td colspan="12" class="px-4 py-6 text-center text-gray-500 text-sm">No clients added yet.</td></tr>`;
-
-      document.getElementById('bUnit').innerHTML = `<option value="">— None selected —</option>` +
-        myUnitsCache.map(u=>`<option value="${u.id}">${u.unit_name} (${peso(u.tcp)})</option>`).join('');
     } catch(err) {
       console.error('Error loading sales/clients:', err);
     }
@@ -892,20 +891,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3200);
   };
 
-  let buyerUnitMode = 'listed';
-  window.setBuyerUnitMode = (mode) => {
-    buyerUnitMode = mode;
-    document.getElementById('bListedRow').classList.toggle('hidden', mode!=='listed');
-    document.getElementById('bManualRows').classList.toggle('hidden', mode!=='manual');
-    const listedBtn = document.getElementById('bModeListedBtn');
-    const manualBtn = document.getElementById('bModeManualBtn');
-    [listedBtn, manualBtn].forEach(b=>{ b.classList.remove('border-orange-500/50','bg-orange-500/10','text-orange-400'); b.classList.add('border-white/10','text-gray-400'); });
-    const activeBtn = mode==='listed' ? listedBtn : manualBtn;
-    activeBtn.classList.add('border-orange-500/50','bg-orange-500/10','text-orange-400'); activeBtn.classList.remove('border-white/10','text-gray-400');
-    if(mode==='listed'){ document.getElementById('bManualProp').value=''; document.getElementById('bManualUnit').value=''; document.getElementById('bManualTCP').value=''; }
-    else { document.getElementById('bUnit').value=''; }
-  };
-
   window.saveBuyer = async () => {
     const name = document.getElementById('bName').value.trim();
     if(!name){ document.getElementById('bErr').classList.remove('hidden'); return; }
@@ -919,16 +904,19 @@ document.addEventListener('DOMContentLoaded', () => {
           email: document.getElementById('bEmail').value.trim(),
           phone: document.getElementById('bPhone').value.trim(),
           address: document.getElementById('bAddr').value.trim(),
-          unit_id: buyerUnitMode==='listed' ? (document.getElementById('bUnit').value || '') : '',
-          manual_property_name: buyerUnitMode==='manual' ? document.getElementById('bManualProp').value.trim() : '',
-          manual_unit_name: buyerUnitMode==='manual' ? document.getElementById('bManualUnit').value.trim() : '',
-          manual_tcp: buyerUnitMode==='manual' ? parseMoney(document.getElementById('bManualTCP').value) : '',
+          manual_unit_name: document.getElementById('bManualUnit').value.trim(),
+          manual_property_name: document.getElementById('bManualProp').value.trim(),
+          reservation_date: document.getElementById('bResDate').value,
+          manual_tcp: parseMoney(document.getElementById('bManualTCP').value),
+          net_selling_price: parseMoney(document.getElementById('bNSP').value),
+          payment_option: document.getElementById('bPayOption').value.trim(),
+          booking_complete: document.getElementById('bBookingComplete').value === 'true',
         })
       });
       if(!res.ok) throw new Error('Save failed');
       closeModal('addBuyerModal');
-      ['bName','bEmail','bPhone','bAddr','bManualProp','bManualUnit','bManualTCP'].forEach(id=>document.getElementById(id).value='');
-      setBuyerUnitMode('listed');
+      ['bName','bEmail','bPhone','bAddr','bManualProp','bManualUnit','bManualTCP','bResDate','bNSP','bPayOption'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('bBookingComplete').value = 'false';
       renderSales();
       showToast('Client added successfully!', name);
     } catch(err) {
