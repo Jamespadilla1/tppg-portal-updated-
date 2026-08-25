@@ -414,6 +414,16 @@ tr:hover td{background:rgba(0,0,0,.02)}
         </table></div>
       </div>
 
+      <!-- CLIENT RECORDS BEHIND A COMMISSION ROW -->
+      <div id="commClientsModal" class="modal-backdrop">
+        <div class="modal-box max-w-2xl">
+          <button onclick="closeModal('commClientsModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+          <h3 class="font-bold text-lg mb-1" id="commClientsTitle">Client Records</h3>
+          <p class="text-xs text-gray-500 mb-4" id="commClientsSubtitle"></p>
+          <div id="commClientsList" class="space-y-3"></div>
+        </div>
+      </div>
+
       <!-- COMMISSION RECEIVABLES (tranches from developers) -->
       <div class="card overflow-hidden">
         <div class="px-5 py-3 border-b border-white/8 flex items-center justify-between">
@@ -3596,6 +3606,48 @@ async function deleteBuyerAdmin(id){
 // ══════════════════════════════════════
 // COMMISSION
 // ══════════════════════════════════════
+let commBuyersCache = [], commUnitsCache = [];
+
+const COMM_ROLE_LABEL = { agent: 'Agent', team_leader: 'Team Leader', sales_manager: 'Sales Manager', unit_manager: 'Unit Manager' };
+const COMM_BOOKING_LABEL = { yes: 'Yes', no: 'No' };
+
+window.openCommClientRecords = (role, id, name) => {
+  const records = commBuyersCache.filter(b => b.input_by_role===role && b.input_by_id===id);
+  document.getElementById('commClientsTitle').textContent = `${name}'s Client Records`;
+  document.getElementById('commClientsSubtitle').textContent = `${records.length} record${records.length===1?'':'s'} added by this ${COMM_ROLE_LABEL[role]||role} · pulled directly from their Add Client entries`;
+
+  document.getElementById('commClientsList').innerHTML = records.map(b=>{
+    const unit = commUnitsCache.find(u=>u.id===b.unit_id);
+    const unitName = unit ? unit.unit_name : (b.manual_unit_name || '—');
+    const projectName = unit ? '—' : (b.manual_property_name || '—');
+    const tcp = unit ? unit.tcp : b.manual_tcp;
+    const bookingLabel = b.booking_requirements_complete ? (COMM_BOOKING_LABEL[b.booking_requirements_complete] || b.booking_requirements_complete) : '—';
+    return `
+      <div class="rounded-lg border border-white/8 bg-white/4 p-4">
+        <div class="flex items-center justify-between mb-2">
+          <p class="font-semibold text-sm">${b.name}</p>
+          <span class="text-orange-400 font-semibold text-sm">${tcp ? peso(tcp) : '—'}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-gray-400">
+          <p><span class="text-gray-600">Email:</span> ${b.email || '—'}</p>
+          <p><span class="text-gray-600">Unit Purchased:</span> ${unitName}</p>
+          <p><span class="text-gray-600">Project:</span> ${projectName}</p>
+          <p><span class="text-gray-600">Reservation Date:</span> ${b.reservation_date ? new Date(b.reservation_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'}) : '—'}</p>
+          <p><span class="text-gray-600">Net Selling Price:</span> ${b.net_selling_price ? peso(b.net_selling_price) : '—'}</p>
+          <p><span class="text-gray-600">Payment Terms:</span> ${b.payment_option || '—'}</p>
+          <p><span class="text-gray-600">Booking Complete:</span> ${bookingLabel}</p>
+          <p><span class="text-gray-600">Date Added:</span> ${new Date(b.created_at).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})}</p>
+        </div>
+        ${b.payment_option==='Monthly Down Payment' ? `
+        <div class="mt-3 pt-3 border-t border-white/8">
+          <span class="badge bg-blue">Months to Pay: ${b.dp_months || '—'}</span>
+        </div>` : ''}
+      </div>`;
+  }).join('') || '<p class="text-center text-gray-500 text-xs py-8">No client records added by this person yet.</p>';
+
+  openModal('commClientsModal');
+};
+
 async function renderCommission(){
   const token = localStorage.getItem('token');
   const headers = { 'Authorization': 'Bearer ' + token };
@@ -3615,6 +3667,8 @@ async function renderCommission(){
     const tls    = await tlRes.json();
     const sms    = await smRes.json();
     const ums    = await umRes.json();
+    commBuyersCache = buyers;
+    commUnitsCache = units;
 
     const LIST_MAP = { agent: agents, team_leader: tls, sales_manager: sms, unit_manager: ums };
     const ID_FIELD_MAP = { agent: 'agent_id', team_leader: 'tl_id', sales_manager: 'sm_id', unit_manager: 'um_id' };
@@ -3623,7 +3677,7 @@ async function renderCommission(){
 
     function personalTCN(role, id){
       return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id)
-        .reduce((s,b)=>{ const u = units.find(x=>x.id===b.unit_id); return s + (u ? Number(u.tcp)||0 : 0); }, 0);
+        .reduce((s,b)=>{ const u = units.find(x=>x.id===b.unit_id); return s + (u ? Number(u.tcp)||0 : Number(b.manual_tcp)||0); }, 0);
     }
     function personalCount(role, id){
       return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id).length;
@@ -3643,7 +3697,7 @@ async function renderCommission(){
       const percentageTax = gross * 0.03;
       const net = gross - withholding - percentageTax;
       totalGross += gross; totalTax += (withholding+percentageTax); totalNet += net;
-      return { name: p.name, roleId: p[ID_FIELD_MAP[level]], rank, rate, count, tcn, gross, withholding, percentageTax, net };
+      return { id: p.id, name: p.name, roleId: p[ID_FIELD_MAP[level]], rank, rate, count, tcn, gross, withholding, percentageTax, net };
     });
 
     document.getElementById('commGross').textContent = peso(totalGross);
@@ -3651,7 +3705,7 @@ async function renderCommission(){
     document.getElementById('commNet').textContent   = peso(totalNet);
 
     document.getElementById('commBody').innerHTML = rows.map(r => `
-      <tr>
+      <tr onclick="openCommClientRecords('${level}','${r.id}','${r.name.replace(/'/g,"\\'")}')" class="cursor-pointer hover:bg-orange-500/5 transition-colors">
         <td class="px-5 py-3 font-medium text-white text-xs">${r.name}</td>
         <td class="px-5 py-3 font-mono text-xs text-gray-400">${r.roleId||'—'}</td>
         <td class="px-5 py-3 text-xs">${r.rank}</td>
