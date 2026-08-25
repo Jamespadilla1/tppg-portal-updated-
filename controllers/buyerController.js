@@ -32,7 +32,7 @@ const getTeamBuyers = async (req, res) => {
     (team.teamLeaders || []).forEach(p => people.push({ role: 'team_leader', id: p.id }));
     (team.agents || []).forEach(p => people.push({ role: 'agent', id: p.id }));
 
-    const orFilters = people.map(p => `and(input_by_role.eq.${p.role},input_by_id.eq.${p.id})`);
+    const orFilters = people.map(p => and(input_by_role.eq.${p.role},input_by_id.eq.${p.id}));
     const { data: buyers, error } = await supabase
       .from('buyers')
       .select('*')
@@ -64,24 +64,22 @@ const lookupPersonName = async (role, id) => {
 // Admin marks units Sold manually in Property Listings when appropriate.
 const createBuyer = async (req, res) => {
   try {
-    const {
-      name, email, phone, address,
-      manual_property_name, manual_unit_name, manual_tcp,
-      reservation_date, net_selling_price, payment_option, booking_complete,
-    } = req.body;
+    const { name, email, phone, address, unit_id, manual_property_name, manual_unit_name, manual_tcp, reservation_date, net_selling_price, payment_option, dp_months, booking_requirements_complete } = req.body;
     const input_by_name = await lookupPersonName(req.user.role, req.user.id);
 
     const { data: buyer, error } = await supabase
       .from('buyers')
       .insert([{
         name, email, phone, address,
-        manual_property_name: manual_property_name || null,
-        manual_unit_name: manual_unit_name || null,
-        manual_tcp: manual_tcp || null,
+        unit_id: unit_id || null,
+        manual_property_name: unit_id ? null : (manual_property_name || null),
+        manual_unit_name: unit_id ? null : (manual_unit_name || null),
+        manual_tcp: unit_id ? null : (manual_tcp || null),
         reservation_date: reservation_date || null,
         net_selling_price: net_selling_price || null,
         payment_option: payment_option || null,
-        booking_complete: !!booking_complete,
+        dp_months: payment_option === 'Monthly Down Payment' ? (dp_months || null) : null,
+        booking_requirements_complete: booking_requirements_complete || null,
         input_by_role: req.user.role,
         input_by_id: req.user.id,
         input_by_name,

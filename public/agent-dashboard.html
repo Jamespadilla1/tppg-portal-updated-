@@ -254,7 +254,7 @@
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase tracking-wide border-b border-white/8">
-            <th class="text-left px-4 py-3">Client Name</th><th class="text-left px-4 py-3">Email</th><th class="text-left px-4 py-3">Phone</th><th class="text-left px-4 py-3">Project</th><th class="text-left px-4 py-3">Unit Purchased</th><th class="text-left px-4 py-3">Reservation Date</th><th class="text-left px-4 py-3">TCP</th><th class="text-left px-4 py-3">Net Selling Price</th><th class="text-left px-4 py-3">Payment Option</th><th class="text-left px-4 py-3">Booking Complete</th><th class="text-left px-4 py-3">Added By</th><th class="text-left px-4 py-3">Reports To</th>
+            <th class="text-left px-4 py-3">Client Name</th><th class="text-left px-4 py-3">Email</th><th class="text-left px-4 py-3">Phone</th><th class="text-left px-4 py-3">Developer</th><th class="text-left px-4 py-3">Property</th><th class="text-left px-4 py-3">Type</th><th class="text-left px-4 py-3">Unit</th><th class="text-left px-4 py-3">Bedrooms</th><th class="text-left px-4 py-3">Furnishing</th><th class="text-left px-4 py-3">TCP</th><th class="text-left px-4 py-3">Reservation Date</th><th class="text-left px-4 py-3">Payment Terms</th><th class="text-left px-4 py-3">Booking Complete</th><th class="text-left px-4 py-3">Added By</th><th class="text-left px-4 py-3">Reports To</th>
           </tr></thead>
           <tbody id="salesBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
@@ -271,15 +271,26 @@
           <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="bEmail" type="email" class="field"></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="bPhone" type="text" class="field"></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Address</label><input id="bAddr" type="text" class="field"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Unit Purchased</label><input id="bManualUnit" type="text" class="field" placeholder="e.g. Unit 305"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Project</label><input id="bManualProp" type="text" class="field" placeholder="e.g. Avenir Iloilo"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Reservation Date</label><input id="bResDate" type="date" class="field"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Total Contract Price (₱)</label><input id="bManualTCP" type="text" inputmode="numeric" class="field" placeholder="3,500,000" oninput="formatMoneyInput(this)"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Net Selling Price (if available) (₱)</label><input id="bNSP" type="text" inputmode="numeric" class="field" placeholder="3,300,000" oninput="formatMoneyInput(this)"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Payment Option</label><input id="bPayOption" type="text" class="field" placeholder="e.g. Bank financing, 20% DP over 24 months"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Complete Booking Requirements?</label><select id="bBookingComplete" class="field">
-            <option value="false">No</option>
-            <option value="true">Yes</option>
+          <div class="space-y-3">
+            <div><label class="text-xs text-gray-400 mb-1 block">Project</label><input id="bManualProp" type="text" class="field" placeholder="e.g. Parc Regency"></div>
+            <div><label class="text-xs text-gray-400 mb-1 block">Unit Purchased</label><input id="bManualUnit" type="text" class="field" placeholder="e.g. Olive"></div>
+            <div><label class="text-xs text-gray-400 mb-1 block">Total Contract Price (₱)</label><input id="bManualTCP" type="text" inputmode="numeric" class="field" placeholder="3,500,000" oninput="formatMoneyInput(this)"></div>
+          </div>
+          <div class="pt-1 border-t border-white/8"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Reservation Date</label><input id="bReservationDate" type="date" class="field"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Net Selling Price (if available)</label><input id="bNetSellingPrice" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Payment Terms</label><select id="bPaymentOption" class="field" onchange="onPaymentTermsChange()">
+            <option value="">— Select —</option>
+            <option value="Monthly Down Payment">Monthly Down Payment</option>
+            <option value="Spot Cash">Spot Cash</option>
+            <option value="Full Down Payment">Full Down Payment</option>
+            <option value="Pre Selling">Pre Selling</option>
+          </select></div>
+          <div id="bDpMonthsWrap" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Number of Months to Pay</label><input id="bDpMonths" type="number" min="1" step="1" class="field" placeholder="e.g. 12"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Complete Booking Requirements</label><select id="bBookingComplete" class="field">
+            <option value="">— Select —</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
           </select></div>
           <p id="bErr" class="text-red-400 text-xs hidden">Name is required.</p>
           <button onclick="saveBuyer()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Client</button>
@@ -858,14 +869,15 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="px-4 py-4 text-gray-400">${b.phone||'—'}</td>
           <td class="px-4 py-4 text-gray-400">${b.property ? b.property.name : (b.manual_property_name || '—')}</td>
           <td class="px-4 py-4 text-gray-400">${b.unit ? b.unit.unit_name : (b.manual_unit_name || '—')}</td>
-          <td class="px-4 py-4 text-gray-400">${b.reservation_date ? new Date(b.reservation_date).toLocaleDateString() : '—'}</td>
-          <td class="px-4 py-4 text-orange-400">${b.unit ? peso(b.unit.tcp) : (b.manual_tcp ? peso(b.manual_tcp) : '—')}</td>
-          <td class="px-4 py-4 text-orange-400">${b.net_selling_price ? peso(b.net_selling_price) : '—'}</td>
-          <td class="px-4 py-4 text-gray-400">${b.payment_option || '—'}</td>
-          <td class="px-4 py-4">${b.booking_complete ? `<span class="badge badge-green">Yes</span>` : `<span class="badge badge-yellow">No</span>`}</td>
+          <td class="px-4 py-4 text-gray-400">${b.unit ? bedroomLabel(b.unit.bedrooms) : '—'}</td>
+          <td class="px-4 py-4 text-gray-400">${b.unit ? (b.unit.furnishing||'—') : '—'}</td>
+          <td class="px-4 py-4 text-orange-400">${saleTCP(b) ? peso(saleTCP(b)) : '—'}</td>
+          <td class="px-4 py-4 text-gray-400">${b.reservation_date ? new Date(b.reservation_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'}) : '—'}</td>
+          <td class="px-4 py-4 text-gray-400">${b.payment_option ? (b.payment_option + (b.payment_option==='Monthly Down Payment' && b.dp_months ? ` (${b.dp_months} mo)` : '')) : '—'}</td>
+          <td class="px-4 py-4 text-gray-400">${b.booking_requirements_complete === 'yes' ? 'Yes' : (b.booking_requirements_complete === 'no' ? 'No' : '—')}</td>
           <td class="px-4 py-4 text-gray-400">${agentName} (Agent)</td>
           <td class="px-4 py-4 text-gray-400">${reportsTo}</td>
-        </tr>`).join('') || `<tr><td colspan="12" class="px-4 py-6 text-center text-gray-500 text-sm">No clients added yet.</td></tr>`;
+        </tr>`).join('') || `<tr><td colspan="15" class="px-4 py-6 text-center text-gray-500 text-sm">No clients added yet.</td></tr>`;
     } catch(err) {
       console.error('Error loading sales/clients:', err);
     }
@@ -891,10 +903,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3200);
   };
 
+  window.onPaymentTermsChange = () => {
+    const isMonthly = document.getElementById('bPaymentOption').value === 'Monthly Down Payment';
+    document.getElementById('bDpMonthsWrap').classList.toggle('hidden', !isMonthly);
+    if(!isMonthly) document.getElementById('bDpMonths').value = '';
+  };
+
   window.saveBuyer = async () => {
     const name = document.getElementById('bName').value.trim();
     if(!name){ document.getElementById('bErr').classList.remove('hidden'); return; }
     document.getElementById('bErr').classList.add('hidden');
+    const paymentOption = document.getElementById('bPaymentOption').value.trim();
     try {
       const res = await fetch('/api/buyers', {
         method: 'POST',
@@ -904,19 +923,20 @@ document.addEventListener('DOMContentLoaded', () => {
           email: document.getElementById('bEmail').value.trim(),
           phone: document.getElementById('bPhone').value.trim(),
           address: document.getElementById('bAddr').value.trim(),
-          manual_unit_name: document.getElementById('bManualUnit').value.trim(),
           manual_property_name: document.getElementById('bManualProp').value.trim(),
-          reservation_date: document.getElementById('bResDate').value,
+          manual_unit_name: document.getElementById('bManualUnit').value.trim(),
           manual_tcp: parseMoney(document.getElementById('bManualTCP').value),
-          net_selling_price: parseMoney(document.getElementById('bNSP').value),
-          payment_option: document.getElementById('bPayOption').value.trim(),
-          booking_complete: document.getElementById('bBookingComplete').value === 'true',
+          reservation_date: document.getElementById('bReservationDate').value || null,
+          net_selling_price: document.getElementById('bNetSellingPrice').value.replace(/,/g,'').trim() || null,
+          payment_option: paymentOption,
+          dp_months: paymentOption==='Monthly Down Payment' ? (document.getElementById('bDpMonths').value || null) : null,
+          booking_requirements_complete: document.getElementById('bBookingComplete').value || null,
         })
       });
       if(!res.ok) throw new Error('Save failed');
       closeModal('addBuyerModal');
-      ['bName','bEmail','bPhone','bAddr','bManualProp','bManualUnit','bManualTCP','bResDate','bNSP','bPayOption'].forEach(id=>document.getElementById(id).value='');
-      document.getElementById('bBookingComplete').value = 'false';
+      ['bName','bEmail','bPhone','bAddr','bManualProp','bManualUnit','bManualTCP','bReservationDate','bNetSellingPrice','bPaymentOption','bDpMonths','bBookingComplete'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('bDpMonthsWrap').classList.add('hidden');
       renderSales();
       showToast('Client added successfully!', name);
     } catch(err) {
