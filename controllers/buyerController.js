@@ -32,7 +32,7 @@ const getTeamBuyers = async (req, res) => {
     (team.teamLeaders || []).forEach(p => people.push({ role: 'team_leader', id: p.id }));
     (team.agents || []).forEach(p => people.push({ role: 'agent', id: p.id }));
 
-    const orFilters = people.map(p => and(input_by_role.eq.${p.role},input_by_id.eq.${p.id}));
+    const orFilters = people.map(p => `and(input_by_role.eq.${p.role},input_by_id.eq.${p.id})`);
     const { data: buyers, error } = await supabase
       .from('buyers')
       .select('*')
@@ -59,9 +59,7 @@ const lookupPersonName = async (role, id) => {
 };
 
 // POST /api/buyers — any logged-in role (agent, team_leader, sales_manager, unit_manager, admin) can add a buyer
-// This is now a free-text sales log entry (Project / Unit Purchased / TCP typed in directly) since
-// Property Listings isn't reliably kept in sync — it no longer auto-links to or marks a real unit Sold.
-// Admin marks units Sold manually in Property Listings when appropriate.
+// Linking a unit automatically marks that unit as Sold
 const createBuyer = async (req, res) => {
   try {
     const { name, email, phone, address, unit_id, manual_property_name, manual_unit_name, manual_tcp, reservation_date, net_selling_price, payment_option, dp_months, booking_requirements_complete } = req.body;
@@ -88,6 +86,15 @@ const createBuyer = async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    if (unit_id) {
+      const { error: unitErr } = await supabase
+        .from('units')
+        .update({ status: 'Sold', updated_at: new Date() })
+        .eq('id', unit_id);
+      if (unitErr) console.error('Failed to mark unit as Sold:', unitErr);
+    }
+
     res.status(201).json(buyer);
   } catch (err) {
     console.error(err);
@@ -96,6 +103,7 @@ const createBuyer = async (req, res) => {
 };
 
 // PUT /api/buyers/:id — only the original creator or admin can edit
+// If the linked unit changes, the old unit reverts to Available and the new one is marked Sold
 const updateBuyer = async (req, res) => {
   try {
     const { data: existing } = await supabase.from('buyers').select('input_by_id, unit_id').eq('id', req.params.id).single();
@@ -104,22 +112,15 @@ const updateBuyer = async (req, res) => {
       return res.status(403).json({ message: 'You can only edit buyers you added.' });
     }
 
-    const {
-      name, email, phone, address,
-      manual_property_name, manual_unit_name, manual_tcp,
-      reservation_date, net_selling_price, payment_option, booking_complete,
-    } = req.body;
+    const { name, email, phone, address, unit_id, manual_property_name, manual_unit_name, manual_tcp } = req.body;
     const { data: buyer, error } = await supabase
       .from('buyers')
       .update({
         name, email, phone, address,
-        manual_property_name: manual_property_name || null,
-        manual_unit_name: manual_unit_name || null,
-        manual_tcp: manual_tcp || null,
-        reservation_date: reservation_date || null,
-        net_selling_price: net_selling_price || null,
-        payment_option: payment_option || null,
-        booking_complete: !!booking_complete,
+        unit_id: unit_id || null,
+        manual_property_name: unit_id ? null : (manual_property_name || null),
+        manual_unit_name: unit_id ? null : (manual_unit_name || null),
+        manual_tcp: unit_id ? null : (manual_tcp || null),
         updated_at: new Date()
       })
       .eq('id', req.params.id)
@@ -127,6 +128,20 @@ const updateBuyer = async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    const oldUnitId = existing.unit_id;
+    const newUnitId = unit_id || null;
+    if (oldUnitId !== newUnitId) {
+      if (oldUnitId) {
+        const { error: revertErr } = await supabase.from('units').update({ status: 'Available', updated_at: new Date() }).eq('id', oldUnitId);
+        if (revertErr) console.error('Failed to revert old unit to Available:', revertErr);
+      }
+      if (newUnitId) {
+        const { error: soldErr } = await supabase.from('units').update({ status: 'Sold', updated_at: new Date() }).eq('id', newUnitId);
+        if (soldErr) console.error('Failed to mark unit as Sold:', soldErr);
+      }
+    }
+
     res.json(buyer);
   } catch (err) {
     console.error(err);
