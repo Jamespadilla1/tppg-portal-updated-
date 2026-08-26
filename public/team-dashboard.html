@@ -174,11 +174,7 @@
           <h3 id="propUnitsTitle" class="font-semibold text-sm"></h3>
         </div>
         <div class="flex gap-2 flex-wrap">
-          <button onclick="filterUnitsList('all',this)"       class="filter-btn active-filter px-3 py-1.5 rounded-lg text-xs border border-orange-500/50 bg-orange-500/10 text-orange-400">All</button>
-          <button onclick="filterUnitsList('Available',this)" class="filter-btn px-3 py-1.5 rounded-lg text-xs border border-gray-200 text-gray-400 hover:text-gray-700">Available</button>
-          <button onclick="filterUnitsList('Hold',this)"      class="filter-btn px-3 py-1.5 rounded-lg text-xs border border-gray-200 text-gray-400 hover:text-gray-700">Hold</button>
-          <button onclick="filterUnitsList('Sold',this)"      class="filter-btn px-3 py-1.5 rounded-lg text-xs border border-gray-200 text-gray-400 hover:text-gray-700">Sold</button>
-          <input type="text" placeholder="Search units…" oninput="searchUnitsList(this.value)" class="field ml-auto w-40 text-xs">
+          <input type="text" placeholder="Search units…" oninput="searchUnitsList(this.value)" class="field w-full sm:w-64 text-xs">
         </div>
         <div id="propUnitGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
         <p id="unitsListCount" class="text-xs text-gray-500"></p>
@@ -353,7 +349,7 @@ window.formatMoneyInput = function(el){
   const pos = Math.max(0, el.value.length - cursorFromEnd);
   el.setSelectionRange(pos, pos);
 };
-const SB = { Available:'badge-green', Hold:'badge-yellow', Sold:'badge-red', approved:'badge-green', pending:'badge-yellow', rejected:'badge-red', suspended:'badge-red' };
+const SB = { approved:'badge-green', pending:'badge-yellow', rejected:'badge-red', suspended:'badge-red' };
 
 document.getElementById('sidebarRoleLabel').textContent = 'TPPG ' + (ROLE_LABELS[role] || '');
 document.getElementById('sidebarName').textContent = name || '—';
@@ -576,7 +572,7 @@ async function renderOverview(){
     const teamData = await loadMyTeam();
     const { buyers } = await fetchMyClientsData();
     const totalValue = buyers.reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
-    const availableUnits = myUnitsCache.filter(u=>u.status==='Available').length;
+    const availableUnits = myUnitsCache.filter(u=>(u.units_left??1)>0).length;
 
     const teamSize = role==='unit_manager' ? (teamData.salesManagers.length + teamData.teamLeaders.length + teamData.agents.length)
       : role==='sales_manager' ? (teamData.teamLeaders.length + teamData.agents.length)
@@ -602,7 +598,7 @@ async function renderOverview(){
 // ── PROPERTIES (view-only) ──
 let propAllDevs=[], propAllProps=[], propAllUnits=[];
 let propCurrentDevId=null, propCurrentDevName='', propCurrentPropId=null, propCurrentPropName='';
-let unitsListFilter='all', unitsListSearch='';
+let unitsListSearch='';
 
 async function fetchAllPropData(){
   const [devsRes, propsRes, unitsRes] = await Promise.all([
@@ -663,7 +659,7 @@ window.propViewProperty = function(id, name){
   document.getElementById('propListView').classList.add('hidden');
   document.getElementById('propUnitsView').classList.remove('hidden');
   document.getElementById('propUnitsTitle').textContent = name;
-  unitsListFilter = 'all'; unitsListSearch = '';
+  unitsListSearch = '';
   renderUnitsList();
 }
 window.propBackToProperties = function(){
@@ -673,33 +669,27 @@ window.propBackToProperties = function(){
 
 function renderUnitsList(){
   const all = propAllUnits.filter(u=>u.property_id===propCurrentPropId);
-  const filtered = all.filter(u=>{
-    const mf = unitsListFilter==='all' || u.status===unitsListFilter;
-    const ms = u.unit_name.toLowerCase().includes(unitsListSearch);
-    return mf && ms;
-  });
-  document.getElementById('propUnitGrid').innerHTML = filtered.map(u => `
-    <div onclick="viewUnitDetail('${u.id}')" class="card overflow-hidden cursor-pointer">
+  const filtered = all.filter(u=>u.unit_name.toLowerCase().includes(unitsListSearch));
+  document.getElementById('propUnitGrid').innerHTML = filtered.map(u => {
+    const left = u.units_left ?? 1;
+    const soldOut = left <= 0;
+    return `
+    <div onclick="viewUnitDetail('${u.id}')" class="card overflow-hidden cursor-pointer ${soldOut?'opacity-50':''}">
       <div class="w-full h-32 bg-gray-50 flex items-center justify-center overflow-hidden">
         ${u.image_url ? `<img src="${u.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-400 text-xs">No photo</span>`}
       </div>
       <div class="p-3 space-y-1">
         <div class="flex items-start justify-between gap-2">
           <p class="font-semibold text-sm leading-tight">${u.unit_name}</p>
-          <span class="badge ${SB[u.status]} shrink-0">${u.status}</span>
+          <span class="badge ${soldOut?'bg-red':'bg-green'} shrink-0">${soldOut ? 'Sold Out' : left + ' unit' + (left===1?'':'s') + ' left'}</span>
         </div>
         <p class="text-orange-600 font-bold text-sm">${peso(u.tcp)}</p>
         <p class="text-gray-500 text-xs">${bedroomLabel(u.bedrooms)}${u.bedrooms!==0 ? ' BR' : ''} · ${u.square_meters??'—'} sqm</p>
       </div>
-    </div>`).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No units yet for ${propCurrentPropName}.</p>`;
+    </div>`;
+  }).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No units yet for ${propCurrentPropName}.</p>`;
   document.getElementById('unitsListCount').textContent = `Showing ${filtered.length} of ${all.length} units`;
 }
-window.filterUnitsList = (val, btn) => {
-  unitsListFilter = val;
-  document.querySelectorAll('#propUnitsView .filter-btn').forEach(b=>{ b.classList.remove('active-filter','border-orange-500/50','bg-orange-500/10','text-orange-400'); b.classList.add('border-gray-200','text-gray-400'); });
-  btn.classList.add('active-filter','border-orange-500/50','bg-orange-500/10','text-orange-400'); btn.classList.remove('border-gray-200','text-gray-400');
-  renderUnitsList();
-};
 window.searchUnitsList = val => { unitsListSearch = val.toLowerCase(); renderUnitsList(); };
 
 function bedroomLabel(n){
@@ -718,7 +708,7 @@ window.viewUnitDetail = function(id){
     </div>
     <div class="flex items-start justify-between gap-2 mb-1">
       <h3 class="font-bold text-lg">${u.unit_name}</h3>
-      <span class="badge ${SB[u.status]}">${u.status}</span>
+      <span class="badge ${(u.units_left??1)<=0?'bg-red':'bg-green'}">${(u.units_left??1)<=0 ? 'Sold Out' : (u.units_left??1) + ' unit' + ((u.units_left??1)===1?'':'s') + ' left'}</span>
     </div>
     <p class="text-gray-500 text-sm mb-3">${propCurrentPropName}</p>
     <div class="grid grid-cols-2 gap-3 mb-3">
