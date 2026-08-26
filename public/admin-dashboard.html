@@ -186,7 +186,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
 
       <div class="card p-5">
         <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <h3 class="font-semibold text-sm">Units per Status</h3>
+          <h3 class="font-semibold text-sm">Units Availability</h3>
           <p class="text-xs text-gray-500" id="ovPortfolioScale"></p>
         </div>
         <div class="flex gap-1 h-3 rounded-full overflow-hidden mb-3" id="unitsStatusBar"></div>
@@ -324,11 +324,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
           <button onclick="openModal('addUnitModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Unit</button>
         </div>
         <div class="flex gap-2 flex-wrap" id="unitFilterBtns">
-          <button onclick="filterUnits('all',this)"       class="uf-btn active-uf px-3 py-1.5 rounded-lg text-xs border border-orange-500/50 bg-orange-500/10 text-orange-400">All</button>
-          <button onclick="filterUnits('Available',this)" class="uf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Available</button>
-          <button onclick="filterUnits('Hold',this)"      class="uf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Hold</button>
-          <button onclick="filterUnits('Sold',this)"      class="uf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Sold</button>
-          <input type="text" placeholder="Search units…" oninput="unitSearch=this.value.toLowerCase();renderUnits()" class="field ml-auto w-40 text-xs py-1.5">
+          <input type="text" placeholder="Search units…" oninput="unitSearch=this.value.toLowerCase();renderUnits()" class="field w-full sm:w-64 text-xs py-1.5">
         </div>
         <div id="unitGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
         <p id="unitCount" class="text-xs text-gray-500"></p>
@@ -944,7 +940,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div><label class="text-xs text-gray-400 mb-1 block">Furnishing</label><select id="uFurnish" class="field"><option value="Fully Furnished">Fully Furnished</option><option value="Semi Furnished">Semi Furnished</option><option value="Bare Unit" selected>Bare Unit</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Construction Status</label><select id="uConstStatus" class="field" onchange="document.getElementById('uFinishRow').classList.toggle('hidden', !['Under Construction','Pre-selling'].includes(this.value))"><option value="RFO">RFO</option><option value="Under Construction">Under Construction</option><option value="Pre-selling">Pre-selling</option></select></div>
       <div id="uFinishRow" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Estimated Finish Date</label><input id="uFinishDate" type="date" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="uStatus" class="field"><option value="Available">Available</option><option value="Hold">Hold</option><option value="Sold">Sold</option></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Units Available</label><input id="uUnitsLeft" type="number" min="0" class="field" placeholder="e.g. 5" value="1"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Description</label><textarea id="uDesc" class="field" placeholder="Brief unit description…"></textarea></div>
       <p id="uErr" class="text-red-400 text-xs hidden">Please fill in all required fields.</p>
       <button onclick="saveUnit()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors mt-1">Save Unit</button>
@@ -992,7 +988,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div><label class="text-xs text-gray-400 mb-1 block">Furnishing</label><select id="eUFurnish" class="field"><option value="Fully Furnished">Fully Furnished</option><option value="Semi Furnished">Semi Furnished</option><option value="Bare Unit">Bare Unit</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Construction Status</label><select id="eUConstStatus" class="field" onchange="document.getElementById('eUFinishRow').classList.toggle('hidden', !['Under Construction','Pre-selling'].includes(this.value))"><option value="RFO">RFO</option><option value="Under Construction">Under Construction</option><option value="Pre-selling">Pre-selling</option></select></div>
       <div id="eUFinishRow" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Estimated Finish Date</label><input id="eUFinishDate" type="date" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Status</label><select id="eUStatus" class="field"><option value="Available">Available</option><option value="Hold">Hold</option><option value="Sold">Sold</option></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Units Available</label><input id="eUUnitsLeft" type="number" min="0" class="field" placeholder="e.g. 5"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Description</label><textarea id="eUDesc" class="field"></textarea></div>
       <button onclick="updateUnit()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Unit</button>
     </div>
@@ -1147,7 +1143,7 @@ const saveObj = (k,d) => localStorage.setItem(k,JSON.stringify(d));
 const peso = n => '₱'+Number(n).toLocaleString('en-PH',{minimumFractionDigits:0,maximumFractionDigits:0});
 
 // ── STATUS BADGE CLASSES ──
-const SB = { Available:'bg-green', Hold:'bg-yellow', Sold:'bg-red', approved:'bg-green', pending:'bg-yellow', rejected:'bg-red', suspended:'bg-purple' };
+const SB = { approved:'bg-green', pending:'bg-yellow', rejected:'bg-red', suspended:'bg-purple' };
 
 // ── LOG ──
 function addLog(msg) {
@@ -1273,6 +1269,10 @@ function ovSecondaryCard({icon, label, value, accent}){
     </div>`;
 }
 
+let commBuyersCache = [], commUnitsCache = [];
+const COMM_ROLE_LABEL = { agent: 'Agent', team_leader: 'Team Leader', sales_manager: 'Sales Manager', unit_manager: 'Unit Manager' };
+const COMM_BOOKING_LABEL = { yes: 'Yes', no: 'No' };
+const COMM_RELEASE_TERMS = ['Full Down Payment', 'Pre Selling', 'Spot Cash'];
 let ovSalesTrendChart = null, ovPortfolioChart = null;
 
 async function renderOverview(){
@@ -1301,22 +1301,24 @@ async function renderOverview(){
     const tls    = await tlRes.json();
     const logs   = await logsRes.json();
     const receivables = await recRes.json();
+    commBuyersCache = buyers;
+    commUnitsCache = units;
 
     const approvedAgents = agents.filter(a=>a.status==='approved');
     const pending = agents.filter(a=>a.status==='pending');
-    const available = units.filter(u=>u.status==='Available');
-    const hold = units.filter(u=>u.status==='Hold');
-    const sold = units.filter(u=>u.status==='Sold');
-    const totalSalesValue = buyers.reduce((s,b)=>{ const u = units.find(x=>x.id===b.unit_id); return s + (u ? Number(u.tcp)||0 : 0); }, 0);
+    const inStock = units.filter(u=>(u.units_left??1)>0);
+    const soldOut = units.filter(u=>(u.units_left??1)<=0);
+    function ovUnitTCP(unitId){ const u = units.find(x=>x.id===unitId); return u ? Number(u.tcp)||0 : 0; }
+    function saleValue(b){ return b.net_selling_price ? Number(b.net_selling_price) : (b.unit_id ? ovUnitTCP(b.unit_id) : (Number(b.manual_tcp)||0)); }
+    const totalSalesValue = buyers.reduce((s,b)=>s + saleValue(b), 0);
 
     // Total Net Commission across all levels (same formula used in Reports > Commission Payout)
-    function ovUnitTCP(unitId){ const u = units.find(x=>x.id===unitId); return u ? Number(u.tcp)||0 : 0; }
     function ovLevelNet(list, role, defaultRate){
       let net = 0;
       list.forEach(p=>{
         const rate = p.commission_rate || defaultRate;
         buyers.filter(b=>b.input_by_role===role && b.input_by_id===p.id).forEach(b=>{
-          const g = ovUnitTCP(b.unit_id) * rate/100;
+          const g = saleValue(b) * rate/100;
           net += g - (g*0.10) - (g*0.03);
         });
       });
@@ -1336,12 +1338,11 @@ async function renderOverview(){
 
     document.getElementById('ovPortfolioScale').textContent = `${devs.length} developers · ${props.length} properties · ${units.length} units`;
 
-    // Units per Status bar
+    // Units in stock vs sold out
     const totalUnits = units.length || 1;
     const segs = [
-      { label:'Available', count: available.length, color:'#22c55e' },
-      { label:'Hold', count: hold.length, color:'#eab308' },
-      { label:'Sold', count: sold.length, color:'#ef4444' },
+      { label:'In Stock', count: inStock.length, color:'#22c55e' },
+      { label:'Sold Out', count: soldOut.length, color:'#ef4444' },
     ];
     document.getElementById('unitsStatusBar').innerHTML = segs.map(s =>
       s.count ? `<div style="width:${(s.count/totalUnits*100)}%;background:${s.color}"></div>` : ''
@@ -1355,7 +1356,7 @@ async function renderOverview(){
     buyers.forEach(b=>{
       const d = new Date(b.created_at);
       const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      salesByMonth[key] = (salesByMonth[key]||0) + ovUnitTCP(b.unit_id);
+      salesByMonth[key] = (salesByMonth[key]||0) + saleValue(b);
     });
     const monthKeys = Object.keys(salesByMonth).sort().slice(-6);
     const monthLabels = monthKeys.map(k=>{
@@ -1379,7 +1380,7 @@ async function renderOverview(){
     });
 
     // ── Top Performers (top 5 by personal sales value) ──
-    function ovPersonalValue(role, id){ return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id).reduce((s,b)=>s+ovUnitTCP(b.unit_id),0); }
+    function ovPersonalValue(role, id){ return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id).reduce((s,b)=>s+saleValue(b),0); }
     const allPerformers = [
       ...approvedAgents.map(a=>({ name:a.name, role:'Agent', value:ovPersonalValue('agent',a.id) })),
       ...tls.map(t=>({ name:t.name, role:'Team Leader', value:ovPersonalValue('team_leader',t.id) })),
@@ -1399,20 +1400,20 @@ async function renderOverview(){
       </div>
     `).join('') || '<div class="px-5 py-4 text-xs text-gray-600">No sales recorded yet.</div>';
 
-    // ── Low Inventory Alerts (properties with 2 or fewer Available units) ──
+    // ── Low Inventory Alerts (properties whose units have 2 or fewer left in total) ──
     const lowStockProps = props.map(p=>{
       const propUnits = units.filter(u=>u.property_id===p.id);
-      const availCount = propUnits.filter(u=>u.status==='Available').length;
+      const totalLeft = propUnits.reduce((s,u)=>s+(u.units_left??1>0?(u.units_left??1):0),0);
       const dev = devs.find(d=>d.id===p.developer_id);
-      return { name:p.name, devName: dev?dev.name:'—', avail: availCount, total: propUnits.length };
-    }).filter(p=>p.total>0 && p.avail<=2).sort((a,b)=>a.avail-b.avail);
+      return { name:p.name, devName: dev?dev.name:'—', left: totalLeft, total: propUnits.length };
+    }).filter(p=>p.total>0 && p.left<=2).sort((a,b)=>a.left-b.left);
     document.getElementById('ovLowStock').innerHTML = lowStockProps.map(p=>`
       <div class="px-5 py-2.5 flex items-center justify-between text-xs">
         <div>
           <p class="text-gray-200 font-medium">${p.name}</p>
           <p class="text-gray-600">${p.devName}</p>
         </div>
-        <span class="badge ${p.avail===0?'bg-red':'bg-yellow'}">${p.avail} of ${p.total} left</span>
+        <span class="badge ${p.left===0?'bg-red':'bg-yellow'}">${p.left} unit${p.left===1?'':'s'} left</span>
       </div>
     `).join('') || '<div class="px-5 py-4 text-xs text-gray-600">No properties running low right now.</div>';
 
@@ -1434,7 +1435,7 @@ async function renderOverview(){
       <tr>
         <td class="px-5 py-2 font-medium text-white text-xs">${u.unit_name}</td>
         <td class="px-5 py-2 text-xs">${peso(u.tcp)}</td>
-        <td class="px-5 py-2"><span class="badge ${SB[u.status]||'bg-blue'}">${u.status}</span></td>
+        <td class="px-5 py-2"><span class="badge ${(u.units_left??1)<=0?'bg-red':'bg-green'}">${(u.units_left??1)<=0 ? 'Sold Out' : (u.units_left??1)+' left'}</span></td>
       </tr>
     `).join('') || `<tr><td colspan="3" class="px-5 py-4 text-center text-gray-500 text-xs">No units yet.</td></tr>`;
 
@@ -1877,7 +1878,7 @@ async function deleteAgent(id) {
 // ══════════════════════════════════════
 let propSearch='', propCache=[];
 let currentDevId=null, currentDevName='', devCache=[];
-let unitFilter='all', unitSearch='', unitCache=[];
+let unitSearch='', unitCache=[];
 let currentPropId=null, currentPropName='', currentPropType='Condo';
 
 function enterProperties(){
@@ -2336,12 +2337,6 @@ async function deleteProp(id){
 }
 
 // ── LEVEL 3: UNITS (under a property) ──
-function filterUnits(val, btn){
-  unitFilter = val;
-  document.querySelectorAll('.uf-btn').forEach(b=>b.classList.remove('active-uf','border-orange-500/50','bg-orange-500/10','text-orange-400'));
-  btn.classList.add('active-uf','border-orange-500/50','bg-orange-500/10','text-orange-400');
-  renderUnits();
-}
 async function renderUnits(){
   if(!currentPropId) return;
   const token = localStorage.getItem('token');
@@ -2354,14 +2349,13 @@ async function renderUnits(){
     const all = await res.json();
     unitCache = all;
 
-    const filtered = all.filter(u => {
-      const mf = unitFilter==='all' || u.status===unitFilter;
-      const ms = u.unit_name.toLowerCase().includes(unitSearch);
-      return mf && ms;
-    });
+    const filtered = all.filter(u => u.unit_name.toLowerCase().includes(unitSearch));
 
-    document.getElementById('unitGrid').innerHTML = filtered.map(u => `
-      <div onclick="viewUnit('${u.id}')" class="card overflow-hidden cursor-pointer hover:border-orange-500/40 transition-colors">
+    document.getElementById('unitGrid').innerHTML = filtered.map(u => {
+      const left = u.units_left ?? 1;
+      const soldOut = left <= 0;
+      return `
+      <div onclick="viewUnit('${u.id}')" class="card overflow-hidden cursor-pointer hover:border-orange-500/40 transition-colors ${soldOut?'opacity-50':''}">
         <div class="w-full h-36 bg-white/5 flex items-center justify-center overflow-hidden">
           ${u.image_url
             ? `<img src="${u.image_url}" class="w-full h-full object-cover">`
@@ -2370,7 +2364,7 @@ async function renderUnits(){
         <div class="p-3 space-y-1">
           <div class="flex items-start justify-between gap-2">
             <p class="font-semibold text-white text-sm leading-tight">${u.unit_name}</p>
-            <span class="badge ${SB[u.status]} shrink-0">${u.status}</span>
+            <span class="badge ${soldOut?'bg-red':'bg-green'} shrink-0">${soldOut ? 'Sold Out' : left + ' unit' + (left===1?'':'s') + ' left'}</span>
           </div>
           <p class="text-orange-400 font-bold text-sm">${peso(u.tcp)}</p>
           <p class="text-gray-500 text-xs">${bedroomLabel(u.bedrooms)}${u.bedrooms!==0 ? ' BR' : ''} · ${u.square_meters??'—'} sqm${u.lot_type?' · '+u.lot_type:''}</p>
@@ -2381,7 +2375,7 @@ async function renderUnits(){
           ${['Under Construction','Pre-selling'].includes(u.construction_status) && u.estimated_finish_date ? `<p class="text-gray-500 text-xs">Est. finish: ${new Date(u.estimated_finish_date).toLocaleDateString('en-PH',{year:'numeric',month:'short'})}</p>` : ''}
         </div>
       </div>
-    `).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No units yet for ${currentPropName} — click "+ Add Unit" to start.</p>`;
+    `;}).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No units yet for ${currentPropName} — click "+ Add Unit" to start.</p>`;
 
     document.getElementById('unitCount').textContent = `Showing ${filtered.length} of ${all.length} units`;
   } catch(err) {
@@ -2397,7 +2391,7 @@ function viewUnit(id){
     </div>
     <div class="flex items-start justify-between gap-2 mb-1">
       <h3 class="font-bold text-lg text-white">${u.unit_name}</h3>
-      <span class="badge ${SB[u.status]}">${u.status}</span>
+      <span class="badge ${(u.units_left??1)<=0?'bg-red':'bg-green'}">${(u.units_left??1)<=0 ? 'Sold Out' : (u.units_left??1) + ' unit' + ((u.units_left??1)===1?'':'s') + ' left'}</span>
     </div>
     <p class="text-gray-400 text-sm mb-3">${currentPropName}</p>
     <div class="grid grid-cols-2 gap-3 mb-3">
@@ -2479,7 +2473,7 @@ async function saveUnit(){
   document.getElementById('uErr').classList.add('hidden');
 
   const token = localStorage.getItem('token');
-  const status = document.getElementById('uStatus').value;
+  const unitsLeft = document.getElementById('uUnitsLeft').value || '1';
   const constStatus = document.getElementById('uConstStatus').value;
   const finishDate = document.getElementById('uFinishDate').value;
   const fd = new FormData();
@@ -2493,7 +2487,7 @@ async function saveUnit(){
   fd.append('square_meters', document.getElementById('uSqm').value || '');
   fd.append('lot_type', ['House and Lot','Lot'].includes(currentPropType) ? document.getElementById('uLotType').value : '');
   fd.append('furnishing', document.getElementById('uFurnish').value);
-  fd.append('status', status);
+  fd.append('units_left', unitsLeft);
   fd.append('construction_status', constStatus);
   fd.append('estimated_finish_date', ['Under Construction','Pre-selling'].includes(constStatus) ? finishDate : '');
   fd.append('description', document.getElementById('uDesc').value.trim());
@@ -2515,12 +2509,12 @@ async function saveUnit(){
     await fetch('/api/logs', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: `Unit "${name}" added under ${currentPropName} — status: ${status}${constDetail}`, actor: 'Admin', role: 'admin' })
+      body: JSON.stringify({ message: `Unit "${name}" added under ${currentPropName} — ${unitsLeft} unit(s) available${constDetail}`, actor: 'Admin', role: 'admin' })
     });
     closeModal('addUnitModal');
     ['uName','uTCP','uResFee','uDownpayment','uDownpaymentPct','uMonthlyDP','uBeds','uSqm','uDesc','uFinishDate'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('uDPTerms').value='24';
-    document.getElementById('uStatus').value='Available';
+    document.getElementById('uUnitsLeft').value='1';
     document.getElementById('uFurnish').value='Bare Unit';
     document.getElementById('uConstStatus').value='RFO';
     document.getElementById('uFinishRow').classList.add('hidden');
@@ -2547,7 +2541,7 @@ function openEditUnit(id){
   if(u.lot_type) document.getElementById('eULotType').value=u.lot_type;
   document.getElementById('eULotRow').classList.toggle('hidden', !['House and Lot','Lot'].includes(currentPropType));
   document.getElementById('eUFurnish').value=u.furnishing||'Bare Unit';
-  document.getElementById('eUStatus').value=u.status;
+  document.getElementById('eUUnitsLeft').value=u.units_left??1;
   document.getElementById('eUConstStatus').value=u.construction_status||'RFO';
   document.getElementById('eUFinishDate').value=u.estimated_finish_date||'';
   document.getElementById('eUFinishRow').classList.toggle('hidden', !['Under Construction','Pre-selling'].includes(u.construction_status||'RFO'));
@@ -2560,11 +2554,11 @@ async function updateUnit(){
   const id = document.getElementById('eUI').value;
   const token = localStorage.getItem('token');
   const name = document.getElementById('eUName').value.trim();
-  const newStatus = document.getElementById('eUStatus').value;
+  const newUnitsLeft = document.getElementById('eUUnitsLeft').value || '0';
   const newConstStatus = document.getElementById('eUConstStatus').value;
   const finishDate = document.getElementById('eUFinishDate').value;
   const oldUnit = unitCache.find(x => x.id === id);
-  const statusChanged = oldUnit && oldUnit.status !== newStatus;
+  const unitsLeftChanged = oldUnit && String(oldUnit.units_left??1) !== String(newUnitsLeft);
   const constChanged = oldUnit && oldUnit.construction_status !== newConstStatus;
 
   const fd = new FormData();
@@ -2577,7 +2571,7 @@ async function updateUnit(){
   fd.append('square_meters', document.getElementById('eUSqm').value || '');
   fd.append('lot_type', ['House and Lot','Lot'].includes(currentPropType) ? document.getElementById('eULotType').value : '');
   fd.append('furnishing', document.getElementById('eUFurnish').value);
-  fd.append('status', newStatus);
+  fd.append('units_left', newUnitsLeft);
   fd.append('construction_status', newConstStatus);
   fd.append('estimated_finish_date', ['Under Construction','Pre-selling'].includes(newConstStatus) ? finishDate : '');
   fd.append('description', document.getElementById('eUDesc').value.trim());
@@ -2594,7 +2588,7 @@ async function updateUnit(){
     });
     if(!res.ok) throw new Error('Failed to update unit');
     let logMsg;
-    if(statusChanged) logMsg = `Unit "${name}" status changed to ${newStatus}`;
+    if(unitsLeftChanged) logMsg = `Unit "${name}" units available changed to ${newUnitsLeft}`;
     else if(constChanged) logMsg = `Unit "${name}" construction status changed to ${newConstStatus}${['Under Construction','Pre-selling'].includes(newConstStatus) && finishDate ? ' (est. finish: '+finishDate+')' : ''}`;
     else logMsg = `Unit "${name}" updated`;
     await fetch('/api/logs', {
@@ -3620,16 +3614,6 @@ async function deleteBuyerAdmin(id){
   }
 }
 
-// ══════════════════════════════════════
-// COMMISSION
-// ══════════════════════════════════════
-let commBuyersCache = [], commUnitsCache = [];
-
-const COMM_ROLE_LABEL = { agent: 'Agent', team_leader: 'Team Leader', sales_manager: 'Sales Manager', unit_manager: 'Unit Manager' };
-const COMM_BOOKING_LABEL = { yes: 'Yes', no: 'No' };
-
-const COMM_RELEASE_TERMS = ['Full Down Payment', 'Pre Selling', 'Spot Cash'];
-
 window.openCommClientRecords = (role, id, name) => {
   const records = commBuyersCache.filter(b => b.input_by_role===role && b.input_by_id===id);
   document.getElementById('commClientsTitle').textContent = `${name}'s Client Records`;
@@ -3639,7 +3623,7 @@ window.openCommClientRecords = (role, id, name) => {
     const unit = commUnitsCache.find(u=>u.id===b.unit_id);
     const unitName = unit ? unit.unit_name : (b.manual_unit_name || '—');
     const projectName = unit ? '—' : (b.manual_property_name || '—');
-    const tcp = unit ? unit.tcp : b.manual_tcp;
+    const tcp = b.net_selling_price || (unit ? unit.tcp : b.manual_tcp);
     const bookingLabel = b.booking_requirements_complete ? (COMM_BOOKING_LABEL[b.booking_requirements_complete] || b.booking_requirements_complete) : '—';
     const clickable = COMM_RELEASE_TERMS.includes(b.payment_option);
     const clickAttrs = clickable ? `onclick="openQuickRelease('${b.id}','${b.name.replace(/'/g,"\\'")}','${b.payment_option}')" class="rounded-lg border border-white/8 bg-white/4 p-4 cursor-pointer hover:border-orange-300 hover:bg-orange-500/8 transition-colors"` : `class="rounded-lg border border-white/8 bg-white/4 p-4"`;
@@ -3709,6 +3693,9 @@ window.saveQuickRelease = async () => {
   }
 };
 
+// ══════════════════════════════════════
+// COMMISSION
+// ══════════════════════════════════════
 async function renderCommission(){
   const token = localStorage.getItem('token');
   const headers = { 'Authorization': 'Bearer ' + token };
@@ -3736,9 +3723,12 @@ async function renderCommission(){
     const DEFAULT_RANK = { agent: 'Property Specialist', team_leader: 'Team Leader', sales_manager: 'Sales Manager', unit_manager: 'Unit Manager' };
     const DEFAULT_RATE = { agent: 2.0, team_leader: 3.0, sales_manager: 3.25, unit_manager: 4.0 };
 
+    function saleValue(b){
+      const u = units.find(x=>x.id===b.unit_id);
+      return b.net_selling_price ? Number(b.net_selling_price) : (u ? Number(u.tcp)||0 : (Number(b.manual_tcp)||0));
+    }
     function personalTCN(role, id){
-      return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id)
-        .reduce((s,b)=>{ const u = units.find(x=>x.id===b.unit_id); return s + (u ? Number(u.tcp)||0 : Number(b.manual_tcp)||0); }, 0);
+      return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id).reduce((s,b)=>s+saleValue(b), 0);
     }
     function personalCount(role, id){
       return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id).length;
@@ -4109,7 +4099,7 @@ function renderSalesSummaryReport({devs, props, units, buyers}){
   const withValue = buyers.map(b=>({ ...b, value: unitTCP(units, b.unit_id), unit: units.find(u=>u.id===b.unit_id) }));
   const totalValue = withValue.reduce((s,b)=>s+b.value,0);
   const avgValue = withValue.length ? totalValue/withValue.length : 0;
-  const soldCount = units.filter(u=>u.status==='Sold').length;
+  const soldCount = units.filter(u=>(u.units_left??1)<=0).length;
 
   document.getElementById('reportCards').innerHTML = [
     ['Total Clients', withValue.length, ''],
@@ -4197,21 +4187,21 @@ function renderTeamPerformanceReport({units, buyers, agents, tls, sms, ums}){
 
 function renderInventoryReport({devs, props, units}){
   document.getElementById('reportTitle').textContent = 'Inventory Report';
-  const available = units.filter(u=>u.status==='Available').length;
-  const hold = units.filter(u=>u.status==='Hold').length;
-  const sold = units.filter(u=>u.status==='Sold').length;
+  const inStock = units.filter(u=>(u.units_left??1)>0).length;
+  const soldOut = units.filter(u=>(u.units_left??1)<=0).length;
+  const totalLeft = units.reduce((s,u)=>s+(u.units_left??1),0);
 
   document.getElementById('reportCards').innerHTML = [
-    ['Total Units', units.length, ''],
-    ['Available', available, 'text-green-400'],
-    ['Hold', hold, 'text-yellow-400'],
-    ['Sold', sold, 'text-red-400'],
+    ['Total Unit Entries', units.length, ''],
+    ['In Stock', inStock, 'text-green-400'],
+    ['Sold Out', soldOut, 'text-red-400'],
+    ['Total Units Left', totalLeft, 'text-orange-400'],
   ].map(([l,v,c])=>reportCard(l,v,c)).join('');
 
   reportChart1 = drawChart('reportChart1', reportChart1, {
     type:'doughnut',
-    data:{ labels:['Available','Hold','Sold'], datasets:[{ data:[available,hold,sold], backgroundColor:['#22c55e','#eab308','#ef4444'] }] },
-    options:{ plugins:{ title:{display:true,text:'Units by Status',color:'#9ca3af'}, legend:{labels:{color:'#9ca3af'}} } }
+    data:{ labels:['In Stock','Sold Out'], datasets:[{ data:[inStock,soldOut], backgroundColor:['#22c55e','#ef4444'] }] },
+    options:{ plugins:{ title:{display:true,text:'Units In Stock vs Sold Out',color:'#9ca3af'}, legend:{labels:{color:'#9ca3af'}} } }
   });
 
   const byProp = props.map(p=>({ name:p.name, count: units.filter(u=>u.property_id===p.id).length })).sort((a,b)=>b.count-a.count).slice(0,8);
@@ -4224,12 +4214,12 @@ function renderInventoryReport({devs, props, units}){
   const rows = props.map(p=>{
     const dev = devs.find(d=>d.id===p.developer_id);
     const propUnits = units.filter(u=>u.property_id===p.id);
-    return [dev?dev.name:'—', p.name, propUnits.filter(u=>u.status==='Available').length, propUnits.filter(u=>u.status==='Hold').length, propUnits.filter(u=>u.status==='Sold').length, propUnits.length];
+    return [dev?dev.name:'—', p.name, propUnits.filter(u=>(u.units_left??1)>0).length, propUnits.filter(u=>(u.units_left??1)<=0).length, propUnits.reduce((s,u)=>s+(u.units_left??1),0), propUnits.length];
   });
-  currentReportHeaders = ['Developer','Property','Available','Hold','Sold','Total'];
+  currentReportHeaders = ['Developer','Property','In Stock','Sold Out','Units Left','Total Entries'];
   currentReportRows = rows;
   document.getElementById('reportTableHead').innerHTML = currentReportHeaders.map(h=>`<th class="text-left px-5 py-2">${h}</th>`).join('');
-  document.getElementById('reportTableBody').innerHTML = rows.map(r=>`<tr><td class="px-5 py-2 text-xs">${r[0]}</td><td class="px-5 py-2 text-xs">${r[1]}</td><td class="px-5 py-2 text-xs text-green-400">${r[2]}</td><td class="px-5 py-2 text-xs text-yellow-400">${r[3]}</td><td class="px-5 py-2 text-xs text-red-400">${r[4]}</td><td class="px-5 py-2 text-xs">${r[5]}</td></tr>`).join('') || `<tr><td colspan="6" class="px-5 py-4 text-center text-gray-500 text-xs">No properties yet.</td></tr>`;
+  document.getElementById('reportTableBody').innerHTML = rows.map(r=>`<tr><td class="px-5 py-2 text-xs">${r[0]}</td><td class="px-5 py-2 text-xs">${r[1]}</td><td class="px-5 py-2 text-xs text-green-400">${r[2]}</td><td class="px-5 py-2 text-xs text-red-400">${r[3]}</td><td class="px-5 py-2 text-xs text-orange-400">${r[4]}</td><td class="px-5 py-2 text-xs">${r[5]}</td></tr>`).join('') || `<tr><td colspan="6" class="px-5 py-4 text-center text-gray-500 text-xs">No properties yet.</td></tr>`;
 }
 
 function renderCommissionPayoutReport({units, buyers, agents, tls, sms, ums}){
@@ -4289,25 +4279,25 @@ function renderCommissionPayoutReport({units, buyers, agents, tls, sms, ums}){
 function renderPortfolioReport({devs, props, units}){
   document.getElementById('reportTitle').textContent = 'Property Portfolio Overview';
   const totalUnits = units.length;
-  const soldUnits = units.filter(u=>u.status==='Sold').length;
+  const soldUnits = units.filter(u=>(u.units_left??1)<=0).length;
   const soldPct = totalUnits ? (soldUnits/totalUnits*100).toFixed(1) : 0;
 
   document.getElementById('reportCards').innerHTML = [
     ['Total Developers', devs.length, ''],
     ['Total Properties', props.length, ''],
-    ['Total Units', totalUnits, ''],
-    ['Overall Sold %', soldPct+'%', 'text-orange-400'],
+    ['Total Unit Entries', totalUnits, ''],
+    ['Overall Sold Out %', soldPct+'%', 'text-orange-400'],
   ].map(([l,v,c])=>reportCard(l,v,c)).join('');
 
   const propStats = props.map(p=>{
     const propUnits = units.filter(u=>u.property_id===p.id);
-    const sold = propUnits.filter(u=>u.status==='Sold').length;
+    const sold = propUnits.filter(u=>(u.units_left??1)<=0).length;
     return { name:p.name, pct: propUnits.length ? (sold/propUnits.length*100) : 0, total: propUnits.length, sold };
   }).sort((a,b)=>b.pct-a.pct).slice(0,8);
   reportChart1 = drawChart('reportChart1', reportChart1, {
     type:'bar',
-    data:{ labels: propStats.map(p=>p.name), datasets:[{ label:'Sold %', data: propStats.map(p=>p.pct.toFixed(1)), backgroundColor:'#e2733a' }] },
-    options:{ plugins:{ title:{display:true,text:'Sold % per Property (Top 8)',color:'#9ca3af'}, legend:{display:false} }, scales:{ x:{ticks:{color:'#9ca3af'}}, y:{ticks:{color:'#9ca3af',callback:v=>v+'%'}} } }
+    data:{ labels: propStats.map(p=>p.name), datasets:[{ label:'Sold Out %', data: propStats.map(p=>p.pct.toFixed(1)), backgroundColor:'#e2733a' }] },
+    options:{ plugins:{ title:{display:true,text:'Sold Out % per Property (Top 8)',color:'#9ca3af'}, legend:{display:false} }, scales:{ x:{ticks:{color:'#9ca3af'}}, y:{ticks:{color:'#9ca3af',callback:v=>v+'%'}} } }
   });
 
   const byDev = devs.map(d=>({ name:d.name, count: units.filter(u=>{ const p = props.find(pp=>pp.id===u.property_id); return p && p.developer_id===d.id; }).length }));
@@ -4320,10 +4310,10 @@ function renderPortfolioReport({devs, props, units}){
   const rows = props.map(p=>{
     const dev = devs.find(d=>d.id===p.developer_id);
     const propUnits = units.filter(u=>u.property_id===p.id);
-    const sold = propUnits.filter(u=>u.status==='Sold').length;
+    const sold = propUnits.filter(u=>(u.units_left??1)<=0).length;
     return [dev?dev.name:'—', p.name, p.property_type, propUnits.length, sold, propUnits.length ? (sold/propUnits.length*100).toFixed(1)+'%' : '0%'];
   });
-  currentReportHeaders = ['Developer','Property','Type','Total Units','Sold','Sold %'];
+  currentReportHeaders = ['Developer','Property','Type','Total Unit Entries','Sold Out','Sold Out %'];
   currentReportRows = rows;
   document.getElementById('reportTableHead').innerHTML = currentReportHeaders.map(h=>`<th class="text-left px-5 py-2">${h}</th>`).join('');
   document.getElementById('reportTableBody').innerHTML = rows.map(r=>`<tr><td class="px-5 py-2 text-xs">${r[0]}</td><td class="px-5 py-2 text-xs">${r[1]}</td><td class="px-5 py-2 text-xs">${r[2]}</td><td class="px-5 py-2 text-xs">${r[3]}</td><td class="px-5 py-2 text-xs">${r[4]}</td><td class="px-5 py-2 text-xs text-orange-400">${r[5]}</td></tr>`).join('') || `<tr><td colspan="6" class="px-5 py-4 text-center text-gray-500 text-xs">No properties yet.</td></tr>`;
