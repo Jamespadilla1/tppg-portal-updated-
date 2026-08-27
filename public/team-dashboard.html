@@ -210,8 +210,8 @@
         </div>
         <div class="border-t border-gray-200 pt-3 space-y-1.5">
           <div class="flex justify-between text-sm"><span class="text-gray-500">Gross Commission</span><span class="font-semibold" id="commGrossVal">₱0</span></div>
-          <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Withholding Tax (10%)</span><span class="text-red-500" id="commWithVal">-₱0</span></div>
-          <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Percentage Tax (3%)</span><span class="text-red-500" id="commPercVal">-₱0</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Withholding Tax (10%)</span><span class="text-red-500" id="commWithVal">(₱0)</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Percentage Tax (3%)</span><span class="text-red-500" id="commPercVal">(₱0)</span></div>
           <div class="flex justify-between text-sm font-semibold pt-1.5 border-t border-gray-200"><span>Net Commission</span><span class="text-orange-600" id="commNetVal">₱0</span></div>
         </div>
       </div>
@@ -270,8 +270,8 @@
             <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Gross Commission</p>
             <p id="calcAmount" class="text-3xl font-bold text-orange-400">₱0</p>
             <div class="mt-3 pt-3 border-t border-orange-500/20 space-y-1.5">
-              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Withholding Tax (10%)</span><span class="text-red-400" id="calcWithholding">-₱0</span></div>
-              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Percentage Tax (3%)</span><span class="text-red-400" id="calcPercTax">-₱0</span></div>
+              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Withholding Tax (10%)</span><span class="text-red-400" id="calcWithholding">(₱0)</span></div>
+              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Percentage Tax (3%)</span><span class="text-red-400" id="calcPercTax">(₱0)</span></div>
               <div class="flex justify-between text-sm font-semibold pt-1.5 border-t border-orange-500/20"><span class="text-white">Net Commission</span><span class="text-orange-400" id="calcNetCommission">₱0</span></div>
             </div>
           </div>
@@ -850,8 +850,8 @@ async function renderCommissionPersonal(){
   document.getElementById('commTCN').textContent = peso(tcn);
   document.getElementById('commRateVal').textContent = rate + '%';
   document.getElementById('commGrossVal').textContent = peso(gross);
-  document.getElementById('commWithVal').textContent = '-' + peso(withholding);
-  document.getElementById('commPercVal').textContent = '-' + peso(percTax);
+  document.getElementById('commWithVal').textContent = '(' + peso(withholding) + ')';
+  document.getElementById('commPercVal').textContent = '(' + peso(percTax) + ')';
   document.getElementById('commNetVal').textContent = peso(net);
 
   const withIncentive = buyers.filter(b=>b.incentive_amount);
@@ -1065,8 +1065,8 @@ window.computeCalc = () => {
   const percTax = comm*0.03;
   const netComm = comm - withholding - percTax;
   document.getElementById('calcAmount').textContent = peso(comm);
-  document.getElementById('calcWithholding').textContent = '-'+peso(withholding);
-  document.getElementById('calcPercTax').textContent = '-'+peso(percTax);
+  document.getElementById('calcWithholding').textContent = '('+peso(withholding)+')';
+  document.getElementById('calcPercTax').textContent = '('+peso(percTax)+')';
   document.getElementById('calcNetCommission').textContent = peso(netComm);
   result.classList.remove('hidden');
 };

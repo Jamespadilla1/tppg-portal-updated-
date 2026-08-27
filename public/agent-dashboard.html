@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Agent Dashboard - TPPG</title>
+<title>Team Dashboard - TPPG</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
   tailwind.config = {
@@ -36,19 +36,6 @@
   .nav-link.active .dot{opacity:1;background:#ea580c}
   .card{background:#ffffff;border:1px solid #e5e7eb;border-radius:12px}
   .card:hover{border-color:#ea580c66}
-  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:500}
-  .badge-green{background:rgba(34,197,94,.1);color:#16a34a}
-  .badge-yellow{background:rgba(234,179,8,.1);color:#ca8a04}
-  .badge-red{background:rgba(239,68,68,.1);color:#dc2626}
-  .badge-blue{background:rgba(59,130,246,.1);color:#2563eb}
-  .section{display:none}.section.active{display:block}
-  .field{width:100%;padding:10px 13px;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;color:#111827;font-size:.875rem;outline:none;transition:border-color .15s}
-  .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(17,24,39,.4);z-index:50;align-items:center;justify-content:center;padding:1rem}
-  .modal-backdrop.open{display:flex}
-  .modal-box{background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;width:100%;max-width:480px;padding:28px;position:relative;max-height:92vh;overflow-y:auto;color:#111827}
-  .field:focus{border-color:#f97316}
-  .field::placeholder{color:#9ca3af}
-  tr:hover td{background:rgba(0,0,0,.02)}
   .org-wrap{display:flex;flex-direction:column;align-items:center;padding:20px 0 10px}
   .org-root{opacity:0;transform:translateY(-10px) scale(.95);transition:all .35s ease}
   .org-root.org-in{opacity:1;transform:translateY(0) scale(1)}
@@ -59,28 +46,42 @@
   .org-branch.org-in{opacity:1;transform:translateY(0) scale(1)}
   .org-branch::before{content:'';position:absolute;top:-24px;width:2px;height:24px;background:#e5e7eb;left:50%;transform:translateX(-50%)}
   .org-node{width:180px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:500}
+  .badge-green{background:rgba(34,197,94,.1);color:#16a34a}
+  .badge-yellow{background:rgba(234,179,8,.1);color:#ca8a04}
+  .badge-red{background:rgba(239,68,68,.1);color:#dc2626}
+  .badge-blue{background:rgba(59,130,246,.1);color:#2563eb}
+  .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(17,24,39,.4);z-index:50;align-items:center;justify-content:center;padding:1rem}
+  .modal-backdrop.open{display:flex}
+  .modal-box{background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;width:100%;max-width:480px;padding:28px;position:relative;max-height:92vh;overflow-y:auto;color:#111827}
+  .field{width:100%;padding:10px 13px;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;color:#111827;font-size:.875rem;outline:none;transition:border-color .15s}
+  .section{display:none}
+  .section.active{display:block}
+  .filter-btn.active-filter{border-color:#ea580c80!important;background:rgba(234,88,12,.1)!important;color:#ea580c!important}
   @media(max-width:768px){
     #sidebar{position:fixed;transform:translateX(-100%);z-index:40;transition:transform .25s}
     #sidebar.open{transform:translateX(0)}
     #main{margin-left:0!important}
   }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 </head>
 <body class="bg-gray-950 text-white min-h-screen">
 
 <aside id="sidebar" class="fixed left-0 top-0 h-full w-60 bg-gray-900 border-r border-white/8 flex flex-col">
   <div class="px-5 py-5 border-b border-white/8 flex items-center gap-3">
     <div class="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center text-sm font-bold">T</div>
-    <span class="font-semibold text-white">TPPG Agent</span>
+    <span class="font-semibold text-white" id="sidebarRoleLabel">TPPG</span>
   </div>
-  <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-    <div class="nav-link active"  onclick="showSection('overview',  this)"><span class="dot"></span> Dashboard</div>
-    <div class="nav-link"         onclick="showSection('team',     this)"><span class="dot"></span> My Team</div>
-    <div class="nav-link"         onclick="showSection('properties',this)"><span class="dot"></span> Properties</div>
-    <div class="nav-link"         onclick="showSection('commission',this)"><span class="dot"></span> Commission</div>
-    <div class="nav-link"         onclick="showSection('sales',     this)"><span class="dot"></span> My Sales & Clients</div>
-    <div class="nav-link"         onclick="showSection('compute',   this)"><span class="dot"></span> Computation Tool</div>
-    <div class="nav-link"         onclick="showSection('profile',   this)"><span class="dot"></span> My Profile</div>
+  <nav class="flex-1 px-3 py-4 space-y-0.5">
+    <div class="nav-link active" onclick="showSection('overview',this)"><span class="dot"></span> Dashboard</div>
+    <div class="nav-link" onclick="showSection('team',this)"><span class="dot"></span> My Team</div>
+    <div class="nav-link" onclick="showSection('properties',this)"><span class="dot"></span> Properties</div>
+    <div class="nav-link" onclick="showSection('commission',this)"><span class="dot"></span> Commission</div>
+    <div class="nav-link" onclick="showSection('sales',this)"><span class="dot"></span> Sales &amp; Buyers</div>
+    <div class="nav-link" onclick="showSection('compute',this)"><span class="dot"></span> Computation Tool</div>
+    <div class="nav-link" onclick="showSection('reports',this)"><span class="dot"></span> Reports &amp; Analytics</div>
+    <div class="nav-link" onclick="showSection('profile',this)"><span class="dot"></span> My Profile</div>
   </nav>
   <div class="mx-3 mb-3 px-3 py-2 rounded-lg bg-yellow-500/8 border border-yellow-500/20 text-yellow-400 text-xs">👁 View-only access</div>
   <div class="px-5 py-4 border-t border-white/8">
@@ -88,26 +89,24 @@
       <div class="w-8 h-8 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-bold" id="sidebarInitials">--</div>
       <div>
         <p class="text-sm font-medium text-white" id="sidebarName">—</p>
-        <p class="text-xs text-gray-500" id="sidebarId">—</p>
+        <p class="text-xs text-gray-500" id="sidebarRole2">—</p>
       </div>
     </div>
+    <p id="sidebarReportsTo" class="hidden mt-2.5 text-[11px] text-orange-400 bg-orange-500/8 border border-orange-500/20 rounded-lg px-2.5 py-1.5"></p>
     <button onclick="logout()" class="mt-3 w-full text-xs text-gray-500 hover:text-red-400 text-left transition-colors">← Log out</button>
   </div>
 </aside>
 
 <div id="main" class="ml-60 min-h-screen flex flex-col">
   <header class="sticky top-0 z-30 bg-gray-950/90 backdrop-blur border-b border-white/8 px-8 py-4 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <button class="md:hidden text-gray-400" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
-      <h2 id="pageTitle" class="text-lg font-semibold">Dashboard</h2>
-    </div>
-    <span class="text-xs text-gray-500 bg-white/5 border border-white/8 px-3 py-1 rounded-full">Agent Portal</span>
+    <h1 class="font-bold text-lg" id="pageTitle">Dashboard</h1>
+    <p class="text-xs text-gray-500" id="teamSummary"></p>
   </header>
 
-  <main class="flex-1 p-8">
+  <main class="flex-1 p-6 space-y-6">
 
-    <!-- OVERVIEW -->
-    <div id="sec-overview" class="section active space-y-6">
+    <!-- DASHBOARD -->
+    <div id="sec-overview" class="section active space-y-5">
       <div class="card p-6" style="border:2px solid #ea580c33;box-shadow:0 4px 16px rgba(234,88,12,.08)">
         <div class="flex gap-2 items-center flex-wrap">
           <div class="flex-1 min-w-[220px] relative">
@@ -118,28 +117,21 @@
         </div>
         <div id="dashSearchResults" class="mt-3"></div>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="card p-5"><p class="text-gray-400 text-xs uppercase tracking-wide mb-2">In Stock Units</p><p id="statAvail" class="text-3xl font-bold text-green-400">0</p><p class="text-xs text-gray-500 mt-1">Ready for sale</p></div>
-        <div class="card p-5"><p class="text-gray-400 text-xs uppercase tracking-wide mb-2">Total Unit Entries</p><p id="statTotal" class="text-3xl font-bold text-orange-400">0</p><p class="text-xs text-gray-500 mt-1">All listings</p></div>
-        <div class="card p-5"><p class="text-gray-400 text-xs uppercase tracking-wide mb-2">Sold Out Units</p><p id="statSold" class="text-3xl font-bold">0</p><p class="text-xs text-gray-500 mt-1">No units left</p></div>
-      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="ovCards"></div>
       <div class="card overflow-hidden">
-        <div class="px-6 py-4 border-b border-white/8 flex items-center justify-between">
-          <h3 class="font-semibold">Recent Properties</h3>
-          <button onclick="showSection('properties',document.querySelectorAll('.nav-link')[1])" class="text-xs text-orange-400 hover:underline">View all →</button>
-        </div>
+        <div class="px-5 py-3 border-b border-gray-200"><h3 class="font-semibold text-sm">Recent Clients</h3></div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
-          <thead><tr class="text-gray-500 text-xs uppercase tracking-wide border-b border-white/8">
-            <th class="text-left px-6 py-3">Property</th><th class="text-left px-6 py-3">Location</th><th class="text-left px-6 py-3">Price</th><th class="text-left px-6 py-3">Status</th>
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
+            <th class="text-left px-5 py-2">Client</th><th class="text-left px-5 py-2">Unit</th><th class="text-left px-5 py-2">TCP</th>
           </tr></thead>
-          <tbody id="overviewTable" class="divide-y divide-white/6 text-gray-300"></tbody>
+          <tbody id="ovRecentBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
         </table></div>
       </div>
     </div>
 
-    <!-- MY TEAM (view-only) -->
+    <!-- MY TEAM -->
     <div id="sec-team" class="section space-y-4">
-      <button id="teamBackBtn" onclick="teamGoBack()" class="hidden text-xs text-gray-400 hover:text-gray-700 flex items-center gap-1">← Back</button>
+      <button id="teamBackBtn" onclick="teamGoBack()" class="hidden text-xs text-gray-400 hover:text-white flex items-center gap-1">← Back</button>
       <div id="teamChart"></div>
     </div>
 
@@ -207,8 +199,8 @@
       </div>
     </div>
 
-    <!-- COMMISSION -->
-    <div id="sec-commission" class="section space-y-5">
+    <!-- COMMISSION (personal) -->
+    <div id="sec-commission" class="section space-y-4">
       <div class="card p-6 max-w-lg">
         <p class="text-xs text-gray-500 mb-1">Your Rank</p>
         <p class="font-semibold text-lg mb-4" id="commRankLabel">—</p>
@@ -218,109 +210,69 @@
         </div>
         <div class="border-t border-gray-200 pt-3 space-y-1.5">
           <div class="flex justify-between text-sm"><span class="text-gray-500">Gross Commission</span><span class="font-semibold" id="commGrossVal">₱0</span></div>
-          <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Withholding Tax (10%)</span><span class="text-red-500" id="commWithVal">-₱0</span></div>
-          <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Percentage Tax (3%)</span><span class="text-red-500" id="commPercVal">-₱0</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Withholding Tax (10%)</span><span class="text-red-500" id="commWithVal">(₱0)</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Percentage Tax (3%)</span><span class="text-red-500" id="commPercVal">(₱0)</span></div>
           <div class="flex justify-between text-sm font-semibold pt-1.5 border-t border-gray-200"><span>Net Commission</span><span class="text-orange-600" id="commNetVal">₱0</span></div>
         </div>
       </div>
       <div class="card overflow-hidden">
-        <div class="px-6 py-4 border-b border-white/8 flex items-center justify-between">
-          <div><h3 class="font-semibold">My Incentives</h3><p class="text-xs text-gray-500 mt-0.5">Incentive amounts set by Admin for your sales. Visible only to you.</p></div>
-          <div class="text-right"><p class="text-xs text-gray-500">Total</p><p class="font-bold text-purple-400" id="incentiveTotalVal">₱0</p></div>
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <div><h3 class="font-semibold">My Incentives</h3><p class="text-xs text-gray-500 mt-0.5">Incentive amounts set by Admin for your own sales. Visible only to you.</p></div>
+          <div class="text-right"><p class="text-xs text-gray-500">Total</p><p class="font-bold text-purple-600" id="incentiveTotalVal">₱0</p></div>
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
-          <thead><tr class="text-gray-500 text-xs uppercase tracking-wide border-b border-white/8">
-            <th class="text-left px-6 py-3">Client</th><th class="text-left px-6 py-3">Property / Unit</th><th class="text-left px-6 py-3">TCP</th><th class="text-left px-6 py-3">Incentive</th>
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
+            <th class="text-left px-5 py-2">Client</th><th class="text-left px-5 py-2">Property / Unit</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Incentive</th>
           </tr></thead>
-          <tbody id="incentiveBody" class="divide-y divide-white/6 text-gray-300"></tbody>
+          <tbody id="incentiveBody" class="divide-y divide-gray-200 text-gray-700"></tbody>
         </table></div>
       </div>
       <div class="card overflow-hidden">
-        <div class="px-6 py-4 border-b border-white/8"><h3 class="font-semibold">My Commission Releases</h3><p class="text-xs text-gray-500 mt-0.5">Commission payouts recorded by Admin for sales you made.</p></div>
+        <div class="px-6 py-4 border-b border-gray-200"><h3 class="font-semibold">My Commission Releases</h3><p class="text-xs text-gray-500 mt-0.5">Commission payouts recorded by Admin for sales you made.</p></div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
-          <thead><tr class="text-gray-500 text-xs uppercase tracking-wide border-b border-white/8">
-            <th class="text-left px-6 py-3">Sale / Property</th><th class="text-left px-6 py-3">Amount</th><th class="text-left px-6 py-3">Release Date</th><th class="text-left px-6 py-3">Type</th><th class="text-left px-6 py-3">Notes</th>
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
+            <th class="text-left px-5 py-2">Sale / Property</th><th class="text-left px-5 py-2">Amount</th><th class="text-left px-5 py-2">Release Date</th><th class="text-left px-5 py-2">Type</th><th class="text-left px-5 py-2">Notes</th>
           </tr></thead>
-          <tbody id="myReceivablesBody" class="divide-y divide-white/6 text-gray-300"></tbody>
+          <tbody id="myReceivablesBody" class="divide-y divide-gray-200 text-gray-700"></tbody>
         </table></div>
       </div>
     </div>
-
-    <!-- SALES PERFORMANCE -->
-    <div id="sec-sales" class="section space-y-5">
+    <div id="sec-sales" class="section space-y-4">
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="card p-5"><p class="text-gray-400 text-xs uppercase tracking-wide mb-2">Total Clients</p><p id="salesCount" class="text-3xl font-bold">0</p></div>
-        <div class="card p-5"><p class="text-gray-400 text-xs uppercase tracking-wide mb-2">Total Sales Value</p><p id="salesRev" class="text-3xl font-bold text-orange-400">₱0</p></div>
-        <div class="card p-5"><p class="text-gray-400 text-xs uppercase tracking-wide mb-2">Top Sale</p><p id="salesBest" class="text-xl font-bold text-white">—</p></div>
+        <div class="card p-5"><p class="text-gray-500 text-xs uppercase tracking-wide mb-2">Total Buyers</p><p id="clientCount" class="text-3xl font-bold">0</p></div>
+        <div class="card p-5"><p class="text-gray-500 text-xs uppercase tracking-wide mb-2">Total Sales Value</p><p id="clientRev" class="text-3xl font-bold text-orange-600">₱0</p></div>
+        <div class="card p-5"><p class="text-gray-500 text-xs uppercase tracking-wide mb-2">Top Sale</p><p id="clientBest" class="text-xl font-bold">—</p></div>
       </div>
-      <div class="card p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="font-semibold">My Clients</h3>
-          <button onclick="openModal('addBuyerModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Client</button>
+      <div class="card overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200">
+          <h3 class="font-semibold text-sm">Team Sales &amp; Buyers</h3>
+          <button onclick="openModal('addBuyerModal')" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Client</button>
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
-          <thead><tr class="text-gray-500 text-xs uppercase tracking-wide border-b border-white/8">
-            <th class="text-left px-4 py-3">Client Name</th><th class="text-left px-4 py-3">Email</th><th class="text-left px-4 py-3">Phone</th><th class="text-left px-4 py-3">Project</th><th class="text-left px-4 py-3">Unit Purchased</th><th class="text-left px-4 py-3">Reservation Date</th><th class="text-left px-4 py-3">TCP</th><th class="text-left px-4 py-3">Net Selling Price</th><th class="text-left px-4 py-3">Payment Option</th><th class="text-left px-4 py-3">Booking Complete</th><th class="text-left px-4 py-3">Added By</th><th class="text-left px-4 py-3">Reports To</th>
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
+            <th class="text-left px-5 py-2">Buyer Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Project</th><th class="text-left px-5 py-2">Unit Purchased</th><th class="text-left px-5 py-2">Reservation Date</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Net Selling Price</th><th class="text-left px-5 py-2">Payment Option</th><th class="text-left px-5 py-2">Booking Complete</th><th class="text-left px-5 py-2">Sold By</th><th class="text-left px-5 py-2">My Override</th>
           </tr></thead>
-          <tbody id="salesBody" class="divide-y divide-white/6 text-gray-300"></tbody>
+          <tbody id="clientsBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
         </table></div>
       </div>
     </div>
 
-    <!-- ADD BUYER -->
-    <div id="addBuyerModal" class="modal-backdrop">
-      <div class="modal-box">
-        <button onclick="closeModal('addBuyerModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
-        <h3 class="font-bold text-lg mb-4">Add Client</h3>
-        <div class="space-y-3">
-          <div><label class="text-xs text-gray-400 mb-1 block">Full Name *</label><input id="bName" type="text" class="field"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Email</label><input id="bEmail" type="email" class="field"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="bPhone" type="text" class="field"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Address</label><input id="bAddr" type="text" class="field"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Unit Purchased</label><input id="bManualUnit" type="text" class="field" placeholder="e.g. Olive"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Project</label><input id="bManualProp" type="text" class="field" placeholder="e.g. Parc Regency"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Reservation Date</label><input id="bReservationDate" type="date" class="field"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Total Contract Price (₱)</label><input id="bManualTCP" type="text" inputmode="numeric" class="field" placeholder="3,500,000" oninput="formatMoneyInput(this)"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Net Selling Price (if available) (₱)</label><input id="bNetSellingPrice" type="text" inputmode="numeric" class="field" placeholder="3,300,000" oninput="formatMoneyInput(this)"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Payment Terms</label><select id="bPaymentOption" class="field" onchange="onPaymentTermsChange()">
-            <option value="">— Select —</option>
-            <option value="Monthly Down Payment">Monthly Down Payment</option>
-            <option value="Spot Cash">Spot Cash</option>
-            <option value="Full Down Payment">Full Down Payment</option>
-            <option value="Pre Selling">Pre Selling</option>
-          </select></div>
-          <div id="bDpMonthsWrap" class="hidden"><label class="text-xs text-gray-400 mb-1 block">Number of Months to Pay</label><input id="bDpMonths" type="number" min="1" step="1" class="field" placeholder="e.g. 12"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Complete Booking Requirements</label><select id="bBookingComplete" class="field">
-            <option value="">— Select —</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-          </select></div>
-          <p id="bErr" class="text-red-400 text-xs hidden">Name is required.</p>
-          <button onclick="saveBuyer()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Client</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- COMPUTATION -->
+    <!-- COMPUTATION TOOL -->
     <div id="sec-compute" class="section">
       <div class="max-w-md">
         <div class="card p-6 space-y-5">
           <div><h3 class="font-semibold text-lg">Commission Calculator</h3><p class="text-xs text-gray-500 mt-1">Compute your commission based on property price and rate.</p></div>
           <div class="space-y-3">
-            <div><label class="text-xs text-gray-400 mb-1 block">Property Price (₱)</label><input id="calcPrice" type="number" placeholder="e.g. 3500000" class="field" oninput="compute()"></div>
-            <div><label class="text-xs text-gray-400 mb-1 block">Commission Rate (%)</label><input id="calcRate" type="number" placeholder="e.g. 3" class="field" oninput="compute()"></div>
+            <div><label class="text-xs text-gray-400 mb-1 block">Property Price (₱)</label><input id="calcPrice" type="number" placeholder="e.g. 3500000" class="field" oninput="computeCalc()"></div>
+            <div><label class="text-xs text-gray-400 mb-1 block">Commission Rate (%)</label><input id="calcRate" type="number" placeholder="e.g. 3" class="field" oninput="computeCalc()"></div>
           </div>
           <div id="calcResult" class="hidden rounded-xl bg-orange-500/10 border border-orange-500/25 p-5">
             <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Gross Commission</p>
             <p id="calcAmount" class="text-3xl font-bold text-orange-400">₱0</p>
             <div class="mt-3 pt-3 border-t border-orange-500/20 space-y-1.5">
-              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Withholding Tax (10%)</span><span class="text-red-400" id="calcWithholding">-₱0</span></div>
-              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Percentage Tax (3%)</span><span class="text-red-400" id="calcPercTax">-₱0</span></div>
+              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Withholding Tax (10%)</span><span class="text-red-400" id="calcWithholding">(₱0)</span></div>
+              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Percentage Tax (3%)</span><span class="text-red-400" id="calcPercTax">(₱0)</span></div>
               <div class="flex justify-between text-sm font-semibold pt-1.5 border-t border-orange-500/20"><span class="text-white">Net Commission</span><span class="text-orange-400" id="calcNetCommission">₱0</span></div>
-            </div>
-            <div class="mt-3 pt-3 border-t border-orange-500/20 grid grid-cols-2 gap-2 text-xs text-gray-400">
-              <div>Price: <span id="calcShowPrice" class="text-white">—</span></div>
-              <div>Rate: <span id="calcShowRate" class="text-white">—</span></div>
             </div>
           </div>
           <p class="text-xs text-gray-600 italic">Gross Commission = Price × Rate ÷ 100. Net Commission deducts 10% withholding tax + 3% percentage tax.</p>
@@ -328,31 +280,29 @@
       </div>
     </div>
 
-    <!-- PROFILE -->
+    <!-- MY PROFILE -->
+    <!-- REPORTS & ANALYTICS (team-scoped) -->
+    <div id="sec-reports" class="section space-y-4">
+      <div class="card p-5 space-y-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="repCards"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="bg-gray-50 rounded-lg border border-gray-200 p-4"><canvas id="repChart1" height="220"></canvas></div>
+          <div class="bg-gray-50 rounded-lg border border-gray-200 p-4"><canvas id="repChart2" height="220"></canvas></div>
+        </div>
+      </div>
+    </div>
+
     <div id="sec-profile" class="section">
-      <div class="max-w-md space-y-4">
-        <div class="card p-6 flex items-center gap-5">
-          <div class="w-16 h-16 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-2xl font-bold flex-shrink-0" id="profileInitials">--</div>
-          <div>
-            <h3 class="text-xl font-bold" id="profileName">—</h3>
-            <div class="flex items-center gap-2 mt-1">
-              <span class="badge badge-blue" id="profileId">—</span>
-              <span class="badge badge-green">Approved</span>
-            </div>
-          </div>
+      <div class="max-w-md card p-6 space-y-4">
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold text-2xl" id="profileInitial">-</div>
+          <div><p class="font-semibold text-lg" id="profileNameRow">—</p><p class="text-xs text-gray-500" id="profileRoleRow">—</p></div>
         </div>
-        <div class="card p-6 space-y-4">
-          <h4 class="text-sm font-semibold text-gray-400 uppercase tracking-wide">Account Info</h4>
-          <div class="space-y-3 text-sm">
-            <div class="flex justify-between border-b border-white/6 pb-3"><span class="text-gray-500">Full Name</span><span class="text-white font-medium" id="profileNameRow">—</span></div>
-            <div class="flex justify-between border-b border-white/6 pb-3"><span class="text-gray-500">Email</span><span class="text-white" id="profileEmail">—</span></div>
-            <div class="flex justify-between border-b border-white/6 pb-3"><span class="text-gray-500">Contact</span><span class="text-white" id="profilePhone">—</span></div>
-            <div class="flex justify-between border-b border-white/6 pb-3"><span class="text-gray-500">Agent ID</span><span class="text-white font-mono" id="profileAgentId">—</span></div>
-            <div class="flex justify-between"><span class="text-gray-500">Status</span><span class="badge badge-green">Approved</span></div>
-          </div>
-        </div>
-        <div class="rounded-xl border border-yellow-500/20 bg-yellow-500/6 px-5 py-4 text-xs text-yellow-400">
-          <strong>Note:</strong> Profile information can only be updated by your administrator. Contact admin for any changes.
+        <div class="border-t border-gray-200 pt-4 space-y-3 text-sm">
+          <div class="flex justify-between"><span class="text-gray-500">ID</span><span class="font-mono" id="profileId">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Email</span><span id="profileEmail">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Commission Rank</span><span id="profileRank">—</span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Commission Rate</span><span id="profileRate">—</span></div>
         </div>
       </div>
     </div>
@@ -360,349 +310,465 @@
   </main>
 </div>
 
+<!-- ADD BUYER -->
+<div id="addBuyerModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('addBuyerModal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-700 text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Add Client</h3>
+    <div class="space-y-3">
+      <div><label class="text-xs text-gray-500 mb-1 block">Full Name *</label><input id="bName" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Email</label><input id="bEmail" type="email" class="field"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Phone</label><input id="bPhone" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Address</label><input id="bAddr" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Unit Purchased</label><input id="bManualUnit" type="text" class="field" placeholder="e.g. Unit 305"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Project</label><input id="bManualProp" type="text" class="field" placeholder="e.g. Avenir Iloilo"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Reservation Date</label><input id="bResDate" type="date" class="field"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Total Contract Price (₱)</label><input id="bManualTCP" type="text" inputmode="numeric" class="field" placeholder="3,500,000" oninput="formatMoneyInput(this)"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Net Selling Price (if available) (₱)</label><input id="bNSP" type="text" inputmode="numeric" class="field" placeholder="3,300,000" oninput="formatMoneyInput(this)"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Payment Option</label><input id="bPayOption" type="text" class="field" placeholder="e.g. Bank financing, 20% DP over 24 months"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Complete Booking Requirements?</label><select id="bBookingComplete" class="field">
+        <option value="false">No</option>
+        <option value="true">Yes</option>
+      </select></div>
+      <p id="bErr" class="text-red-500 text-xs hidden">Name is required.</p>
+      <button onclick="saveBuyer()" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Client</button>
+    </div>
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
-  // ── GUARD ──
-  const role    = localStorage.getItem('role');
-  const agentId = localStorage.getItem('agentId');
-  if (role !== 'agent' || !agentId) {
-    window.location.href = 'index.html';
+const token = localStorage.getItem('token');
+const role  = localStorage.getItem('role');
+const name  = localStorage.getItem('name');
+
+if (!token || !['unit_manager','sales_manager','team_leader'].includes(role)) {
+  window.location.href = 'index.html';
+}
+
+const ROLE_LABELS = { unit_manager: 'Unit Manager', sales_manager: 'Sales Manager', team_leader: 'Team Leader' };
+const peso = n => '₱' + Number(n||0).toLocaleString('en-PH', {maximumFractionDigits:0});
+function parseMoney(str){
+  return parseFloat((str||'').toString().replace(/,/g,'')) || 0;
+}
+window.formatMoneyInput = function(el){
+  const cursorFromEnd = el.value.length - el.selectionStart;
+  const digits = el.value.replace(/[^\d]/g,'');
+  el.value = digits === '' ? '' : parseInt(digits,10).toLocaleString('en-US');
+  const pos = Math.max(0, el.value.length - cursorFromEnd);
+  el.setSelectionRange(pos, pos);
+};
+const SB = { approved:'badge-green', pending:'badge-yellow', rejected:'badge-red', suspended:'badge-red' };
+
+document.getElementById('sidebarRoleLabel').textContent = 'TPPG ' + (ROLE_LABELS[role] || '');
+document.getElementById('sidebarName').textContent = name || '—';
+document.getElementById('sidebarRole2').textContent = (ROLE_LABELS[role] || '—') + (localStorage.getItem('personId') ? ' · ' + localStorage.getItem('personId') : '');
+document.getElementById('sidebarInitials').textContent = (name || '?')[0].toUpperCase();
+
+// ── REPORTS TO badge (Sales Manager / Team Leader: who they report up to) ──
+async function renderReportsToBadge(){
+  const myUMId = localStorage.getItem('unitManagerId');
+  const mySMId = localStorage.getItem('salesManagerId');
+  const badge = document.getElementById('sidebarReportsTo');
+  const parts = [];
+  try {
+    if(role==='team_leader' && mySMId){
+      const res = await fetch('/api/sales-managers', { headers: { 'Authorization': 'Bearer ' + token } });
+      const list = await res.json();
+      const sm = list.find(s=>s.id===mySMId);
+      if(sm) parts.push(`${sm.name} (Sales Manager)`);
+    }
+    if(myUMId){
+      const res = await fetch('/api/unit-managers', { headers: { 'Authorization': 'Bearer ' + token } });
+      const list = await res.json();
+      const um = list.find(u=>u.id===myUMId);
+      if(um) parts.push(`${um.name} (Unit Manager)`);
+    }
+    if(parts.length){
+      badge.textContent = 'Reports to: ' + parts.join(' · ');
+      badge.classList.remove('hidden');
+    }
+  } catch(err) { console.error('Error loading reporting chain:', err); }
+}
+renderReportsToBadge();
+
+// ── SECTION SWITCHING ──
+window.showSection = (id, linkEl) => {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+  linkEl.classList.add('active');
+  const TITLES = { overview:'Dashboard', team:'My Team', properties:'Properties', commission:'Commission', sales:'Sales & Buyers', compute:'Computation Tool', reports:'Reports & Analytics', profile:'My Profile' };
+  document.getElementById('pageTitle').textContent = TITLES[id];
+  if(id==='overview') renderOverview();
+  else if(id==='team'){ teamDrillStack=[]; renderTeamChart(); }
+  else if(id==='properties') enterPropDevelopers();
+  else if(id==='commission') renderCommissionPersonal();
+  else if(id==='sales') loadMyClients();
+  else if(id==='reports') renderTeamReports();
+  else if(id==='profile') renderProfile();
+};
+
+window.openModal  = (id) => document.getElementById(id).classList.add('open');
+window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+document.querySelectorAll('.modal-backdrop').forEach(m => {
+  m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); });
+});
+window.logout = () => { localStorage.clear(); window.location.href = 'index.html'; };
+
+window.showToast = function(text, sub){
+  const stack = document.getElementById('toastStack');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<div class="toast-icon">✓</div><div><div class="toast-text">${text}</div>${sub ? `<div class="toast-sub">${sub}</div>` : ''}</div>`;
+  stack.appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('toast-in')));
+  setTimeout(() => {
+    el.classList.remove('toast-in');
+    el.classList.add('toast-out');
+    setTimeout(() => el.remove(), 300);
+  }, 3200);
+};
+
+// ── MY TEAM ──
+// Lightweight fetch used by Overview/Sales for team-size stats (no rendering)
+async function fetchMyTeamData(){
+  try {
+    const res = await fetch('/api/my-team', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!res.ok) throw new Error('Failed to load team');
+    return await res.json();
+  } catch(err) {
+    console.error('Error loading team:', err);
+    return { salesManagers: [], teamLeaders: [], agents: [] };
+  }
+}
+async function loadMyTeam(){
+  const data = await fetchMyTeamData();
+  const smCount = (data.salesManagers||[]).length;
+  const tlCount = (data.teamLeaders||[]).length;
+  const agCount = (data.agents||[]).length;
+  document.getElementById('teamSummary').textContent =
+    role==='unit_manager' ? `${smCount} Sales Managers · ${tlCount} Team Leaders · ${agCount} Agents` :
+    role==='sales_manager' ? `${tlCount} Team Leaders · ${agCount} Agents` :
+    `${agCount} Agents`;
+  return data;
+}
+
+// ── MY TEAM: org chart drill-down (self as root, drill into subordinates) ──
+let teamDrillStack = []; // {role, id, name} — empty means show self as root
+
+function orgNode(opts){
+  return `
+    <div class="card org-node p-3 ${opts.clickable?'cursor-pointer':''}" ${opts.onclick?`onclick="${opts.onclick}"`:''}>
+      <div class="flex items-center gap-2 mb-1.5">
+        <div class="w-8 h-8 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold text-sm shrink-0">${opts.name[0]}</div>
+        <div class="min-w-0">
+          <p class="font-semibold text-xs truncate">${opts.name}</p>
+          <p class="text-[10px] text-gray-500 truncate">${opts.email||''}</p>
+        </div>
+      </div>
+      <span class="badge badge-blue text-[10px] inline-block">${opts.roleLabel}</span>
+      ${opts.subLabel ? `<p class="text-[10px] text-gray-500 border-t border-gray-200 pt-1.5 mt-1.5 text-center">${opts.subLabel}</p>` : ''}
+    </div>`;
+}
+function animateOrgIn(){
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.querySelectorAll('.org-root, .org-branch').forEach(el => el.classList.add('org-in'));
+  }));
+}
+
+async function renderTeamChart(){
+  const chart = document.getElementById('teamChart');
+  const backBtn = document.getElementById('teamBackBtn');
+
+  if(!teamDrillStack.length){
+    backBtn.classList.add('hidden');
+    const rootRole = role; // unit_manager | sales_manager | team_leader
+    const rootData = await fetchMyTeamData();
+    const rootLabel = ROLE_LABELS[rootRole];
+    const smCount = (rootData.salesManagers||[]).length;
+    const tlCount = (rootData.teamLeaders||[]).length;
+    const agCount = (rootData.agents||[]).length;
+    const subParts = [];
+    if(rootRole==='unit_manager') subParts.push(`${smCount} Sales Mgrs`, `${tlCount} Team Leads`, `${agCount} Agents`);
+    else if(rootRole==='sales_manager') subParts.push(`${tlCount} Team Leads`, `${agCount} Agents`);
+    else subParts.push(`${agCount} Agents`);
+
+    const rootOpts = { name, email: localStorage.getItem('email'), roleLabel: rootLabel, subLabel: subParts.join(' · ') };
+    const directSM = (rootData.salesManagers||[]).map(sm => ({ name: sm.name, email: sm.email, roleLabel:'Sales Manager', clickable:true, onclick:`teamDrillInto('sales_manager','${sm.id}','${sm.name.replace(/'/g,"\\'")}')` }));
+    const directTLOnly = rootRole==='unit_manager'
+      ? (rootData.teamLeaders||[]).filter(tl=>!tl.sales_manager_id).map(tl => ({ name: tl.name, email: tl.email, roleLabel:'Team Leader', clickable:true, onclick:`teamDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` }))
+      : rootRole==='sales_manager'
+      ? (rootData.teamLeaders||[]).map(tl => ({ name: tl.name, email: tl.email, roleLabel:'Team Leader', clickable:true, onclick:`teamDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` }))
+      : [];
+    const directAgentsOnly = rootRole==='team_leader'
+      ? (rootData.agents||[]).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:false }))
+      : (rootData.agents||[]).filter(a => (rootRole==='unit_manager' && !a.team_leader_id && !a.sales_manager_id) || (rootRole==='sales_manager' && !a.team_leader_id)).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:false }));
+
+    const children = [...directSM, ...directTLOnly, ...directAgentsOnly];
+    chart.innerHTML = `
+      <div class="org-wrap">
+        <div class="org-root">${orgNode(rootOpts)}</div>
+        ${children.length ? `
+          <div class="org-vline"></div>
+          <div class="org-children-row">${children.map(c=>`<div class="org-branch">${orgNode(c)}</div>`).join('')}</div>
+        ` : `<p class="text-center text-gray-500 text-xs py-6">Nobody under you yet.</p>`}
+      </div>`;
+    animateOrgIn();
     return;
   }
 
-  const peso = n => '₱' + Number(n||0).toLocaleString('en-PH', {minimumFractionDigits:0,maximumFractionDigits:0});
-  function parseMoney(str){
-    return parseFloat((str||'').toString().replace(/,/g,'')) || 0;
-  }
-  window.formatMoneyInput = function(el){
-    const cursorFromEnd = el.value.length - el.selectionStart;
-    const digits = el.value.replace(/[^\d]/g,'');
-    el.value = digits === '' ? '' : parseInt(digits,10).toLocaleString('en-US');
-    const pos = Math.max(0, el.value.length - cursorFromEnd);
-    el.setSelectionRange(pos, pos);
-  };
-  const ROLE_LABELS = { team_leader:'Team Leader', sales_manager:'Sales Manager', unit_manager:'Unit Manager' };
-
-  const agentName  = localStorage.getItem('agentName')  || localStorage.getItem('name') || 'Agent';
-  const agentEmail = localStorage.getItem('agentEmail') || localStorage.getItem('email') || '—';
-  const agentPhone = localStorage.getItem('agentPhone') || '—';
-  const token = localStorage.getItem('token');
-
-  function initials(name) { return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
-
-  // ── LOAD AGENT INFO ──
-  function loadAgentInfo() {
-    const ini = initials(agentName);
-    document.getElementById('sidebarInitials').textContent = ini;
-    document.getElementById('sidebarName').textContent     = agentName;
-    document.getElementById('sidebarId').textContent       = agentId;
-    document.getElementById('profileInitials').textContent = ini;
-    document.getElementById('profileName').textContent     = agentName;
-    document.getElementById('profileId').textContent       = agentId;
-    document.getElementById('profileNameRow').textContent  = agentName;
-    document.getElementById('profileEmail').textContent    = agentEmail;
-    document.getElementById('profilePhone').textContent    = agentPhone;
-    document.getElementById('profileAgentId').textContent  = agentId;
-  }
-
-  // ── OVERVIEW ──
-  async function renderOverview() {
-    await fetchAllPropData();
-    document.getElementById('statAvail').textContent = propAllUnits.filter(u=>(u.units_left??1)>0).length;
-    document.getElementById('statTotal').textContent = propAllUnits.length;
-    document.getElementById('statSold').textContent  = propAllUnits.filter(u=>(u.units_left??1)<=0).length;
-    const recentProps = [...propAllProps].sort((a,b)=> new Date(b.created_at||0)-new Date(a.created_at||0)).slice(0,5);
-    document.getElementById('overviewTable').innerHTML = recentProps.map(p=>{
-      const propUnits = propAllUnits.filter(u=>u.property_id===p.id);
-      const startingPrice = propUnits.length ? Math.min(...propUnits.map(u=>Number(u.tcp)||Infinity)) : null;
-      return `
-      <tr>
-        <td class="px-6 py-3 font-medium text-white text-sm">${p.name}</td>
-        <td class="px-6 py-3 text-gray-400 text-sm">${p.location||'—'}</td>
-        <td class="px-6 py-3 text-sm">${startingPrice && startingPrice!==Infinity ? peso(startingPrice) : '—'}</td>
-        <td class="px-6 py-3"><span class="badge badge-blue">${p.selling_status||'—'}</span></td>
-      </tr>`;
-    }).join('') || `<tr><td colspan="4" class="px-6 py-5 text-center text-gray-500 text-sm">No properties yet. Admin hasn't added any listings.</td></tr>`;
-  }
-
-  // ── MY TEAM (view-only, read-only for this agent) ──
-  let teamDrillStack = [];
-
-  function agentTeamRoot(){
-    const tlId = localStorage.getItem('teamLeaderId');
-    const smId = localStorage.getItem('salesManagerId');
-    const umId = localStorage.getItem('unitManagerId');
-    if(tlId) return { role:'team_leader', id:tlId };
-    if(smId) return { role:'sales_manager', id:smId };
-    if(umId) return { role:'unit_manager', id:umId };
-    return null;
-  }
-
-  function orgNode(opts){
-    return `
-      <div class="card org-node p-3 ${opts.clickable?'cursor-pointer':''}" ${opts.onclick?`onclick="${opts.onclick}"`:''}>
-        <div class="flex items-center gap-2 mb-1.5">
-          <div class="w-8 h-8 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold text-sm shrink-0">${opts.name[0]}</div>
-          <div class="min-w-0">
-            <p class="font-semibold text-xs truncate">${opts.name}</p>
-            <p class="text-[10px] text-gray-500 truncate">${opts.email||''}</p>
-          </div>
-        </div>
-        <span class="badge badge-blue text-[10px] inline-block">${opts.roleLabel}</span>
-        ${opts.subLabel ? `<p class="text-[10px] text-gray-500 border-t border-gray-200 pt-1.5 mt-1.5 text-center">${opts.subLabel}</p>` : ''}
-      </div>`;
-  }
-  function animateOrgIn(){
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      document.querySelectorAll('.org-root, .org-branch').forEach(el => el.classList.add('org-in'));
-    }));
-  }
-  function agentNode(a){
-    const isMe = a.agent_id === agentId;
-    return { name: a.name + (isMe ? ' (You)' : ''), email: a.email, roleLabel:'Agent', clickable:false };
-  }
-
-  async function renderAgentTeam(){
-    const chart = document.getElementById('teamChart');
-    const backBtn = document.getElementById('teamBackBtn');
-    const root = agentTeamRoot();
-    if(!root){
-      backBtn.classList.add('hidden');
-      chart.innerHTML = `<p class="text-center text-gray-500 text-xs py-8">You're not yet assigned to a Team Leader, Sales Manager, or Unit Manager.</p>`;
-      return;
+  backBtn.classList.remove('hidden');
+  const current = teamDrillStack[teamDrillStack.length-1];
+  try {
+    const res = await fetch(`/api/my-team/of/${current.role}/${current.id}`, { headers: { 'Authorization': 'Bearer ' + token } });
+    const data = await res.json();
+    const rootOpts = { name: current.name, roleLabel: ROLE_LABELS[current.role] || current.role, subLabel: '' };
+    let children = [];
+    if(current.role==='sales_manager'){
+      children = [
+        ...(data.teamLeaders||[]).map(tl => ({ name: tl.name, email: tl.email, roleLabel:'Team Leader', clickable:true, onclick:`teamDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` })),
+        ...(data.agents||[]).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:false })),
+      ];
+    } else if(current.role==='team_leader'){
+      children = (data.agents||[]).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:false }));
     }
-    const current = teamDrillStack.length ? teamDrillStack[teamDrillStack.length-1] : root;
-    backBtn.classList.toggle('hidden', !teamDrillStack.length);
-    try {
-      let rootName = current.name, rootEmail = '';
-      if(!rootName){
-        const listUrl = { team_leader:'/api/team-leaders', sales_manager:'/api/sales-managers', unit_manager:'/api/unit-managers' }[current.role];
-        const res0 = await fetch(listUrl, { headers: { 'Authorization': 'Bearer ' + token } });
-        const list = await res0.json();
-        const person = list.find(p=>p.id===current.id);
-        rootName = person ? person.name : ROLE_LABELS[current.role];
-        rootEmail = person ? person.email : '';
-      }
-      const res = await fetch(`/api/my-team/of/${current.role}/${current.id}`, { headers: { 'Authorization': 'Bearer ' + token } });
-      const data = await res.json();
-      const rootOpts = { name: rootName, email: rootEmail, roleLabel: ROLE_LABELS[current.role], subLabel: '' };
-      let children = [];
-      if(current.role==='unit_manager'){
-        children = [
-          ...(data.salesManagers||[]).map(sm => ({ name: sm.name, email: sm.email, roleLabel:'Sales Manager', clickable:true, onclick:`teamDrillInto('sales_manager','${sm.id}','${sm.name.replace(/'/g,"\\'")}')` })),
-          ...(data.teamLeaders||[]).filter(tl=>!tl.sales_manager_id).map(tl => ({ name: tl.name, email: tl.email, roleLabel:'Team Leader', clickable:true, onclick:`teamDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` })),
-          ...(data.agents||[]).filter(a=>!a.team_leader_id && !a.sales_manager_id).map(agentNode),
-        ];
-      } else if(current.role==='sales_manager'){
-        children = [
-          ...(data.teamLeaders||[]).map(tl => ({ name: tl.name, email: tl.email, roleLabel:'Team Leader', clickable:true, onclick:`teamDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` })),
-          ...(data.agents||[]).filter(a=>!a.team_leader_id).map(agentNode),
-        ];
-      } else if(current.role==='team_leader'){
-        children = (data.agents||[]).map(agentNode);
-      }
-      chart.innerHTML = `
-        <div class="org-wrap">
-          <div class="org-root">${orgNode(rootOpts)}</div>
-          ${children.length ? `
-            <div class="org-vline"></div>
-            <div class="org-children-row">${children.map(c=>`<div class="org-branch">${orgNode(c)}</div>`).join('')}</div>
-          ` : `<p class="text-center text-gray-500 text-xs py-6">Nobody else here yet.</p>`}
-        </div>`;
-      animateOrgIn();
-    } catch(err) { console.error('Error loading team:', err); }
-  }
-  window.teamDrillInto = (role2, id, personName) => { teamDrillStack.push({ role: role2, id, name: personName }); renderAgentTeam(); };
-  window.teamGoBack = () => { teamDrillStack.pop(); renderAgentTeam(); };
-
-  // ── PROPERTIES (view-only, real data — mirrors the Unit Manager's Properties view) ──
-  let propAllDevs=[], propAllProps=[], propAllUnits=[];
-  let propCurrentDevId=null, propCurrentDevName='', propCurrentPropId=null, propCurrentPropName='';
-  let unitsListSearch='';
-
-  async function fetchAllPropData(){
-    const [devsRes, propsRes, unitsRes] = await Promise.all([
-      fetch('/api/developers', { headers: { 'Authorization': 'Bearer ' + token } }),
-      fetch('/api/properties', { headers: { 'Authorization': 'Bearer ' + token } }),
-      fetch('/api/units', { headers: { 'Authorization': 'Bearer ' + token } }),
-    ]);
-    propAllDevs = await devsRes.json();
-    propAllProps = await propsRes.json();
-    propAllUnits = await unitsRes.json();
-  }
-
-  async function enterPropDevelopers(){
-    propCurrentDevId = null; propCurrentPropId = null;
-    document.getElementById('propDevListView').classList.remove('hidden');
-    document.getElementById('propListView').classList.add('hidden');
-    document.getElementById('propUnitsView').classList.add('hidden');
-    await fetchAllPropData();
-    document.getElementById('propDevGrid').innerHTML = propAllDevs.map(d => `
-      <div onclick="propViewDeveloper('${d.id}','${d.name.replace(/'/g,"\\'")}')" class="card overflow-hidden cursor-pointer text-center">
-        <div class="w-full h-28 bg-gray-50 flex items-center justify-center overflow-hidden">
-          ${d.logo_url ? `<img src="${d.logo_url}" class="w-full h-full object-cover">` : `<span class="text-gray-400 text-xs">No logo</span>`}
-        </div>
-        <div class="p-3">
-          <p class="font-semibold text-sm">${d.name}</p>
-          ${d.drive_link ? `<a href="${d.drive_link}" target="_blank" onclick="event.stopPropagation()" class="text-xs text-orange-500 hover:underline block mt-1">📁 Drive</a>` : ''}
-        </div>
-      </div>`).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No developers yet.</p>`;
-  }
-
-  window.propViewDeveloper = function(id, name){
-    propCurrentDevId = id; propCurrentDevName = name;
-    document.getElementById('propDevListView').classList.add('hidden');
-    document.getElementById('propListView').classList.remove('hidden');
-    document.getElementById('propListTitle').textContent = name;
-    const props = propAllProps.filter(p=>p.developer_id===id);
-    document.getElementById('propListGrid').innerHTML = props.map(p => `
-      <div onclick="propViewProperty('${p.id}','${p.name.replace(/'/g,"\\'")}')" class="card overflow-hidden cursor-pointer">
-        <div class="w-full h-36 bg-gray-50 flex items-center justify-center overflow-hidden">
-          ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-400 text-xs">No photo</span>`}
-        </div>
-        <div class="p-3 space-y-1">
-          <p class="font-semibold text-sm">${p.name}</p>
-          <p class="text-xs text-gray-500">${p.location||'—'}</p>
-          <p class="text-xs text-gray-500">${p.property_type||'Condo'}</p>
-          ${(p.latitude && p.longitude) ? `
-          <div class="pt-1">
-            <iframe src="https://www.openstreetmap.org/export/embed.html?bbox=${(+p.longitude-0.01)}%2C${(+p.latitude-0.007)}%2C${(+p.longitude+0.01)}%2C${(+p.latitude+0.007)}&layer=mapnik&marker=${p.latitude}%2C${p.longitude}" class="w-full h-24 rounded-lg border border-gray-200 pointer-events-none" loading="lazy"></iframe>
-            <button onclick="event.stopPropagation();window.open('https://www.google.com/maps?q=${p.latitude},${p.longitude}','_blank')" class="w-full mt-1.5 text-xs text-orange-500 hover:text-orange-600 border border-orange-500/30 hover:border-orange-500/50 rounded-lg py-1.5 transition-colors">📍 View Location</button>
-          </div>` : ''}
-        </div>
-      </div>`).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No properties yet for ${name}.</p>`;
-  }
-  window.propBackToDevelopers = function(){ enterPropDevelopers(); }
-
-  window.propViewProperty = function(id, name){
-    propCurrentPropId = id; propCurrentPropName = name;
-    document.getElementById('propListView').classList.add('hidden');
-    document.getElementById('propUnitsView').classList.remove('hidden');
-    document.getElementById('propUnitsTitle').textContent = name;
-    unitsListSearch = '';
-    renderUnitsList();
-  }
-  window.propBackToProperties = function(){
-    document.getElementById('propUnitsView').classList.add('hidden');
-    document.getElementById('propListView').classList.remove('hidden');
-  }
-
-  function renderUnitsList(){
-    const all = propAllUnits.filter(u=>u.property_id===propCurrentPropId);
-    const filtered = all.filter(u=>u.unit_name.toLowerCase().includes(unitsListSearch));
-    document.getElementById('propUnitGrid').innerHTML = filtered.map(u => {
-      const left = u.units_left ?? 1;
-      const soldOut = left <= 0;
-      return `
-      <div onclick="viewUnitDetail('${u.id}')" class="card overflow-hidden cursor-pointer ${soldOut?'opacity-50':''}">
-        <div class="w-full h-32 bg-gray-50 flex items-center justify-center overflow-hidden">
-          ${u.image_url ? `<img src="${u.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-400 text-xs">No photo</span>`}
-        </div>
-        <div class="p-3 space-y-1">
-          <div class="flex items-start justify-between gap-2">
-            <p class="font-semibold text-sm leading-tight">${u.unit_name}</p>
-            <span class="badge ${soldOut?'bg-red':'bg-green'} shrink-0">${soldOut ? 'Sold Out' : left + ' unit' + (left===1?'':'s') + ' left'}</span>
-          </div>
-          <p class="text-orange-600 font-bold text-sm">${peso(u.tcp)}</p>
-          <p class="text-gray-500 text-xs">${bedroomLabel(u.bedrooms)}${u.bedrooms!==0 ? ' BR' : ''} · ${u.square_meters??'—'} sqm</p>
-        </div>
+    chart.innerHTML = `
+      <div class="org-wrap">
+        <div class="org-root">${orgNode(rootOpts)}</div>
+        ${children.length ? `
+          <div class="org-vline"></div>
+          <div class="org-children-row">${children.map(c=>`<div class="org-branch">${orgNode(c)}</div>`).join('')}</div>
+        ` : `<p class="text-center text-gray-500 text-xs py-6">Nobody under this person yet.</p>`}
       </div>`;
-    }).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No units yet for ${propCurrentPropName}.</p>`;
-    document.getElementById('unitsListCount').textContent = `Showing ${filtered.length} of ${all.length} units`;
-  }
-  window.searchUnitsList = val => { unitsListSearch = val.toLowerCase(); renderUnitsList(); };
+    animateOrgIn();
+  } catch(err) { console.error('Error loading subordinate team:', err); }
+}
+window.teamDrillInto = (role2, id, personName) => {
+  teamDrillStack.push({ role: role2, id, name: personName });
+  renderTeamChart();
+};
+window.teamGoBack = () => {
+  teamDrillStack.pop();
+  renderTeamChart();
+};
 
-  function bedroomLabel(n){
-    if(n===null || n===undefined || n==='') return '—';
-    return Number(n)===0 ? 'Studio' : n;
-  }
+// ── PERSONAL CLIENTS/BUYERS (shared data used by Overview, Sales, Commission) ──
+let myUnitsCache = [], myBuyersWithUnit = [];
+async function fetchMyClientsData(){
+  const [buyersRes, unitsRes, propsRes, devsRes] = await Promise.all([
+    fetch('/api/buyers', { headers: { 'Authorization': 'Bearer ' + token } }),
+    fetch('/api/units',  { headers: { 'Authorization': 'Bearer ' + token } }),
+    fetch('/api/properties', { headers: { 'Authorization': 'Bearer ' + token } }),
+    fetch('/api/developers', { headers: { 'Authorization': 'Bearer ' + token } }),
+  ]);
+  const buyers = await buyersRes.json();
+  myUnitsCache = await unitsRes.json();
+  const propsCache = await propsRes.json();
+  const devsCache  = await devsRes.json();
+  myBuyersWithUnit = buyers.map(b => {
+    const unit = myUnitsCache.find(u=>u.id===b.unit_id);
+    const property = unit ? propsCache.find(p=>p.id===unit.property_id) : null;
+    const developer = property ? devsCache.find(d=>d.id===property.developer_id) : null;
+    return { ...b, unit, property, developer };
+  });
+  return { buyers: myBuyersWithUnit, props: propsCache, devs: devsCache };
+}
 
-  window.viewUnitDetail = function(id){
-    const u = propAllUnits.find(x=>x.id===id);
-    if(!u) return;
-    const terms = u.downpayment_terms_months || 24;
-    const monthlyDP = u.downpayment ? Number(u.downpayment)/terms : null;
-    document.getElementById('unitDetailContent').innerHTML = `
-      <div class="w-full h-48 bg-gray-50 rounded-lg overflow-hidden mb-4 flex items-center justify-center">
+// ── DASHBOARD (Overview) ──
+async function renderOverview(){
+  try {
+    const teamData = await loadMyTeam();
+    const { buyers } = await fetchMyClientsData();
+    const totalValue = buyers.reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
+    const availableUnits = myUnitsCache.filter(u=>(u.units_left??1)>0).length;
+
+    const teamSize = role==='unit_manager' ? (teamData.salesManagers.length + teamData.teamLeaders.length + teamData.agents.length)
+      : role==='sales_manager' ? (teamData.teamLeaders.length + teamData.agents.length)
+      : teamData.agents.length;
+
+    document.getElementById('ovCards').innerHTML = [
+      ['Team Size', teamSize, ''],
+      ['My Clients', buyers.length, ''],
+      ['My Sales Value', peso(totalValue), 'text-orange-600'],
+      ['Available Units', availableUnits, 'text-green-600'],
+    ].map(([l,v,c])=>`<div class="card p-4"><p class="text-gray-500 text-xs uppercase tracking-wide mb-1">${l}</p><p class="text-2xl font-bold ${c}">${v}</p></div>`).join('');
+
+    const recent = [...buyers].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,5);
+    document.getElementById('ovRecentBody').innerHTML = recent.map(b=>`
+      <tr>
+        <td class="px-5 py-2 text-xs font-medium">${b.name}</td>
+        <td class="px-5 py-2 text-xs">${b.unit?b.unit.unit_name:'—'}</td>
+        <td class="px-5 py-2 text-xs text-orange-600">${b.unit?peso(b.unit.tcp):'—'}</td>
+      </tr>`).join('') || `<tr><td colspan="3" class="px-5 py-4 text-center text-gray-500 text-xs">No clients yet.</td></tr>`;
+  } catch(err) { console.error('Error loading overview:', err); }
+}
+
+// ── PROPERTIES (view-only) ──
+let propAllDevs=[], propAllProps=[], propAllUnits=[];
+let propCurrentDevId=null, propCurrentDevName='', propCurrentPropId=null, propCurrentPropName='';
+let unitsListSearch='';
+
+async function fetchAllPropData(){
+  const [devsRes, propsRes, unitsRes] = await Promise.all([
+    fetch('/api/developers', { headers: { 'Authorization': 'Bearer ' + token } }),
+    fetch('/api/properties', { headers: { 'Authorization': 'Bearer ' + token } }),
+    fetch('/api/units', { headers: { 'Authorization': 'Bearer ' + token } }),
+  ]);
+  propAllDevs = await devsRes.json();
+  propAllProps = await propsRes.json();
+  propAllUnits = await unitsRes.json();
+}
+
+async function enterPropDevelopers(){
+  propCurrentDevId = null; propCurrentPropId = null;
+  document.getElementById('propDevListView').classList.remove('hidden');
+  document.getElementById('propListView').classList.add('hidden');
+  document.getElementById('propUnitsView').classList.add('hidden');
+  await fetchAllPropData();
+  document.getElementById('propDevGrid').innerHTML = propAllDevs.map(d => `
+    <div onclick="propViewDeveloper('${d.id}','${d.name.replace(/'/g,"\\'")}')" class="card overflow-hidden cursor-pointer text-center">
+      <div class="w-full h-28 bg-gray-50 flex items-center justify-center overflow-hidden">
+        ${d.logo_url ? `<img src="${d.logo_url}" class="w-full h-full object-cover">` : `<span class="text-gray-400 text-xs">No logo</span>`}
+      </div>
+      <div class="p-3">
+        <p class="font-semibold text-sm">${d.name}</p>
+        ${d.drive_link ? `<a href="${d.drive_link}" target="_blank" onclick="event.stopPropagation()" class="text-xs text-orange-500 hover:underline block mt-1">📁 Drive</a>` : ''}
+      </div>
+    </div>`).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No developers yet.</p>`;
+}
+
+window.propViewDeveloper = function(id, name){
+  propCurrentDevId = id; propCurrentDevName = name;
+  document.getElementById('propDevListView').classList.add('hidden');
+  document.getElementById('propListView').classList.remove('hidden');
+  document.getElementById('propListTitle').textContent = name;
+  const props = propAllProps.filter(p=>p.developer_id===id);
+  document.getElementById('propListGrid').innerHTML = props.map(p => `
+    <div onclick="propViewProperty('${p.id}','${p.name.replace(/'/g,"\\'")}')" class="card overflow-hidden cursor-pointer">
+      <div class="w-full h-36 bg-gray-50 flex items-center justify-center overflow-hidden">
+        ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-400 text-xs">No photo</span>`}
+      </div>
+      <div class="p-3 space-y-1">
+        <p class="font-semibold text-sm">${p.name}</p>
+        <p class="text-xs text-gray-500">${p.location||'—'}</p>
+        <p class="text-xs text-gray-500">${p.property_type||'Condo'}</p>
+        ${(p.latitude && p.longitude) ? `
+        <div class="pt-1">
+          <iframe src="https://www.openstreetmap.org/export/embed.html?bbox=${(+p.longitude-0.01)}%2C${(+p.latitude-0.007)}%2C${(+p.longitude+0.01)}%2C${(+p.latitude+0.007)}&layer=mapnik&marker=${p.latitude}%2C${p.longitude}" class="w-full h-24 rounded-lg border border-gray-200 pointer-events-none" loading="lazy"></iframe>
+          <button onclick="event.stopPropagation();window.open('https://www.google.com/maps?q=${p.latitude},${p.longitude}','_blank')" class="w-full mt-1.5 text-xs text-orange-500 hover:text-orange-600 border border-orange-500/30 hover:border-orange-500/50 rounded-lg py-1.5 transition-colors">📍 View Location</button>
+        </div>` : ''}
+      </div>
+    </div>`).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No properties yet for ${name}.</p>`;
+}
+window.propBackToDevelopers = function(){ enterPropDevelopers(); }
+
+window.propViewProperty = function(id, name){
+  propCurrentPropId = id; propCurrentPropName = name;
+  document.getElementById('propListView').classList.add('hidden');
+  document.getElementById('propUnitsView').classList.remove('hidden');
+  document.getElementById('propUnitsTitle').textContent = name;
+  unitsListSearch = '';
+  renderUnitsList();
+}
+window.propBackToProperties = function(){
+  document.getElementById('propUnitsView').classList.add('hidden');
+  document.getElementById('propListView').classList.remove('hidden');
+}
+
+function renderUnitsList(){
+  const all = propAllUnits.filter(u=>u.property_id===propCurrentPropId);
+  const filtered = all.filter(u=>u.unit_name.toLowerCase().includes(unitsListSearch));
+  document.getElementById('propUnitGrid').innerHTML = filtered.map(u => {
+    const left = u.units_left ?? 1;
+    const soldOut = left <= 0;
+    return `
+    <div onclick="viewUnitDetail('${u.id}')" class="card overflow-hidden cursor-pointer ${soldOut?'opacity-50':''}">
+      <div class="w-full h-32 bg-gray-50 flex items-center justify-center overflow-hidden">
         ${u.image_url ? `<img src="${u.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-400 text-xs">No photo</span>`}
       </div>
-      <div class="flex items-start justify-between gap-2 mb-1">
-        <h3 class="font-bold text-lg">${u.unit_name}</h3>
-        <span class="badge ${(u.units_left??1)<=0?'bg-red':'bg-green'}">${(u.units_left??1)<=0 ? 'Sold Out' : (u.units_left??1) + ' unit' + ((u.units_left??1)===1?'':'s') + ' left'}</span>
+      <div class="p-3 space-y-1">
+        <div class="flex items-start justify-between gap-2">
+          <p class="font-semibold text-sm leading-tight">${u.unit_name}</p>
+          <span class="badge ${soldOut?'bg-red':'bg-green'} shrink-0">${soldOut ? 'Sold Out' : left + ' unit' + (left===1?'':'s') + ' left'}</span>
+        </div>
+        <p class="text-orange-600 font-bold text-sm">${peso(u.tcp)}</p>
+        <p class="text-gray-500 text-xs">${bedroomLabel(u.bedrooms)}${u.bedrooms!==0 ? ' BR' : ''} · ${u.square_meters??'—'} sqm</p>
       </div>
-      <p class="text-gray-500 text-sm mb-3">${propCurrentPropName}</p>
-      <div class="grid grid-cols-2 gap-3 mb-3">
-        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">TCP</p><p class="font-bold">${peso(u.tcp)}</p></div>
-        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Bedrooms</p><p class="font-bold">${bedroomLabel(u.bedrooms)}</p></div>
-        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Square Meters</p><p class="font-bold">${u.square_meters??'—'}</p></div>
-        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Furnishing</p><p class="font-bold">${u.furnishing||'Bare Unit'}</p></div>
-      </div>
-      <div class="grid grid-cols-2 gap-3 mb-3">
-        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Reservation Fee</p><p class="font-bold">${u.reservation_fee ? peso(u.reservation_fee) : '—'}</p></div>
-        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Full Downpayment</p><p class="font-bold">${u.downpayment ? peso(u.downpayment) : '—'}</p></div>
-        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Monthly DP</p><p class="font-bold">${monthlyDP ? peso(monthlyDP) : '—'}</p></div>
-        <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Downpayment Terms</p><p class="font-bold">${u.downpayment ? terms + ' months' : '—'}</p></div>
-      </div>
-      <p class="text-gray-500 text-xs mb-1">Description</p>
-      <p class="text-gray-700 text-sm">${u.description||'No description provided.'}</p>
-    `;
-    openModal('unitDetailModal');
-  }
+    </div>`;
+  }).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No units yet for ${propCurrentPropName}.</p>`;
+  document.getElementById('unitsListCount').textContent = `Showing ${filtered.length} of ${all.length} units`;
+}
+window.searchUnitsList = val => { unitsListSearch = val.toLowerCase(); renderUnitsList(); };
 
-  // Global property search across all developers (from Level 1)
-  window.updateBudgetLabels = function(context){
-    const budgetType = document.getElementById(context+'SearchBudgetType').value;
-    const label = budgetType==='dp' ? 'Monthly DP' : (budgetType==='fulldp' ? 'Full DP' : 'TCP');
-    document.getElementById(context+'SearchMinLabel').textContent = `Min ${label} (₱)`;
-    document.getElementById(context+'SearchMaxLabel').textContent = `Max ${label} (₱)`;
-  }
+function bedroomLabel(n){
+  if(n===null || n===undefined || n==='') return '—';
+  return Number(n)===0 ? 'Studio' : n;
+}
 
-  window.searchPropsGlobal = async function(context){
-    context = context || 'prop';
-    const safeVal = id => { const el = document.getElementById(id); return el ? el.value : ''; };
-    const type = safeVal(context+'SearchType');
-    const selling = safeVal(context+'SearchSelling');
-    const loc = safeVal(context+'SearchLoc').trim().toLowerCase();
-    const budgetType = safeVal(context+'SearchBudgetType');
-    const budgetMin = parseMoney(safeVal(context+'SearchDPMin'));
-    const budgetMaxRaw = safeVal(context+'SearchDPMax');
-    const budgetMax = budgetMaxRaw ? parseMoney(budgetMaxRaw) : Infinity;
-    const resultsEl = document.getElementById(context+'SearchResults');
-    if(!type && !selling && !loc && !budgetMin && budgetMaxRaw===''){ resultsEl.innerHTML = '<p class="text-xs text-gray-500">Enter a filter to search.</p>'; return; }
-    if(!propAllProps.length) await fetchAllPropData();
-    const filtered = propAllProps.filter(p=>{
-      const propUnits0 = propAllUnits.filter(u=>u.property_id===p.id);
-      const mt = !type || p.property_type===type;
-      const ms = !selling || p.selling_status===selling || propUnits0.some(u=>u.construction_status===selling);
-      const ml = !loc || (p.location||'').toLowerCase().includes(loc) || p.name.toLowerCase().includes(loc) || propUnits0.some(u=>(u.unit_name||'').toLowerCase().includes(loc));
-      if(!mt || !ms || !ml) return false;
-      if(budgetMin || budgetMaxRaw!==''){
-        const propUnits = propAllUnits.filter(u=>u.property_id===p.id);
-        const hasMatch = propUnits.some(u=>{
-          let value;
-          if(budgetType==='dp'){
-            const terms = u.downpayment_terms_months || 24;
-            value = u.downpayment ? Number(u.downpayment)/terms : 0;
-          } else if(budgetType==='fulldp'){
-            value = Number(u.downpayment) || 0;
-          } else {
-            value = Number(u.tcp) || 0;
-          }
-          return value >= budgetMin && value <= budgetMax;
-        });
-        if(!hasMatch) return false;
-      }
-      return true;
-    });
-    function matchingUnitFor(p){
+window.viewUnitDetail = function(id){
+  const u = propAllUnits.find(x=>x.id===id);
+  if(!u) return;
+  const terms = u.downpayment_terms_months || 24;
+  const monthlyDP = u.downpayment ? Number(u.downpayment)/terms : null;
+  document.getElementById('unitDetailContent').innerHTML = `
+    <div class="w-full h-48 bg-gray-50 rounded-lg overflow-hidden mb-4 flex items-center justify-center">
+      ${u.image_url ? `<img src="${u.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-400 text-xs">No photo</span>`}
+    </div>
+    <div class="flex items-start justify-between gap-2 mb-1">
+      <h3 class="font-bold text-lg">${u.unit_name}</h3>
+      <span class="badge ${(u.units_left??1)<=0?'bg-red':'bg-green'}">${(u.units_left??1)<=0 ? 'Sold Out' : (u.units_left??1) + ' unit' + ((u.units_left??1)===1?'':'s') + ' left'}</span>
+    </div>
+    <p class="text-gray-500 text-sm mb-3">${propCurrentPropName}</p>
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">TCP</p><p class="font-bold">${peso(u.tcp)}</p></div>
+      <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Bedrooms</p><p class="font-bold">${bedroomLabel(u.bedrooms)}</p></div>
+      <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Square Meters</p><p class="font-bold">${u.square_meters??'—'}</p></div>
+      <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Furnishing</p><p class="font-bold">${u.furnishing||'Bare Unit'}</p></div>
+    </div>
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Reservation Fee</p><p class="font-bold">${u.reservation_fee ? peso(u.reservation_fee) : '—'}</p></div>
+      <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Full Downpayment</p><p class="font-bold">${u.downpayment ? peso(u.downpayment) : '—'}</p></div>
+      <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Monthly DP</p><p class="font-bold">${monthlyDP ? peso(monthlyDP) : '—'}</p></div>
+      <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Downpayment Terms</p><p class="font-bold">${u.downpayment ? terms + ' months' : '—'}</p></div>
+    </div>
+    <p class="text-gray-500 text-xs mb-1">Description</p>
+    <p class="text-gray-700 text-sm">${u.description||'No description provided.'}</p>
+  `;
+  openModal('unitDetailModal');
+}
+
+// Global property search across all developers (from Level 1)
+window.updateBudgetLabels = function(context){
+  const budgetType = document.getElementById(context+'SearchBudgetType').value;
+  const label = budgetType==='dp' ? 'Monthly DP' : (budgetType==='fulldp' ? 'Full DP' : 'TCP');
+  document.getElementById(context+'SearchMinLabel').textContent = `Min ${label} (₱)`;
+  document.getElementById(context+'SearchMaxLabel').textContent = `Max ${label} (₱)`;
+}
+
+window.searchPropsGlobal = async function(context){
+  context = context || 'prop';
+  const safeVal = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const type = safeVal(context+'SearchType');
+  const selling = safeVal(context+'SearchSelling');
+  const loc = safeVal(context+'SearchLoc').trim().toLowerCase();
+  const budgetType = safeVal(context+'SearchBudgetType');
+  const budgetMin = parseMoney(safeVal(context+'SearchDPMin'));
+  const budgetMaxRaw = safeVal(context+'SearchDPMax');
+  const budgetMax = budgetMaxRaw ? parseMoney(budgetMaxRaw) : Infinity;
+  const resultsEl = document.getElementById(context+'SearchResults');
+  if(!type && !selling && !loc && !budgetMin && budgetMaxRaw===''){ resultsEl.innerHTML = '<p class="text-xs text-gray-500">Enter a filter to search.</p>'; return; }
+  if(!propAllProps.length) await fetchAllPropData();
+  const filtered = propAllProps.filter(p=>{
+    const propUnits0 = propAllUnits.filter(u=>u.property_id===p.id);
+    const mt = !type || p.property_type===type;
+    const ms = !selling || p.selling_status===selling || propUnits0.some(u=>u.construction_status===selling);
+    const ml = !loc || (p.location||'').toLowerCase().includes(loc) || p.name.toLowerCase().includes(loc) || propUnits0.some(u=>(u.unit_name||'').toLowerCase().includes(loc));
+    if(!mt || !ms || !ml) return false;
+    if(budgetMin || budgetMaxRaw!==''){
       const propUnits = propAllUnits.filter(u=>u.property_id===p.id);
-      if(loc){
-        const byName = propUnits.find(u=>(u.unit_name||'').toLowerCase().includes(loc));
-        if(byName) return byName;
-      }
-      if(!(budgetMin || budgetMaxRaw!=='')) return null;
-      return propUnits.find(u=>{
+      const hasMatch = propUnits.some(u=>{
         let value;
         if(budgetType==='dp'){
           const terms = u.downpayment_terms_months || 24;
@@ -713,291 +779,312 @@ document.addEventListener('DOMContentLoaded', () => {
           value = Number(u.tcp) || 0;
         }
         return value >= budgetMin && value <= budgetMax;
-      }) || null;
+      });
+      if(!hasMatch) return false;
     }
-    resultsEl.innerHTML = filtered.length ? `
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        ${filtered.map(p=>{
-          const dev = propAllDevs.find(d=>d.id===p.developer_id);
-          const propUnits = propAllUnits.filter(u=>u.property_id===p.id);
-          const startingPrice = propUnits.length ? Math.min(...propUnits.map(u=>Number(u.tcp)||Infinity)) : null;
-          const matchUnit = matchingUnitFor(p);
-          const switchSection = context==='dash' ? `showSection('properties',document.querySelectorAll('.nav-link')[1]);` : '';
-          const jumpCall = `${switchSection}propViewDeveloper('${p.developer_id}','${dev?dev.name.replace(/'/g,"\\'"):''}');propViewProperty('${p.id}','${p.name.replace(/'/g,"\\'")}')${matchUnit ? `;viewUnitDetail('${matchUnit.id}')` : ''}`;
-          return `<div onclick="${jumpCall}" class="card p-3 cursor-pointer">
-            <p class="font-semibold text-sm">${p.name}</p>
-            <p class="text-xs text-gray-500">${p.location||'—'} · ${p.property_type} · ${p.selling_status||'—'}</p>
-            <p class="text-xs text-gray-500">Developer: ${dev?dev.name:'—'}</p>
-            ${matchUnit ? `<p class="text-xs text-orange-600 font-semibold mt-1">${matchUnit.unit_name}: ${peso(matchUnit.tcp)}</p>` : (startingPrice && startingPrice!==Infinity ? `<p class="text-xs text-orange-600 font-semibold mt-1">Starting from ${peso(startingPrice)}</p>` : '')}
-          </div>`;
-        }).join('')}
-      </div>
-    ` : `<p class="text-xs text-gray-500">No properties match your search.</p>`;
+    return true;
+  });
+  function matchingUnitFor(p){
+    const propUnits = propAllUnits.filter(u=>u.property_id===p.id);
+    if(loc){
+      const byName = propUnits.find(u=>(u.unit_name||'').toLowerCase().includes(loc));
+      if(byName) return byName;
+    }
+    if(!(budgetMin || budgetMaxRaw!=='')) return null;
+    return propUnits.find(u=>{
+      let value;
+      if(budgetType==='dp'){
+        const terms = u.downpayment_terms_months || 24;
+        value = u.downpayment ? Number(u.downpayment)/terms : 0;
+      } else if(budgetType==='fulldp'){
+        value = Number(u.downpayment) || 0;
+      } else {
+        value = Number(u.tcp) || 0;
+      }
+      return value >= budgetMin && value <= budgetMax;
+    }) || null;
   }
+  resultsEl.innerHTML = filtered.length ? `
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      ${filtered.map(p=>{
+        const dev = propAllDevs.find(d=>d.id===p.developer_id);
+        const propUnits = propAllUnits.filter(u=>u.property_id===p.id);
+        const startingPrice = propUnits.length ? Math.min(...propUnits.map(u=>Number(u.tcp)||Infinity)) : null;
+        const matchUnit = matchingUnitFor(p);
+        const switchSection = context==='dash' ? `showSection('properties',document.querySelectorAll('.nav-link')[2]);` : '';
+        const jumpCall = `${switchSection}propViewDeveloper('${p.developer_id}','${dev?dev.name.replace(/'/g,"\\'"):''}');propViewProperty('${p.id}','${p.name.replace(/'/g,"\\'")}')${matchUnit ? `;viewUnitDetail('${matchUnit.id}')` : ''}`;
+        return `<div onclick="${jumpCall}" class="card p-3 cursor-pointer">
+          <p class="font-semibold text-sm">${p.name}</p>
+          <p class="text-xs text-gray-500">${p.location||'—'} · ${p.property_type} · ${p.selling_status||'—'}</p>
+          <p class="text-xs text-gray-500">Developer: ${dev?dev.name:'—'}</p>
+          ${matchUnit ? `<p class="text-xs text-orange-600 font-semibold mt-1">${matchUnit.unit_name}: ${peso(matchUnit.tcp)}</p>` : (startingPrice && startingPrice!==Infinity ? `<p class="text-xs text-orange-600 font-semibold mt-1">Starting from ${peso(startingPrice)}</p>` : '')}
+        </div>`;
+      }).join('')}
+    </div>
+  ` : `<p class="text-xs text-gray-500">No properties match your search.</p>`;
+}
 
-  // ── COMMISSION (real: rank/rate from Admin, computed from actual sales) ──
-  // Commission is computed off Net Selling Price when the agent provided one (the actual
-  // commissionable amount after adjustments); falls back to TCP/manual TCP otherwise.
-  function saleTCP(b){
-    if(b.net_selling_price) return Number(b.net_selling_price) || 0;
-    if(b.unit) return Number(b.unit.tcp) || 0;
-    if(b.manual_tcp) return Number(b.manual_tcp) || 0;
-    return 0;
-  }
-  function salePropertyLabel(b){
-    if(b.property) return `${b.property.name}${b.unit ? ' / ' + b.unit.unit_name : ''}`;
-    if(b.manual_property_name || b.manual_unit_name) return `${b.manual_property_name||'—'}${b.manual_unit_name ? ' / ' + b.manual_unit_name : ''}`;
-    return '—';
-  }
-  async function renderCommission() {
-    const rank = localStorage.getItem('commissionRank') || '—';
-    const rate = parseFloat(localStorage.getItem('commissionRate')) || 0;
-    const { buyers } = await fetchMyClientsData();
+// ── COMMISSION (personal) ──
+function saleTCP(b){
+  if(b.net_selling_price) return Number(b.net_selling_price) || 0;
+  if(b.unit) return Number(b.unit.tcp) || 0;
+  if(b.manual_tcp) return Number(b.manual_tcp) || 0;
+  return 0;
+}
+function salePropertyLabel(b){
+  if(b.property) return `${b.property.name}${b.unit ? ' / ' + b.unit.unit_name : ''}`;
+  if(b.manual_property_name || b.manual_unit_name) return `${b.manual_property_name||'—'}${b.manual_unit_name ? ' / ' + b.manual_unit_name : ''}`;
+  return '—';
+}
+async function renderCommissionPersonal(){
+  const { buyers } = await fetchMyClientsData();
+  const rank = localStorage.getItem('commissionRank') || '—';
+  const rate = parseFloat(localStorage.getItem('commissionRate')) || 0;
+  const tcn = buyers.reduce((s,b)=>s + saleTCP(b), 0);
+  const gross = tcn * rate / 100;
+  const withholding = gross * 0.10;
+  const percTax = gross * 0.03;
+  const net = gross - withholding - percTax;
 
-  const tcn = buyers.reduce((s,b)=> s + saleTCP(b), 0);
-    const gross = tcn * rate / 100;
-    const withholding = gross * 0.10;
-    const percTax = gross * 0.03;
-    const net = gross - withholding - percTax;
+  document.getElementById('commRankLabel').textContent = rank;
+  document.getElementById('commTCN').textContent = peso(tcn);
+  document.getElementById('commRateVal').textContent = rate + '%';
+  document.getElementById('commGrossVal').textContent = peso(gross);
+  document.getElementById('commWithVal').textContent = '(' + peso(withholding) + ')';
+  document.getElementById('commPercVal').textContent = '(' + peso(percTax) + ')';
+  document.getElementById('commNetVal').textContent = peso(net);
 
-    document.getElementById('commRankLabel').textContent = rank;
-    document.getElementById('commTCN').textContent = peso(tcn);
-    document.getElementById('commRateVal').textContent = rate + '%';
-    document.getElementById('commGrossVal').textContent = peso(gross);
-    document.getElementById('commWithVal').textContent = '-' + peso(withholding);
-    document.getElementById('commPercVal').textContent = '-' + peso(percTax);
-    document.getElementById('commNetVal').textContent = peso(net);
+  const withIncentive = buyers.filter(b=>b.incentive_amount);
+  const totalIncentive = withIncentive.reduce((s,b)=> s + (Number(b.incentive_amount)||0), 0);
+  document.getElementById('incentiveTotalVal').textContent = peso(totalIncentive);
+  document.getElementById('incentiveBody').innerHTML = withIncentive.map(b => `
+    <tr>
+      <td class="px-5 py-3 text-xs font-medium text-gray-900">${b.name}</td>
+      <td class="px-5 py-3 text-xs text-gray-500">${salePropertyLabel(b)}</td>
+      <td class="px-5 py-3 text-xs text-orange-600">${saleTCP(b) ? peso(saleTCP(b)) : '—'}</td>
+      <td class="px-5 py-3 text-xs text-purple-600 font-semibold">${peso(b.incentive_amount)}</td>
+    </tr>`).join('') || `<tr><td colspan="4" class="px-5 py-5 text-center text-gray-400 text-xs">No incentives recorded yet.</td></tr>`;
 
-    const withIncentive = buyers.filter(b=>b.incentive_amount);
-    const totalIncentive = withIncentive.reduce((s,b)=> s + (Number(b.incentive_amount)||0), 0);
-    document.getElementById('incentiveTotalVal').textContent = peso(totalIncentive);
-    document.getElementById('incentiveBody').innerHTML = withIncentive.map(b => `
+  renderMyReceivables();
+}
+
+async function renderMyReceivables(){
+  try {
+    const res = await fetch('/api/commission-receivables/mine', { headers: { 'Authorization': 'Bearer ' + token } });
+    const receivables = await res.json();
+    const { buyers } = await fetchMyClientsData(); // buyers already carry .unit and .property
+    document.getElementById('myReceivablesBody').innerHTML = receivables.map(r => {
+      const buyer = buyers.find(b=>b.id===r.buyer_id);
+      const saleLabel = buyer && buyer.property ? `${buyer.property.name}${buyer.unit ? ' / ' + buyer.unit.unit_name : ''}` : (buyer ? buyer.name : '—');
+      const trancheInfo = (r.release_type==='Monthly Tranche' && r.monthly_amount && r.tranche_months)
+        ? `<div class="text-gray-400 font-normal text-xs">${peso(r.monthly_amount)}/mo × ${r.tranche_months} mo</div>` : '';
+      return `
       <tr>
-        <td class="px-6 py-3 font-medium text-white text-xs">${b.name}</td>
-        <td class="px-6 py-3 text-gray-400 text-xs">${salePropertyLabel(b)}</td>
-        <td class="px-6 py-3 text-orange-400 text-xs">${saleTCP(b) ? peso(saleTCP(b)) : '—'}</td>
-        <td class="px-6 py-3 text-purple-400 font-semibold text-xs">${peso(b.incentive_amount)}</td>
-      </tr>`).join('') || `<tr><td colspan="4" class="px-6 py-5 text-center text-gray-500 text-xs">No incentives recorded yet.</td></tr>`;
-
-    renderMyReceivables();
+        <td class="px-5 py-3 text-xs font-medium text-gray-900">${saleLabel}</td>
+        <td class="px-5 py-3 text-xs text-orange-600 font-semibold">${peso(r.amount)}${trancheInfo}</td>
+        <td class="px-5 py-3 text-xs">${new Date(r.release_date).toLocaleDateString()}</td>
+        <td class="px-5 py-3 text-xs">${r.release_type}</td>
+        <td class="px-5 py-3 text-xs text-gray-500">${r.notes||'—'}</td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="5" class="px-5 py-5 text-center text-gray-400 text-xs">No commission releases recorded yet.</td></tr>`;
+  } catch(err) {
+    console.error('Error loading my receivables:', err);
   }
+}
 
-  async function renderMyReceivables() {
-    try {
-      const [recRes, buyersRes, unitsRes, propsRes] = await Promise.all([
-        fetch('/api/commission-receivables/mine', { headers: { 'Authorization': 'Bearer ' + token } }),
-        fetch('/api/buyers', { headers: { 'Authorization': 'Bearer ' + token } }),
-        fetch('/api/units',  { headers: { 'Authorization': 'Bearer ' + token } }),
-        fetch('/api/properties', { headers: { 'Authorization': 'Bearer ' + token } }),
-      ]);
-      const receivables = await recRes.json();
-      const buyers = await buyersRes.json();
-      const units = await unitsRes.json();
-      const props = await propsRes.json();
-      document.getElementById('myReceivablesBody').innerHTML = receivables.map(r => {
-        const buyer = buyers.find(b=>b.id===r.buyer_id);
-        const unit = buyer ? units.find(u=>u.id===buyer.unit_id) : null;
-        const prop = unit ? props.find(p=>p.id===unit.property_id) : null;
-        const saleLabel = prop ? `${prop.name}${unit ? ' / ' + unit.unit_name : ''}` : (buyer ? buyer.name : '—');
-        const trancheInfo = (r.release_type==='Monthly Tranche' && r.monthly_amount && r.tranche_months)
-          ? `<div class="text-gray-500 font-normal text-xs">${peso(r.monthly_amount)}/mo × ${r.tranche_months} mo</div>` : '';
-        return `
-        <tr>
-          <td class="px-6 py-4 font-medium text-white">${saleLabel}</td>
-          <td class="px-6 py-4 text-orange-400 font-semibold">${peso(r.amount)}${trancheInfo}</td>
-          <td class="px-6 py-4 text-gray-500">${new Date(r.release_date).toLocaleDateString()}</td>
-          <td class="px-6 py-4">${r.release_type}</td>
-          <td class="px-6 py-4 text-gray-500">${r.notes||'—'}</td>
-        </tr>`;
-      }).join('') || `<tr><td colspan="5" class="px-6 py-6 text-center text-gray-500 text-sm">No commission releases recorded yet.</td></tr>`;
-    } catch(err) {
-      console.error('Error loading my receivables:', err);
+// ── REPORTS & ANALYTICS (team-scoped) ──
+function unitTCP(units, unitId){ const u = units.find(x=>x.id===unitId); return u ? Number(u.tcp)||0 : 0; }
+let repChart1 = null, repChart2 = null;
+const CHART_COLORS = ['#e2733a','#22c55e','#eab308','#3b82f6','#a855f7','#ef4444','#14b8a6'];
+
+async function renderTeamReports(){
+  try {
+    const [buyersRes, unitsRes] = await Promise.all([
+      fetch('/api/buyers/team', { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch('/api/units', { headers: { 'Authorization': 'Bearer ' + token } }),
+    ]);
+    const buyers = await buyersRes.json();
+    const units = await unitsRes.json();
+    const teamData = await fetchMyTeamData();
+
+    const withValue = buyers.map(b => ({ ...b, value: unitTCP(units, b.unit_id) }));
+    const totalValue = withValue.reduce((s,b)=>s+b.value,0);
+    const teamSize = role==='unit_manager' ? (teamData.salesManagers.length + teamData.teamLeaders.length + teamData.agents.length)
+      : role==='sales_manager' ? (teamData.teamLeaders.length + teamData.agents.length)
+      : teamData.agents.length;
+
+    document.getElementById('repCards').innerHTML = [
+      ['Team Size', teamSize, ''],
+      ['Team Clients', withValue.length, ''],
+      ['Team Sales Value', peso(totalValue), 'text-orange-600'],
+      ['Average Sale', peso(withValue.length ? totalValue/withValue.length : 0), ''],
+    ].map(([l,v,c])=>`<div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">${l}</p><p class="text-xl font-bold ${c}">${v}</p></div>`).join('');
+
+    // Chart 1: sales value by month
+    const byMonth = {};
+    withValue.forEach(b=>{
+      const d = new Date(b.created_at);
+      const key = d.toLocaleDateString('en-PH',{year:'numeric',month:'short'});
+      byMonth[key] = (byMonth[key]||0) + b.value;
+    });
+    const monthLabels = Object.keys(byMonth);
+    if(repChart1) repChart1.destroy();
+    repChart1 = new Chart(document.getElementById('repChart1').getContext('2d'), {
+      type:'line',
+      data:{ labels: monthLabels, datasets:[{ label:'Sales Value', data: monthLabels.map(k=>byMonth[k]), borderColor:'#e2733a', backgroundColor:'rgba(226,115,58,.15)', fill:true, tension:.3 }] },
+      options:{ plugins:{ title:{display:true,text:'Team Sales by Month'}, legend:{display:false} } }
+    });
+
+    // Chart 2: sales value by team member
+    const byPerson = {};
+    withValue.forEach(b=>{
+      byPerson[b.input_by_id] = (byPerson[b.input_by_id]||0) + b.value;
+    });
+    function nameFor(id){
+      if(id===localStorage.getItem('personId')) return name;
+      const found = [...teamData.salesManagers, ...teamData.teamLeaders, ...teamData.agents].find(p=>p.id===id);
+      return found ? found.name : 'Unknown';
     }
+    const personLabels = Object.keys(byPerson).map(nameFor);
+    if(repChart2) repChart2.destroy();
+    repChart2 = new Chart(document.getElementById('repChart2').getContext('2d'), {
+      type:'bar',
+      data:{ labels: personLabels, datasets:[{ label:'Sales Value', data: Object.values(byPerson), backgroundColor: CHART_COLORS }] },
+      options:{ indexAxis:'y', plugins:{ title:{display:true,text:'Sales by Team Member'}, legend:{display:false} } }
+    });
+  } catch(err) {
+    console.error('Error loading team reports:', err);
   }
+}
 
-  // ── SALES / MY CLIENTS (real data) ──
-  let myUnitsCache = [], myBuyersWithUnit = [];
-
-  async function fetchMyClientsData(){
+// ── MY SALES & CLIENTS ──
+async function loadMyClients(){
+  try {
     const [buyersRes, unitsRes, propsRes, devsRes] = await Promise.all([
-      fetch('/api/buyers', { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch('/api/buyers/team', { headers: { 'Authorization': 'Bearer ' + token } }),
       fetch('/api/units',  { headers: { 'Authorization': 'Bearer ' + token } }),
       fetch('/api/properties', { headers: { 'Authorization': 'Bearer ' + token } }),
       fetch('/api/developers', { headers: { 'Authorization': 'Bearer ' + token } }),
     ]);
-    const buyers = await buyersRes.json();
+    const rawBuyers = await buyersRes.json();
     myUnitsCache = await unitsRes.json();
     const propsCache = await propsRes.json();
     const devsCache  = await devsRes.json();
-    myBuyersWithUnit = buyers.map(b => {
+    const teamData = await fetchMyTeamData();
+
+    const ROLE_LABEL_MAP = { agent: 'Agent', team_leader: 'Team Leader', sales_manager: 'Sales Manager', unit_manager: 'Unit Manager' };
+    function soldByLabel(b){
+      if(b.input_by_id === localStorage.getItem('personId')) return `${name} (${ROLE_LABELS[role]})`;
+      const pools = { agent: teamData.agents, team_leader: teamData.teamLeaders, sales_manager: teamData.salesManagers };
+      const pool = pools[b.input_by_role] || [];
+      const person = pool.find(p=>p.id===b.input_by_id);
+      if(person) return `${person.name} (${ROLE_LABEL_MAP[b.input_by_role]||b.input_by_role})`;
+      return b.input_by_name ? `${b.input_by_name} (former ${ROLE_LABEL_MAP[b.input_by_role]||b.input_by_role})` : 'Unknown';
+    }
+    function myOverrideFor(b){
+      const fieldMap = { team_leader: 'override_team_leader', sales_manager: 'override_sales_manager', unit_manager: 'override_unit_manager' };
+      const val = b[fieldMap[role]];
+      return val ? peso(val) : '—';
+    }
+
+    const buyers = rawBuyers.map(b => {
       const unit = myUnitsCache.find(u=>u.id===b.unit_id);
       const property = unit ? propsCache.find(p=>p.id===unit.property_id) : null;
       const developer = property ? devsCache.find(d=>d.id===property.developer_id) : null;
       return { ...b, unit, property, developer };
     });
-    return { buyers: myBuyersWithUnit, props: propsCache, devs: devsCache };
+
+    const totalValue = buyers.reduce((s,b)=>s + saleTCP(b), 0);
+    const best = buyers.length ? buyers.reduce((a,b)=> (saleTCP(b) > saleTCP(a)) ? b : a) : null;
+
+    document.getElementById('clientCount').textContent = buyers.length;
+    document.getElementById('clientRev').textContent   = peso(totalValue);
+    document.getElementById('clientBest').textContent  = best ? (best.unit ? best.unit.unit_name : (best.manual_unit_name || best.manual_property_name || '—')) : '—';
+
+    document.getElementById('clientsBody').innerHTML = buyers.map(b => `
+      <tr>
+        <td class="px-5 py-3 font-medium text-xs">${b.name}</td>
+        <td class="px-5 py-3 text-gray-500 text-xs">${b.email||'—'}</td>
+        <td class="px-5 py-3 text-gray-500 text-xs">${b.phone||'—'}</td>
+        <td class="px-5 py-3 text-gray-500 text-xs">${b.property ? b.property.name : (b.manual_property_name || '—')}</td>
+        <td class="px-5 py-3 text-gray-500 text-xs">${b.unit ? b.unit.unit_name : (b.manual_unit_name || '—')}</td>
+        <td class="px-5 py-3 text-gray-500 text-xs">${b.reservation_date ? new Date(b.reservation_date).toLocaleDateString() : '—'}</td>
+        <td class="px-5 py-3 text-orange-600 text-xs">${b.unit ? peso(b.unit.tcp) : (b.manual_tcp ? peso(b.manual_tcp) : '—')}</td>
+        <td class="px-5 py-3 text-orange-600 text-xs">${b.net_selling_price ? peso(b.net_selling_price) : '—'}</td>
+        <td class="px-5 py-3 text-gray-500 text-xs">${b.payment_option || '—'}</td>
+        <td class="px-5 py-3 text-xs">${b.booking_complete ? `<span class="badge badge-green">Yes</span>` : `<span class="badge badge-yellow">No</span>`}</td>
+        <td class="px-5 py-3 text-gray-500 text-xs">${soldByLabel(b)}</td>
+        <td class="px-5 py-3 text-green-600 text-xs font-semibold">${myOverrideFor(b)}</td>
+      </tr>`).join('') || `<tr><td colspan="12" class="px-5 py-5 text-center text-gray-500 text-xs">No buyers recorded yet.</td></tr>`;
+  } catch(err) {
+    console.error('Error loading clients:', err);
   }
-
-  async function renderSales() {
-    try {
-      const [{ buyers: withUnit }, tlRes, smRes, umRes] = await Promise.all([
-        fetchMyClientsData(),
-        fetch('/api/team-leaders', { headers: { 'Authorization': 'Bearer ' + token } }),
-        fetch('/api/sales-managers', { headers: { 'Authorization': 'Bearer ' + token } }),
-        fetch('/api/unit-managers', { headers: { 'Authorization': 'Bearer ' + token } }),
-      ]);
-      const tlCache = await tlRes.json();
-      const smCache = await smRes.json();
-      const umCache = await umRes.json();
-
-      // Resolve who this agent reports to (Team Leader > Sales Manager > Unit Manager)
-      let reportsTo = 'Unassigned';
-      const myTLId = localStorage.getItem('teamLeaderId');
-      const mySMId = localStorage.getItem('salesManagerId');
-      const myUMId = localStorage.getItem('unitManagerId');
-      if(myTLId){ const tl = tlCache.find(t=>t.id===myTLId); if(tl) reportsTo = `${tl.name} (Team Leader)`; }
-      else if(mySMId){ const sm = smCache.find(s=>s.id===mySMId); if(sm) reportsTo = `${sm.name} (Sales Manager)`; }
-      else if(myUMId){ const um = umCache.find(u=>u.id===myUMId); if(um) reportsTo = `${um.name} (Unit Manager)`; }
-
-      const totalValue = withUnit.reduce((s,b)=>s + saleTCP(b), 0);
-      const best = withUnit.length ? withUnit.reduce((a,b)=> (saleTCP(b) > saleTCP(a)) ? b : a) : null;
-
-      document.getElementById('salesCount').textContent = withUnit.length;
-      document.getElementById('salesRev').textContent   = peso(totalValue);
-      document.getElementById('salesBest').textContent  = best ? (best.unit ? best.unit.unit_name : (best.manual_unit_name || best.manual_property_name || '—')) : '—';
-
-      document.getElementById('salesBody').innerHTML = withUnit.map(b => `
-        <tr>
-          <td class="px-4 py-4 font-medium text-white">${b.name}</td>
-          <td class="px-4 py-4 text-gray-400">${b.email||'—'}</td>
-          <td class="px-4 py-4 text-gray-400">${b.phone||'—'}</td>
-          <td class="px-4 py-4 text-gray-400">${b.property ? b.property.name : (b.manual_property_name || '—')}</td>
-          <td class="px-4 py-4 text-gray-400">${b.unit ? b.unit.unit_name : (b.manual_unit_name || '—')}</td>
-          <td class="px-4 py-4 text-gray-400">${b.reservation_date ? new Date(b.reservation_date).toLocaleDateString() : '—'}</td>
-          <td class="px-4 py-4 text-orange-400">${b.unit ? peso(b.unit.tcp) : (b.manual_tcp ? peso(b.manual_tcp) : '—')}</td>
-          <td class="px-4 py-4 text-orange-400">${b.net_selling_price ? peso(b.net_selling_price) : '—'}</td>
-          <td class="px-4 py-4 text-gray-400">${b.payment_option ? (b.payment_option + (b.payment_option==='Monthly Down Payment' && b.dp_months ? ` (${b.dp_months} mo)` : '')) : '—'}</td>
-          <td class="px-4 py-4">${b.booking_requirements_complete === 'yes' ? `<span class="badge badge-green">Yes</span>` : (b.booking_requirements_complete === 'no' ? `<span class="badge badge-yellow">No</span>` : '—')}</td>
-          <td class="px-4 py-4 text-gray-400">${agentName} (Agent)</td>
-          <td class="px-4 py-4 text-gray-400">${reportsTo}</td>
-        </tr>`).join('') || `<tr><td colspan="12" class="px-4 py-6 text-center text-gray-500 text-sm">No clients added yet.</td></tr>`;
-    } catch(err) {
-      console.error('Error loading sales/clients:', err);
-    }
+}
+window.saveBuyer = async () => {
+  const name2 = document.getElementById('bName').value.trim();
+  if(!name2){ document.getElementById('bErr').classList.remove('hidden'); return; }
+  document.getElementById('bErr').classList.add('hidden');
+  try {
+    const res = await fetch('/api/buyers', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name2,
+        email: document.getElementById('bEmail').value.trim(),
+        phone: document.getElementById('bPhone').value.trim(),
+        address: document.getElementById('bAddr').value.trim(),
+        manual_unit_name: document.getElementById('bManualUnit').value.trim(),
+        manual_property_name: document.getElementById('bManualProp').value.trim(),
+        reservation_date: document.getElementById('bResDate').value,
+        manual_tcp: parseMoney(document.getElementById('bManualTCP').value),
+        net_selling_price: parseMoney(document.getElementById('bNSP').value),
+        payment_option: document.getElementById('bPayOption').value.trim(),
+        booking_complete: document.getElementById('bBookingComplete').value === 'true',
+      })
+    });
+    if(!res.ok) throw new Error('Save failed');
+    closeModal('addBuyerModal');
+    ['bName','bEmail','bPhone','bAddr','bManualProp','bManualUnit','bManualTCP','bResDate','bNSP','bPayOption'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('bBookingComplete').value = 'false';
+    loadMyClients();
+    showToast('Client added successfully!', name2);
+  } catch(err) {
+    console.error('Error saving client:', err);
+    alert('Failed to save client.');
   }
+};
 
-  window.openModal  = (id) => document.getElementById(id).classList.add('open');
-  window.closeModal = (id) => document.getElementById(id).classList.remove('open');
-  document.querySelectorAll('.modal-backdrop').forEach(m => {
-    m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); });
-  });
+// ── COMPUTATION TOOL ──
+window.computeCalc = () => {
+  const price = parseFloat(document.getElementById('calcPrice').value);
+  const rate  = parseFloat(document.getElementById('calcRate').value);
+  const result = document.getElementById('calcResult');
+  if (!price || !rate) { result.classList.add('hidden'); return; }
+  const comm = price*rate/100;
+  const withholding = comm*0.10;
+  const percTax = comm*0.03;
+  const netComm = comm - withholding - percTax;
+  document.getElementById('calcAmount').textContent = peso(comm);
+  document.getElementById('calcWithholding').textContent = '('+peso(withholding)+')';
+  document.getElementById('calcPercTax').textContent = '('+peso(percTax)+')';
+  document.getElementById('calcNetCommission').textContent = peso(netComm);
+  result.classList.remove('hidden');
+};
 
-  window.showToast = function(text, sub){
-    const stack = document.getElementById('toastStack');
-    const el = document.createElement('div');
-    el.className = 'toast';
-    el.innerHTML = `<div class="toast-icon">✓</div><div><div class="toast-text">${text}</div>${sub ? `<div class="toast-sub">${sub}</div>` : ''}</div>`;
-    stack.appendChild(el);
-    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('toast-in')));
-    setTimeout(() => {
-      el.classList.remove('toast-in');
-      el.classList.add('toast-out');
-      setTimeout(() => el.remove(), 300);
-    }, 3200);
-  };
+// ── MY PROFILE ──
+function renderProfile(){
+  document.getElementById('profileInitial').textContent = (name||'?')[0].toUpperCase();
+  document.getElementById('profileNameRow').textContent = name || '—';
+  document.getElementById('profileRoleRow').textContent = ROLE_LABELS[role] || '—';
+  document.getElementById('profileId').textContent = localStorage.getItem('personId') || '—';
+  document.getElementById('profileEmail').textContent = localStorage.getItem('email') || '—';
+  document.getElementById('profileRank').textContent = localStorage.getItem('commissionRank') || '—';
+  document.getElementById('profileRate').textContent = (localStorage.getItem('commissionRate')||'0') + '%';
+}
 
-  window.onPaymentTermsChange = () => {
-    const isMonthly = document.getElementById('bPaymentOption').value === 'Monthly Down Payment';
-    document.getElementById('bDpMonthsWrap').classList.toggle('hidden', !isMonthly);
-    if(!isMonthly) document.getElementById('bDpMonths').value = '';
-  };
+renderOverview();
 
-  window.saveBuyer = async () => {
-    const name = document.getElementById('bName').value.trim();
-    if(!name){ document.getElementById('bErr').classList.remove('hidden'); return; }
-    document.getElementById('bErr').classList.add('hidden');
-    const paymentOption = document.getElementById('bPaymentOption').value.trim();
-    try {
-      const res = await fetch('/api/buyers', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          email: document.getElementById('bEmail').value.trim(),
-          phone: document.getElementById('bPhone').value.trim(),
-          address: document.getElementById('bAddr').value.trim(),
-          manual_unit_name: document.getElementById('bManualUnit').value.trim(),
-          manual_property_name: document.getElementById('bManualProp').value.trim(),
-          reservation_date: document.getElementById('bReservationDate').value || null,
-          manual_tcp: parseMoney(document.getElementById('bManualTCP').value),
-          net_selling_price: parseMoney(document.getElementById('bNetSellingPrice').value),
-          payment_option: paymentOption,
-          dp_months: paymentOption==='Monthly Down Payment' ? (document.getElementById('bDpMonths').value || null) : null,
-          booking_requirements_complete: document.getElementById('bBookingComplete').value || null,
-        })
-      });
-      if(!res.ok) throw new Error('Save failed');
-      closeModal('addBuyerModal');
-      ['bName','bEmail','bPhone','bAddr','bManualProp','bManualUnit','bManualTCP','bReservationDate','bNetSellingPrice','bPaymentOption','bDpMonths','bBookingComplete'].forEach(id=>document.getElementById(id).value='');
-      document.getElementById('bDpMonthsWrap').classList.add('hidden');
-      renderSales();
-      showToast('Client added successfully!', name);
-    } catch(err) {
-      console.error('Error saving client:', err);
-      alert('Failed to save client.');
-    }
-  };
-
-  // ── SECTION SWITCHING ──
-  const renderers = {
-    overview: renderOverview,
-    team: () => { teamDrillStack = []; renderAgentTeam(); },
-    properties: enterPropDevelopers,
-    commission: renderCommission,
-    sales: renderSales,
-  };
-
-  window.showSection = (id, linkEl) => {
-    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-    document.getElementById('sec-'+id).classList.add('active');
-    document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
-    if (linkEl) linkEl.classList.add('active');
-    document.getElementById('pageTitle').textContent = linkEl ? linkEl.textContent.trim() : id;
-    if (renderers[id]) renderers[id]();
-    
-    document.getElementById('sidebar').classList.remove('open');
-  };
-
-  // ── COMPUTATION ──
-  window.compute = () => {
-    const price = parseFloat(document.getElementById('calcPrice').value);
-    const rate  = parseFloat(document.getElementById('calcRate').value);
-    const result = document.getElementById('calcResult');
-    if (!price || !rate) { result.classList.add('hidden'); return; }
-    const comm = price*rate/100;
-    const withholding = comm*0.10;
-    const percTax = comm*0.03;
-    const netComm = comm - withholding - percTax;
-    document.getElementById('calcAmount').textContent    = peso(comm);
-    document.getElementById('calcWithholding').textContent  = '-'+peso(withholding);
-    document.getElementById('calcPercTax').textContent      = '-'+peso(percTax);
-    document.getElementById('calcNetCommission').textContent = peso(netComm);
-    document.getElementById('calcShowPrice').textContent = peso(price);
-    document.getElementById('calcShowRate').textContent  = rate+'%';
-    result.classList.remove('hidden');
-  };
-
-  // ── LOGOUT ──
-  window.logout = () => {
-    ['role','agentId','agentName','agentEmail','agentPhone'].forEach(k=>localStorage.removeItem(k));
-    window.location.href = 'index.html';
-  };
-
-  // ── INIT ──
-  loadAgentInfo();
-  renderOverview();
-
-}); // end DOMContentLoaded
+});
 </script>
 <div id="toastStack"></div>
 </body>
