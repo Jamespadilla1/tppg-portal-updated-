@@ -804,15 +804,15 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div><label class="text-xs text-gray-400 mb-1 block">Email * (used for login)</label><input id="agEmail" type="email" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="agPhone" type="text" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Password *</label><input id="agPassword" type="password" class="field" placeholder="Set a login password"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">Reports To (optional)</label><select id="agReportType" class="field" onchange="toggleAgentReportTarget()">
-        <option value="">— Unassigned —</option>
+      <div><label class="text-xs text-gray-400 mb-1 block">Reports To *</label><select id="agReportType" class="field" onchange="toggleAgentReportTarget()">
+        <option value="">— Select —</option>
         <option value="team_leader">Team Leader</option>
         <option value="sales_manager">Sales Manager</option>
         <option value="unit_manager">Unit Manager</option>
       </select></div>
-      <div id="agTLRow" class="hidden"><select id="agTL" class="field"></select></div>
-      <div id="agSMRow" class="hidden"><select id="agSM" class="field"></select></div>
-      <div id="agUMRow" class="hidden"><select id="agUM" class="field"></select></div>
+      <div id="agTLRow" class="hidden"><select id="agTL" class="field"><option value="">— Select Team Leader —</option></select></div>
+      <div id="agSMRow" class="hidden"><select id="agSM" class="field"><option value="">— Select Sales Manager —</option></select></div>
+      <div id="agUMRow" class="hidden"><select id="agUM" class="field"><option value="">— Select Unit Manager —</option></select></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Commission Rank</label>
         <select id="agRank" class="field" onchange="document.getElementById('agRate').value = this.selectedOptions[0].dataset.rate">
           <option value="Property Specialist" data-rate="2.0">Property Specialist (2.0%)</option>
@@ -821,7 +821,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
         </select>
         <input id="agRate" type="hidden" value="2.0">
       </div>
-      <p id="agErr" class="text-red-400 text-xs hidden">Name, email, and password are required.</p>
+      <p id="agErr" class="text-red-400 text-xs hidden">Name, email, password, and a specific reporting manager are all required.</p>
       <button onclick="saveAgentDirect()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Agent</button>
     </div>
   </div>
@@ -3248,17 +3248,21 @@ async function saveAgentDirect(){
   const name = document.getElementById('agName').value.trim();
   const email = document.getElementById('agEmail').value.trim();
   const password = document.getElementById('agPassword').value;
-  if(!name || !email || !password){ document.getElementById('agErr').classList.remove('hidden'); return; }
+  const reportType = document.getElementById('agReportType').value;
+  const teamLeaderId = document.getElementById('agTL').value;
+  const salesManagerId = document.getElementById('agSM').value;
+  const unitManagerId = document.getElementById('agUM').value;
+  const hasManager = (reportType==='team_leader' && teamLeaderId) || (reportType==='sales_manager' && salesManagerId) || (reportType==='unit_manager' && unitManagerId);
+  if(!name || !email || !password || !reportType || !hasManager){ document.getElementById('agErr').classList.remove('hidden'); return; }
   document.getElementById('agErr').classList.add('hidden');
 
-  const reportType = document.getElementById('agReportType').value;
   const payload = {
     name, email,
     phone: document.getElementById('agPhone').value.trim(),
     password,
-    team_leader_id: reportType==='team_leader' ? (document.getElementById('agTL').value || null) : null,
-    sales_manager_id: reportType==='sales_manager' ? (document.getElementById('agSM').value || null) : null,
-    unit_manager_id: reportType==='unit_manager' ? (document.getElementById('agUM').value || null) : null,
+    team_leader_id: reportType==='team_leader' ? teamLeaderId : null,
+    sales_manager_id: reportType==='sales_manager' ? salesManagerId : null,
+    unit_manager_id: reportType==='unit_manager' ? unitManagerId : null,
     commission_rank: document.getElementById('agRank').value,
     commission_rate: parseFloat(document.getElementById('agRate').value),
   };
