@@ -350,11 +350,11 @@ const token = localStorage.getItem('token');
 const role  = localStorage.getItem('role');
 const name  = localStorage.getItem('name');
 
-if (!token || !['unit_manager','sales_manager','team_leader'].includes(role)) {
+if (!token || role !== 'agent') {
   window.location.href = 'index.html';
 }
 
-const ROLE_LABELS = { unit_manager: 'Unit Manager', sales_manager: 'Sales Manager', team_leader: 'Team Leader' };
+const ROLE_LABELS = { agent: 'Agent', unit_manager: 'Unit Manager', sales_manager: 'Sales Manager', team_leader: 'Team Leader' };
 const peso = n => '₱' + Number(n||0).toLocaleString('en-PH', {maximumFractionDigits:0});
 function parseMoney(str){
   return parseFloat((str||'').toString().replace(/,/g,'')) || 0;
