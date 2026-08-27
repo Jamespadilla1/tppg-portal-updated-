@@ -17,6 +17,41 @@ const getBuyers = async (req, res) => {
   }
 };
 
+// GET /api/buyers/history — for Agent/Team Leader/Sales Manager: sales they recorded under their
+// PREVIOUS role, before their most recent promotion. This is view-only history — it does NOT count
+// toward their current commission (promotions are a deliberate clean break for that).
+const getPreviousRoleSalesHistory = async (req, res) => {
+  try {
+    const { id, role } = req.user;
+    if (!['agent', 'team_leader', 'sales_manager'].includes(role)) {
+      return res.status(403).json({ message: 'This account type has no pre-promotion sales history.' });
+    }
+
+    // Agents are the base rank — they have no "previous role" to look back on.
+    if (role === 'agent') return res.json([]);
+
+    const table = role === 'team_leader' ? 'team_leaders' : 'sales_managers';
+    const { data: person, error: personErr } = await supabase
+      .from(table)
+      .select('previous_role, previous_id')
+      .eq('id', id)
+      .single();
+    if (personErr || !person || !person.previous_role || !person.previous_id) return res.json([]);
+
+    const { data: buyers, error } = await supabase
+      .from('buyers')
+      .select('*')
+      .eq('input_by_role', person.previous_role)
+      .eq('input_by_id', person.previous_id)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    res.json(buyers);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
 // GET /api/buyers/team — for Unit Manager/Sales Manager/Team Leader: buyers added by them
 // PLUS everyone in their downward team (used for team-scoped Reports & Analytics)
 const getTeamBuyers = async (req, res) => {
@@ -152,7 +187,7 @@ const updateBuyer = async (req, res) => {
 // PATCH /api/buyers/:id/overrides — admin only: set manager override amounts + incentive for a sale
 const setBuyerOverrides = async (req, res) => {
   try {
-    const { override_team_leader, override_sales_manager, override_unit_manager, incentive_amount } = req.body;
+    const { override_team_leader, override_sales_manager, override_unit_manager, incentive_amount, incentive_date } = req.body;
     const { data: buyer, error } = await supabase
       .from('buyers')
       .update({
@@ -160,6 +195,7 @@ const setBuyerOverrides = async (req, res) => {
         override_sales_manager: override_sales_manager || null,
         override_unit_manager: override_unit_manager || null,
         incentive_amount: incentive_amount || null,
+        incentive_date: incentive_date || null,
         updated_at: new Date(),
       })
       .eq('id', req.params.id)
@@ -195,4 +231,4 @@ const deleteBuyer = async (req, res) => {
   }
 };
 
-module.exports = { getBuyers, getTeamBuyers, createBuyer, updateBuyer, setBuyerOverrides, deleteBuyer };
+module.exports = { getBuyers, getTeamBuyers, getPreviousRoleSalesHistory, createBuyer, updateBuyer, setBuyerOverrides, deleteBuyer };
