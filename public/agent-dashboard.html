@@ -259,12 +259,12 @@
       </div>
       <div class="card overflow-hidden">
         <div class="flex items-center justify-between p-4 border-b border-gray-200">
-          <h3 class="font-semibold text-sm">Team Sales &amp; Buyers</h3>
+          <h3 class="font-semibold text-sm">My Sales &amp; Buyers</h3>
           <button onclick="openModal('addBuyerModal')" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Client</button>
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
-            <th class="text-left px-5 py-2">Buyer Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Project</th><th class="text-left px-5 py-2">Unit Purchased</th><th class="text-left px-5 py-2">Reservation Date</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Net Selling Price</th><th class="text-left px-5 py-2">Payment Option</th><th class="text-left px-5 py-2">Booking Complete</th><th class="text-left px-5 py-2">Sold By</th><th class="text-left px-5 py-2">My Override</th>
+            <th class="text-left px-5 py-2">Buyer Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Project</th><th class="text-left px-5 py-2">Unit Purchased</th><th class="text-left px-5 py-2">Reservation Date</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Net Selling Price</th><th class="text-left px-5 py-2">Payment Option</th><th class="text-left px-5 py-2">Booking Complete</th>
           </tr></thead>
           <tbody id="clientsBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
         </table></div>
@@ -334,15 +334,23 @@
       <div><label class="text-xs text-gray-500 mb-1 block">Email</label><input id="bEmail" type="email" class="field"></div>
       <div><label class="text-xs text-gray-500 mb-1 block">Phone</label><input id="bPhone" type="text" class="field"></div>
       <div><label class="text-xs text-gray-500 mb-1 block">Address</label><input id="bAddr" type="text" class="field"></div>
-      <div><label class="text-xs text-gray-500 mb-1 block">Unit Purchased</label><input id="bManualUnit" type="text" class="field" placeholder="e.g. Unit 305"></div>
-      <div><label class="text-xs text-gray-500 mb-1 block">Project</label><input id="bManualProp" type="text" class="field" placeholder="e.g. Avenir Iloilo"></div>
-      <div><label class="text-xs text-gray-500 mb-1 block">Reservation Date</label><input id="bResDate" type="date" class="field"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Unit Purchased</label><input id="bManualUnit" type="text" class="field" placeholder="e.g. Olive"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Project</label><input id="bManualProp" type="text" class="field" placeholder="e.g. Parc Regency"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Reservation Date</label><input id="bReservationDate" type="date" class="field"></div>
       <div><label class="text-xs text-gray-500 mb-1 block">Total Contract Price (₱)</label><input id="bManualTCP" type="text" inputmode="numeric" class="field" placeholder="3,500,000" oninput="formatMoneyInput(this)"></div>
-      <div><label class="text-xs text-gray-500 mb-1 block">Net Selling Price (if available) (₱)</label><input id="bNSP" type="text" inputmode="numeric" class="field" placeholder="3,300,000" oninput="formatMoneyInput(this)"></div>
-      <div><label class="text-xs text-gray-500 mb-1 block">Payment Option</label><input id="bPayOption" type="text" class="field" placeholder="e.g. Bank financing, 20% DP over 24 months"></div>
-      <div><label class="text-xs text-gray-500 mb-1 block">Complete Booking Requirements?</label><select id="bBookingComplete" class="field">
-        <option value="false">No</option>
-        <option value="true">Yes</option>
+      <div><label class="text-xs text-gray-500 mb-1 block">Net Selling Price (if available) (₱)</label><input id="bNetSellingPrice" type="text" inputmode="numeric" class="field" placeholder="3,300,000" oninput="formatMoneyInput(this)"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Payment Terms</label><select id="bPaymentOption" class="field" onchange="onPaymentTermsChange()">
+        <option value="">— Select —</option>
+        <option value="Monthly Down Payment">Monthly Down Payment</option>
+        <option value="Spot Cash">Spot Cash</option>
+        <option value="Full Down Payment">Full Down Payment</option>
+        <option value="Pre Selling">Pre Selling</option>
+      </select></div>
+      <div id="bDpMonthsWrap" class="hidden"><label class="text-xs text-gray-500 mb-1 block">Number of Months to Pay</label><input id="bDpMonths" type="number" min="1" step="1" class="field" placeholder="e.g. 12"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Complete Booking Requirements</label><select id="bBookingComplete" class="field">
+        <option value="">— Select —</option>
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
       </select></div>
       <p id="bErr" class="text-red-500 text-xs hidden">Name is required.</p>
       <button onclick="saveBuyer()" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Client</button>
@@ -1052,7 +1060,7 @@ async function renderMyReceivables(){
   }
 }
 
-// ── REPORTS & ANALYTICS (team-scoped) ──
+// ── REPORTS & ANALYTICS (my own sales) ──
 function unitTCP(units, unitId){ const u = units.find(x=>x.id===unitId); return u ? Number(u.tcp)||0 : 0; }
 let repChart1 = null, repChart2 = null;
 const CHART_COLORS = ['#e2733a','#22c55e','#eab308','#3b82f6','#a855f7','#ef4444','#14b8a6'];
@@ -1060,23 +1068,18 @@ const CHART_COLORS = ['#e2733a','#22c55e','#eab308','#3b82f6','#a855f7','#ef4444
 async function renderTeamReports(){
   try {
     const [buyersRes, unitsRes] = await Promise.all([
-      fetch('/api/buyers/team', { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch('/api/buyers', { headers: { 'Authorization': 'Bearer ' + token } }),
       fetch('/api/units', { headers: { 'Authorization': 'Bearer ' + token } }),
     ]);
     const buyers = await buyersRes.json();
     const units = await unitsRes.json();
-    const teamData = await fetchMyTeamData();
 
-    const withValue = buyers.map(b => ({ ...b, value: unitTCP(units, b.unit_id) }));
+    const withValue = buyers.map(b => ({ ...b, value: b.unit_id ? unitTCP(units, b.unit_id) : (b.net_selling_price ? Number(b.net_selling_price) : (Number(b.manual_tcp)||0)) }));
     const totalValue = withValue.reduce((s,b)=>s+b.value,0);
-    const teamSize = role==='unit_manager' ? (teamData.salesManagers.length + teamData.teamLeaders.length + teamData.agents.length)
-      : role==='sales_manager' ? (teamData.teamLeaders.length + teamData.agents.length)
-      : teamData.agents.length;
 
     document.getElementById('repCards').innerHTML = [
-      ['Team Size', teamSize, ''],
-      ['Team Clients', withValue.length, ''],
-      ['Team Sales Value', peso(totalValue), 'text-orange-600'],
+      ['My Clients', withValue.length, ''],
+      ['My Sales Value', peso(totalValue), 'text-orange-600'],
       ['Average Sale', peso(withValue.length ? totalValue/withValue.length : 0), ''],
     ].map(([l,v,c])=>`<div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">${l}</p><p class="text-xl font-bold ${c}">${v}</p></div>`).join('');
 
@@ -1092,25 +1095,22 @@ async function renderTeamReports(){
     repChart1 = new Chart(document.getElementById('repChart1').getContext('2d'), {
       type:'line',
       data:{ labels: monthLabels, datasets:[{ label:'Sales Value', data: monthLabels.map(k=>byMonth[k]), borderColor:'#e2733a', backgroundColor:'rgba(226,115,58,.15)', fill:true, tension:.3 }] },
-      options:{ plugins:{ title:{display:true,text:'Team Sales by Month'}, legend:{display:false} } }
+      options:{ plugins:{ title:{display:true,text:'My Sales by Month'}, legend:{display:false} } }
     });
 
-    // Chart 2: sales value by team member
-    const byPerson = {};
+    // Chart 2: sales value by unit/property
+    const byProperty = {};
     withValue.forEach(b=>{
-      byPerson[b.input_by_id] = (byPerson[b.input_by_id]||0) + b.value;
+      const unit = b.unit_id ? units.find(u=>u.id===b.unit_id) : null;
+      const label = unit ? unit.unit_name : (b.manual_property_name || b.manual_unit_name || 'Manual entry');
+      byProperty[label] = (byProperty[label]||0) + b.value;
     });
-    function nameFor(id){
-      if(id===localStorage.getItem('personId')) return name;
-      const found = [...teamData.salesManagers, ...teamData.teamLeaders, ...teamData.agents].find(p=>p.id===id);
-      return found ? found.name : 'Unknown';
-    }
-    const personLabels = Object.keys(byPerson).map(nameFor);
+    const propertyLabels = Object.keys(byProperty);
     if(repChart2) repChart2.destroy();
     repChart2 = new Chart(document.getElementById('repChart2').getContext('2d'), {
       type:'bar',
-      data:{ labels: personLabels, datasets:[{ label:'Sales Value', data: Object.values(byPerson), backgroundColor: CHART_COLORS }] },
-      options:{ indexAxis:'y', plugins:{ title:{display:true,text:'Sales by Team Member'}, legend:{display:false} } }
+      data:{ labels: propertyLabels, datasets:[{ label:'Sales Value', data: Object.values(byProperty), backgroundColor: CHART_COLORS }] },
+      options:{ indexAxis:'y', plugins:{ title:{display:true,text:'Sales by Unit'}, legend:{display:false} } }
     });
   } catch(err) {
     console.error('Error loading team reports:', err);
@@ -1121,7 +1121,7 @@ async function renderTeamReports(){
 async function loadMyClients(){
   try {
     const [buyersRes, unitsRes, propsRes, devsRes] = await Promise.all([
-      fetch('/api/buyers/team', { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch('/api/buyers', { headers: { 'Authorization': 'Bearer ' + token } }),
       fetch('/api/units',  { headers: { 'Authorization': 'Bearer ' + token } }),
       fetch('/api/properties', { headers: { 'Authorization': 'Bearer ' + token } }),
       fetch('/api/developers', { headers: { 'Authorization': 'Bearer ' + token } }),
@@ -1130,22 +1130,6 @@ async function loadMyClients(){
     myUnitsCache = await unitsRes.json();
     const propsCache = await propsRes.json();
     const devsCache  = await devsRes.json();
-    const teamData = await fetchMyTeamData();
-
-    const ROLE_LABEL_MAP = { agent: 'Agent', team_leader: 'Team Leader', sales_manager: 'Sales Manager', unit_manager: 'Unit Manager' };
-    function soldByLabel(b){
-      if(b.input_by_id === localStorage.getItem('personId')) return `${name} (${ROLE_LABELS[role]})`;
-      const pools = { agent: teamData.agents, team_leader: teamData.teamLeaders, sales_manager: teamData.salesManagers };
-      const pool = pools[b.input_by_role] || [];
-      const person = pool.find(p=>p.id===b.input_by_id);
-      if(person) return `${person.name} (${ROLE_LABEL_MAP[b.input_by_role]||b.input_by_role})`;
-      return b.input_by_name ? `${b.input_by_name} (former ${ROLE_LABEL_MAP[b.input_by_role]||b.input_by_role})` : 'Unknown';
-    }
-    function myOverrideFor(b){
-      const fieldMap = { team_leader: 'override_team_leader', sales_manager: 'override_sales_manager', unit_manager: 'override_unit_manager' };
-      const val = b[fieldMap[role]];
-      return val ? peso(val) : '—';
-    }
 
     const buyers = rawBuyers.map(b => {
       const unit = myUnitsCache.find(u=>u.id===b.unit_id);
@@ -1171,19 +1155,24 @@ async function loadMyClients(){
         <td class="px-5 py-3 text-gray-500 text-xs">${b.reservation_date ? new Date(b.reservation_date).toLocaleDateString() : '—'}</td>
         <td class="px-5 py-3 text-orange-600 text-xs">${b.unit ? peso(b.unit.tcp) : (b.manual_tcp ? peso(b.manual_tcp) : '—')}</td>
         <td class="px-5 py-3 text-orange-600 text-xs">${b.net_selling_price ? peso(b.net_selling_price) : '—'}</td>
-        <td class="px-5 py-3 text-gray-500 text-xs">${b.payment_option || '—'}</td>
-        <td class="px-5 py-3 text-xs">${b.booking_complete ? `<span class="badge badge-green">Yes</span>` : `<span class="badge badge-yellow">No</span>`}</td>
-        <td class="px-5 py-3 text-gray-500 text-xs">${soldByLabel(b)}</td>
-        <td class="px-5 py-3 text-green-600 text-xs font-semibold">${myOverrideFor(b)}</td>
-      </tr>`).join('') || `<tr><td colspan="12" class="px-5 py-5 text-center text-gray-500 text-xs">No buyers recorded yet.</td></tr>`;
+        <td class="px-5 py-3 text-gray-500 text-xs">${b.payment_option ? (b.payment_option + (b.payment_option==='Monthly Down Payment' && b.dp_months ? ` (${b.dp_months} mo)` : '')) : '—'}</td>
+        <td class="px-5 py-3 text-xs">${b.booking_requirements_complete === 'yes' ? `<span class="badge badge-green">Yes</span>` : (b.booking_requirements_complete === 'no' ? `<span class="badge badge-yellow">No</span>` : '—')}</td>
+      </tr>`).join('') || `<tr><td colspan="10" class="px-5 py-5 text-center text-gray-500 text-xs">No buyers recorded yet.</td></tr>`;
   } catch(err) {
     console.error('Error loading clients:', err);
   }
 }
+window.onPaymentTermsChange = () => {
+  const isMonthly = document.getElementById('bPaymentOption').value === 'Monthly Down Payment';
+  document.getElementById('bDpMonthsWrap').classList.toggle('hidden', !isMonthly);
+  if(!isMonthly) document.getElementById('bDpMonths').value = '';
+};
+
 window.saveBuyer = async () => {
   const name2 = document.getElementById('bName').value.trim();
   if(!name2){ document.getElementById('bErr').classList.remove('hidden'); return; }
   document.getElementById('bErr').classList.add('hidden');
+  const paymentOption = document.getElementById('bPaymentOption').value.trim();
   try {
     const res = await fetch('/api/buyers', {
       method: 'POST',
@@ -1195,17 +1184,18 @@ window.saveBuyer = async () => {
         address: document.getElementById('bAddr').value.trim(),
         manual_unit_name: document.getElementById('bManualUnit').value.trim(),
         manual_property_name: document.getElementById('bManualProp').value.trim(),
-        reservation_date: document.getElementById('bResDate').value,
+        reservation_date: document.getElementById('bReservationDate').value || null,
         manual_tcp: parseMoney(document.getElementById('bManualTCP').value),
-        net_selling_price: parseMoney(document.getElementById('bNSP').value),
-        payment_option: document.getElementById('bPayOption').value.trim(),
-        booking_complete: document.getElementById('bBookingComplete').value === 'true',
+        net_selling_price: parseMoney(document.getElementById('bNetSellingPrice').value),
+        payment_option: paymentOption,
+        dp_months: paymentOption==='Monthly Down Payment' ? (document.getElementById('bDpMonths').value || null) : null,
+        booking_requirements_complete: document.getElementById('bBookingComplete').value || null,
       })
     });
     if(!res.ok) throw new Error('Save failed');
     closeModal('addBuyerModal');
-    ['bName','bEmail','bPhone','bAddr','bManualProp','bManualUnit','bManualTCP','bResDate','bNSP','bPayOption'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('bBookingComplete').value = 'false';
+    ['bName','bEmail','bPhone','bAddr','bManualProp','bManualUnit','bManualTCP','bReservationDate','bNetSellingPrice','bPaymentOption','bDpMonths','bBookingComplete'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('bDpMonthsWrap').classList.add('hidden');
     loadMyClients();
     showToast('Client added successfully!', name2);
   } catch(err) {
