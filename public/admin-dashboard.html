@@ -141,19 +141,19 @@ tr:hover td{background:rgba(0,0,0,.02)}
 
     <!-- ══ DASHBOARD OVERVIEW ══ -->
     <div id="sec-overview" class="section active space-y-5">
-      <!-- Simple search bar with collapsible advanced filters -->
-      <div class="card p-4">
+      <!-- Emphasized search bar -->
+      <div class="card p-6" style="border:2px solid #ea580c33;box-shadow:0 4px 16px rgba(234,88,12,.08)">
         <div class="flex gap-2 items-center flex-wrap">
           <div class="flex-1 min-w-[220px] relative">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input id="ovSearchLoc" type="text" placeholder="Search properties by location…" class="field pl-9" onkeydown="if(event.key==='Enter')searchPropertiesGlobal('ov')">
+            <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-400 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="ovSearchLoc" type="text" placeholder="Search properties by location…" class="field pl-11" style="font-size:1rem;padding-top:14px;padding-bottom:14px" onkeydown="if(event.key==='Enter')searchPropertiesGlobal('ov')">
           </div>
-          <button onclick="toggleOvFilters()" id="ovFiltersBtn" class="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm border border-gray-200 text-gray-500 hover:border-orange-300 hover:text-orange-600 transition-colors shrink-0">
+          <button onclick="toggleOvFilters()" id="ovFiltersBtn" class="flex items-center gap-1.5 px-4 py-3.5 rounded-lg text-sm font-medium border border-gray-200 text-gray-500 hover:border-orange-300 hover:text-orange-600 transition-colors shrink-0">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
             Filters
             <svg id="ovFiltersChevron" class="w-3.5 h-3.5 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <button onclick="searchPropertiesGlobal('ov')" class="bg-orange-500 hover:bg-orange-600 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors shrink-0">Search</button>
+          <button onclick="searchPropertiesGlobal('ov')" class="bg-orange-500 hover:bg-orange-600 px-6 py-3.5 rounded-lg text-sm font-semibold transition-colors shrink-0">Search</button>
         </div>
         <div id="ovFiltersPanel" class="hidden flex gap-2 flex-wrap items-end mt-3 pt-3 border-t border-gray-100">
           <div><label class="text-xs text-gray-400 mb-1 block">Type</label><select id="ovSearchType" class="field w-36">
@@ -178,11 +178,24 @@ tr:hover td{background:rgba(0,0,0,.02)}
         <div id="ovSearchResults" class="mt-3"></div>
       </div>
 
-      <!-- Business snapshot: the two headline money metrics, given visual weight -->
+      <!-- Business snapshot: YTD sales vs annual target, and net commission -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="ovHeroStats"></div>
 
       <!-- Secondary operational stats -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3" id="ovSecondaryStats"></div>
+
+      <!-- Sales Trend: YTD cumulative + per-month breakdown -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="card p-5">
+          <h3 class="font-semibold text-sm mb-3">Sales Trend — Year to Date</h3>
+          <div style="height:260px"><canvas id="ovYtdChart"></canvas></div>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-semibold text-sm mb-3">Sales by Month (<span id="ovMonthChartYear"></span>)</h3>
+          <div style="height:260px"><canvas id="ovMonthChart"></canvas></div>
+        </div>
+      </div>
+      <p id="ovSalesTrendNote" class="hidden text-xs text-gray-600 -mt-2">Once a few more months of sales come in, the trend line will fill out.</p>
 
       <div class="card p-5">
         <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
@@ -193,32 +206,12 @@ tr:hover td{background:rgba(0,0,0,.02)}
         <div class="grid grid-cols-3 gap-3 text-center" id="unitsStatusLegend"></div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div class="card p-5">
-          <h3 class="font-semibold text-sm mb-3">Sales Trend (Last 6 Months)</h3>
-          <div style="height:260px"><canvas id="ovSalesTrendChart"></canvas></div>
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-white/8 flex justify-between items-center">
+          <h3 class="font-semibold text-sm">Top Performers</h3>
+          <button onclick="go('reports',document.querySelectorAll('.nav-link')[7])" class="text-xs text-orange-400 hover:underline">View all →</button>
         </div>
-        <div class="card p-5">
-          <h3 class="font-semibold text-sm mb-3">Portfolio by Property Type</h3>
-          <div style="height:260px"><canvas id="ovPortfolioChart"></canvas></div>
-        </div>
-      </div>
-      <p id="ovSalesTrendNote" class="hidden text-xs text-gray-600 -mt-2">Once a few more months of sales come in, the trend line will fill out.</p>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div class="card overflow-hidden">
-          <div class="px-5 py-3 border-b border-white/8 flex justify-between items-center">
-            <h3 class="font-semibold text-sm">Top Performers</h3>
-            <button onclick="go('reports',document.querySelectorAll('.nav-link')[7])" class="text-xs text-orange-400 hover:underline">View all →</button>
-          </div>
-          <div id="ovTopPerformers" class="divide-y divide-white/6"></div>
-        </div>
-        <div class="card overflow-hidden">
-          <div class="px-5 py-3 border-b border-white/8">
-            <h3 class="font-semibold text-sm">Low Inventory Alerts</h3>
-          </div>
-          <div id="ovLowStock" class="divide-y divide-white/6 max-h-64 overflow-y-auto"></div>
-        </div>
+        <div id="ovTopPerformers" class="divide-y divide-white/6"></div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -272,7 +265,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
     <div id="sec-properties" class="section space-y-4">
       <!-- LEVEL 1: Developer cards -->
       <div id="devListView">
-        <div class="card p-4 mb-3">
+        <div class="card p-6 mb-3" style="border:2px solid #ea580c33;box-shadow:0 4px 16px rgba(234,88,12,.08)">
           <div class="flex gap-2 flex-wrap items-end">
             <div><label class="text-xs text-gray-400 mb-1 block">Type</label><select id="plSearchType" class="field w-36">
               <option value="">All Types</option>
@@ -285,7 +278,11 @@ tr:hover td{background:rgba(0,0,0,.02)}
               <option value="RFO">RFO</option>
               <option value="Pre-selling">Pre-selling</option>
             </select></div>
-            <div class="flex-1 min-w-[140px]"><label class="text-xs text-gray-400 mb-1 block">Location</label><input id="plSearchLoc" type="text" placeholder="Type any location…" class="field" onkeydown="if(event.key==='Enter')searchPropertiesGlobal('pl')"></div>
+            <div class="flex-1 min-w-[160px] relative">
+              <label class="text-xs text-gray-400 mb-1 block">Search by Unit, Property, or Location</label>
+              <svg class="absolute left-3 top-1/2 translate-y-1 w-4 h-4 text-orange-400 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input id="plSearchLoc" type="text" placeholder="e.g. Olive, Parc Regency, Cebu City…" class="field pl-9" style="font-size:.95rem" onkeydown="if(event.key==='Enter')searchPropertiesGlobal('pl')">
+            </div>
             <div><label class="text-xs text-gray-400 mb-1 block">Filter By</label><select id="plSearchBudgetType" class="field w-32" onchange="updateBudgetLabels('pl')">
               <option value="tcp">TCP</option>
               <option value="dp">Monthly DP</option>
@@ -293,15 +290,22 @@ tr:hover td{background:rgba(0,0,0,.02)}
             </select></div>
             <div><label class="text-xs text-gray-400 mb-1 block" id="plSearchMinLabel">Min TCP (₱)</label><input id="plSearchBudgetMin" type="text" inputmode="numeric" placeholder="0" class="field w-32" oninput="formatMoneyInput(this)"></div>
             <div><label class="text-xs text-gray-400 mb-1 block" id="plSearchMaxLabel">Max TCP (₱)</label><input id="plSearchBudgetMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-32" oninput="formatMoneyInput(this)"></div>
-            <button onclick="searchPropertiesGlobal('pl')" class="bg-orange-500 hover:bg-orange-600 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">Search</button>
+            <button onclick="searchPropertiesGlobal('pl')" class="bg-orange-500 hover:bg-orange-600 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors">Search</button>
           </div>
           <div id="plSearchResults" class="mt-3"></div>
         </div>
+        <div class="flex gap-2 mb-3" id="plSortPills">
+          <button type="button" data-level="developers" onclick="setPropSortLevel('developers')" class="prop-pill px-4 py-2 rounded-lg text-sm font-medium border border-white/10 text-gray-400 hover:text-white transition-colors">Developers</button>
+          <button type="button" data-level="properties" onclick="setPropSortLevel('properties')" class="prop-pill px-4 py-2 rounded-lg text-sm font-medium border border-white/10 text-gray-400 hover:text-white transition-colors">Properties</button>
+          <button type="button" data-level="units" onclick="setPropSortLevel('units')" class="prop-pill px-4 py-2 rounded-lg text-sm font-medium border border-white/10 text-gray-400 hover:text-white transition-colors">Units</button>
+        </div>
         <div class="flex items-center justify-between mb-3">
-          <p class="text-xs text-gray-500">Select a developer to view their properties.</p>
-          <button onclick="openModal('addDevModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Developer</button>
+          <p class="text-xs text-gray-500" id="plSortHint">Select a developer to view their properties.</p>
+          <button onclick="openModal('addDevModal')" id="plAddDevBtn" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Developer</button>
         </div>
         <div id="devGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
+        <div id="flatPropertiesView" class="hidden space-y-6"></div>
+        <div id="flatUnitsView" class="hidden space-y-6"></div>
       </div>
 
       <!-- LEVEL 2: A developer's properties -->
@@ -595,6 +599,18 @@ tr:hover td{background:rgba(0,0,0,.02)}
           </div>
           <button onclick="saveProfile()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg text-sm font-semibold transition-colors">Save Profile</button>
           <p id="profileMsg" class="text-xs text-green-400 hidden">Profile updated.</p>
+        </div>
+
+        <!-- Sales Target -->
+        <div class="card p-6 space-y-4">
+          <h3 class="font-semibold">Annual Sales Target</h3>
+          <p class="text-xs text-gray-500 -mt-2">Used to show year-to-date progress on the Dashboard.</p>
+          <div>
+            <label class="text-xs text-gray-400 mb-1 block">Target Sales for <span id="setSalesTargetYear"></span> (₱)</label>
+            <input id="setSalesTarget" type="text" inputmode="numeric" class="field" placeholder="e.g. 50,000,000" oninput="formatMoneyInput(this)">
+          </div>
+          <button onclick="saveSalesTarget()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg text-sm font-semibold transition-colors">Save Target</button>
+          <p id="salesTargetMsg" class="text-xs text-green-400 hidden">Sales target updated.</p>
         </div>
 
         <!-- Password -->
@@ -1204,7 +1220,7 @@ function go(id, linkEl) {
   // Header buttons
 
   // Render
-  const r = {overview:renderOverview,agents:renderAgents,properties:enterProperties,teams:renderTeamsView,buyers:renderBuyers,commission:renderCommission,reports:renderReports,logs:renderLogs};
+  const r = {overview:renderOverview,agents:renderAgents,properties:enterProperties,teams:renderTeamsView,buyers:renderBuyers,commission:renderCommission,reports:renderReports,logs:renderLogs,settings:renderSettings};
   if(r[id]) r[id]();
 }
 
@@ -1271,7 +1287,7 @@ let commBuyersCache = [], commUnitsCache = [];
 const COMM_ROLE_LABEL = { agent: 'Agent', team_leader: 'Team Leader', sales_manager: 'Sales Manager', unit_manager: 'Unit Manager' };
 const COMM_BOOKING_LABEL = { yes: 'Yes', no: 'No' };
 const COMM_RELEASE_TERMS = ['Full Down Payment', 'Pre Selling', 'Spot Cash'];
-let ovSalesTrendChart = null, ovPortfolioChart = null;
+let ovYtdChart = null, ovMonthChart = null;
 
 async function renderOverview(){
   const token = localStorage.getItem('token');
@@ -1324,8 +1340,19 @@ async function renderOverview(){
     }
     const totalNetCommission = ovLevelNet(approvedAgents,'agent',2.0) + ovLevelNet(tls,'team_leader',3.0) + ovLevelNet(sms,'sales_manager',3.25) + ovLevelNet(ums,'unit_manager',4.0);
 
+    const currentYear = new Date().getFullYear();
+    const ytdBuyers = buyers.filter(b => new Date(b.created_at).getFullYear() === currentYear);
+    const ytdSalesValue = ytdBuyers.reduce((s,b)=>s + saleValue(b), 0);
+    const target = await fetchAnnualSalesTarget();
+    const targetPct = target ? Math.min(100, Math.round((ytdSalesValue / target) * 100)) : null;
+
     document.getElementById('ovHeroStats').innerHTML =
-      ovHeroCard({ icon: OV_ICONS.trendUp, label:'Total Sales Value', value: peso(totalSalesValue), accent:'#ea580c', sub: `${buyers.length} client${buyers.length===1?'':'s'} recorded` }) +
+      ovHeroCard({
+        icon: OV_ICONS.trendUp, label:`Total Sales Value (${currentYear} YTD)`, value: peso(ytdSalesValue), accent:'#ea580c',
+        sub: target
+          ? `${peso(target)} annual target · ${targetPct}% reached`
+          : `${ytdBuyers.length} client${ytdBuyers.length===1?'':'s'} this year — set a target in Settings`
+      }) +
       ovHeroCard({ icon: OV_ICONS.banknote, label:'Total Net Commission', value: peso(totalNetCommission), accent:'#16a34a', sub: 'After withholding & percentage tax' });
 
     document.getElementById('ovSecondaryStats').innerHTML =
@@ -1349,32 +1376,35 @@ async function renderOverview(){
       <div><p class="text-lg font-bold" style="color:${s.color}">${s.count}</p><p class="text-xs text-gray-500">${s.label}</p></div>
     `).join('');
 
-    // ── Sales Trend (last 6 months) ──
-    const salesByMonth = {};
-    buyers.forEach(b=>{
-      const d = new Date(b.created_at);
-      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      salesByMonth[key] = (salesByMonth[key]||0) + saleValue(b);
-    });
-    const monthKeys = Object.keys(salesByMonth).sort().slice(-6);
-    const monthLabels = monthKeys.map(k=>{
-      const [y,m] = k.split('-');
-      return new Date(Number(y), Number(m)-1, 1).toLocaleDateString('en-PH',{year:'numeric',month:'short'});
-    });
-    document.getElementById('ovSalesTrendNote').classList.toggle('hidden', monthKeys.length>=3);
-    ovSalesTrendChart = drawChart('ovSalesTrendChart', ovSalesTrendChart, {
+    // ── Sales Trend: YTD cumulative running total ──
+    const ytdByMonth = {};
+    for(let m=0;m<12;m++) ytdByMonth[m] = 0;
+    ytdBuyers.forEach(b=>{ ytdByMonth[new Date(b.created_at).getMonth()] += saleValue(b); });
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const currentMonth = new Date().getMonth();
+    let running = 0;
+    const ytdLabels = [], ytdData = [];
+    for(let m=0; m<=currentMonth; m++){
+      running += ytdByMonth[m];
+      ytdLabels.push(monthNames[m]);
+      ytdData.push(running);
+    }
+    document.getElementById('ovSalesTrendNote').classList.toggle('hidden', ytdLabels.length>=3);
+    ovYtdChart = drawChart('ovYtdChart', ovYtdChart, {
       type:'line',
-      data:{ labels: monthLabels, datasets:[{ label:'Sales Value', data: monthKeys.map(k=>salesByMonth[k]), borderColor:'#e2733a', backgroundColor:'rgba(226,115,58,.15)', fill:true, tension:.3, pointRadius:4 }] },
-      options:{ maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ticks:{color:'#9ca3af'}}, y:{beginAtZero:true, ticks:{color:'#9ca3af'}} } }
+      data:{ labels: ytdLabels, datasets:[
+        { label:'Cumulative Sales', data: ytdData, borderColor:'#e2733a', backgroundColor:'rgba(226,115,58,.15)', fill:true, tension:.3, pointRadius:4 },
+        ...(target ? [{ label:'Target', data: ytdLabels.map(()=>target), borderColor:'#9ca3af', borderDash:[6,6], pointRadius:0, fill:false }] : [])
+      ]},
+      options:{ maintainAspectRatio:false, plugins:{ legend:{display: !!target, labels:{color:'#9ca3af'}} }, scales:{ x:{ticks:{color:'#9ca3af'}}, y:{beginAtZero:true, ticks:{color:'#9ca3af'}} } }
     });
 
-    // ── Portfolio by Property Type ──
-    const byType = {};
-    props.forEach(p=>{ const t = p.property_type||'Unspecified'; byType[t] = (byType[t]||0)+1; });
-    ovPortfolioChart = drawChart('ovPortfolioChart', ovPortfolioChart, {
-      type:'doughnut',
-      data:{ labels: Object.keys(byType), datasets:[{ data: Object.values(byType), backgroundColor: ['#e2733a','#22c55e','#3b82f6','#a855f7','#eab308'] }] },
-      options:{ maintainAspectRatio:false, plugins:{ legend:{labels:{color:'#9ca3af'}} } }
+    // ── Sales by Month (current year, all 12 months) ──
+    document.getElementById('ovMonthChartYear').textContent = currentYear;
+    ovMonthChart = drawChart('ovMonthChart', ovMonthChart, {
+      type:'bar',
+      data:{ labels: monthNames, datasets:[{ label:'Sales Value', data: monthNames.map((_,m)=>ytdByMonth[m]), backgroundColor:'#e2733a' }] },
+      options:{ maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ticks:{color:'#9ca3af'}}, y:{beginAtZero:true, ticks:{color:'#9ca3af'}} } }
     });
 
     // ── Top Performers (top 5 by personal sales value) ──
@@ -1397,23 +1427,6 @@ async function renderOverview(){
         <span class="text-orange-400 font-semibold">${peso(p.value)}</span>
       </div>
     `).join('') || '<div class="px-5 py-4 text-xs text-gray-600">No sales recorded yet.</div>';
-
-    // ── Low Inventory Alerts (properties whose units have 2 or fewer left in total) ──
-    const lowStockProps = props.map(p=>{
-      const propUnits = units.filter(u=>u.property_id===p.id);
-      const totalLeft = propUnits.reduce((s,u)=>s+(u.units_left??1>0?(u.units_left??1):0),0);
-      const dev = devs.find(d=>d.id===p.developer_id);
-      return { name:p.name, devName: dev?dev.name:'—', left: totalLeft, total: propUnits.length };
-    }).filter(p=>p.total>0 && p.left<=2).sort((a,b)=>a.left-b.left);
-    document.getElementById('ovLowStock').innerHTML = lowStockProps.map(p=>`
-      <div class="px-5 py-2.5 flex items-center justify-between text-xs">
-        <div>
-          <p class="text-gray-200 font-medium">${p.name}</p>
-          <p class="text-gray-600">${p.devName}</p>
-        </div>
-        <span class="badge ${p.left===0?'bg-red':'bg-yellow'}">${p.left} unit${p.left===1?'':'s'} left</span>
-      </div>
-    `).join('') || '<div class="px-5 py-4 text-xs text-gray-600">No properties running low right now.</div>';
 
     // ── Recent Commission Receivables (last 5 logged) ──
     document.getElementById('ovRecentReceivables').innerHTML = receivables.slice(0,5).map(r=>{
@@ -1489,13 +1502,13 @@ async function searchPropertiesGlobal(context){
     const allUnits = await unitsRes.json();
 
     const filtered = allProps.filter(p => {
+      const propUnits = allUnits.filter(u=>u.property_id===p.id);
       const mt = !type || p.property_type === type;
-      const ms = !selling || p.selling_status === selling || allUnits.some(u=>u.property_id===p.id && u.construction_status===selling);
-      const ml = !loc || (p.location||'').toLowerCase().includes(loc) || p.name.toLowerCase().includes(loc);
+      const ms = !selling || p.selling_status === selling || propUnits.some(u=>u.construction_status===selling);
+      const ml = !loc || (p.location||'').toLowerCase().includes(loc) || p.name.toLowerCase().includes(loc) || propUnits.some(u=>(u.unit_name||'').toLowerCase().includes(loc));
       if(!mt || !ms || !ml) return false;
 
       if(anyBudget){
-        const propUnits = allUnits.filter(u=>u.property_id===p.id);
         const hasMatch = propUnits.some(u=>{
           let value;
           if(budgetType==='dp'){
@@ -1513,10 +1526,14 @@ async function searchPropertiesGlobal(context){
       return true;
     });
 
-    // For each result, find the specific unit that matched (if a budget filter was used) so clicking jumps straight to it
+    // For each result, find the specific unit that matched (by unit name, or by budget filter) so clicking jumps straight to it
     function matchingUnitFor(p){
-      if(!anyBudget) return null;
       const propUnits = allUnits.filter(u=>u.property_id===p.id);
+      if(loc){
+        const byName = propUnits.find(u=>(u.unit_name||'').toLowerCase().includes(loc));
+        if(byName) return byName;
+      }
+      if(!anyBudget) return null;
       return propUnits.find(u=>{
         let value;
         if(budgetType==='dp'){
@@ -1879,11 +1896,157 @@ let currentDevId=null, currentDevName='', devCache=[];
 let unitSearch='', unitCache=[];
 let currentPropId=null, currentPropName='', currentPropType='Condo';
 
+let plSortLevel = 'developers';
+function setPropSortLevel(level){
+  plSortLevel = level;
+  document.querySelectorAll('#plSortPills .prop-pill').forEach(btn=>{
+    const active = btn.dataset.level === level;
+    btn.classList.toggle('border-orange-500/50', active);
+    btn.classList.toggle('bg-orange-500/10', active);
+    btn.classList.toggle('text-orange-600', active);
+    btn.classList.toggle('border-white/10', !active);
+    btn.classList.toggle('text-gray-400', !active);
+  });
+  document.getElementById('devGrid').classList.toggle('hidden', level!=='developers');
+  document.getElementById('flatPropertiesView').classList.toggle('hidden', level!=='properties');
+  document.getElementById('flatUnitsView').classList.toggle('hidden', level!=='units');
+  document.getElementById('plAddDevBtn').classList.toggle('hidden', level!=='developers');
+  const hints = {
+    developers: 'Select a developer to view their properties.',
+    properties: 'All properties across every developer, grouped by developer.',
+    units: 'All units across every property, grouped by developer.',
+  };
+  document.getElementById('plSortHint').textContent = hints[level];
+  if(level==='properties') renderFlatProperties();
+  if(level==='units') renderFlatUnits();
+}
+
+async function renderFlatProperties(){
+  const token = localStorage.getItem('token');
+  const headers = { 'Authorization': 'Bearer ' + token };
+  const container = document.getElementById('flatPropertiesView');
+  container.innerHTML = `<p class="text-xs text-gray-500 py-8 text-center">Loading…</p>`;
+  try {
+    const [devsRes, propsRes] = await Promise.all([
+      fetch('/api/developers', {headers}),
+      fetch('/api/properties', {headers}),
+    ]);
+    const devs = await devsRes.json();
+    const props = await propsRes.json();
+    devCache = devs;
+
+    const sortedDevs = [...devs].sort((a,b)=>a.name.localeCompare(b.name));
+    container.innerHTML = sortedDevs.map(d=>{
+      const devProps = props.filter(p=>p.developer_id===d.id).sort((a,b)=>a.name.localeCompare(b.name));
+      if(!devProps.length) return '';
+      return `
+        <div>
+          <div class="flex items-center gap-2 mb-3 pb-2 border-b border-white/8">
+            ${d.logo_url ? `<img src="${d.logo_url}" class="w-6 h-6 rounded object-cover">` : ''}
+            <h4 class="font-semibold text-sm text-white">${d.name}</h4>
+            <span class="text-xs text-gray-500">${devProps.length} propert${devProps.length===1?'y':'ies'}</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            ${devProps.map(p=>`
+              <div onclick="jumpToProperty('${p.id}','${p.name.replace(/'/g,"\\'")}','${p.property_type}','${d.id}','${d.name.replace(/'/g,"\\'")}','')" class="card overflow-hidden cursor-pointer hover:border-orange-500/40 transition-colors">
+                <div class="w-full h-32 bg-white/5 flex items-center justify-center overflow-hidden">
+                  ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-600 text-xs">No photo</span>`}
+                </div>
+                <div class="p-3 space-y-1">
+                  <div class="flex items-start justify-between gap-2">
+                    <p class="font-semibold text-white text-sm leading-tight">${p.name}</p>
+                    <span class="badge ${p.selling_status==='Pre-selling'?'bg-yellow':'bg-green'} shrink-0">${p.selling_status||'RFO'}</span>
+                  </div>
+                  <p class="text-gray-500 text-xs">${p.location||'—'}</p>
+                  <p class="text-gray-500 text-xs">${p.property_type||'Condo'}</p>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }).join('') || `<p class="text-center text-gray-500 text-xs py-8">No properties yet.</p>`;
+  } catch(err) {
+    console.error('Error loading flat properties view:', err);
+    container.innerHTML = `<p class="text-center text-gray-500 text-xs py-8">Failed to load properties.</p>`;
+  }
+}
+
+async function renderFlatUnits(){
+  const token = localStorage.getItem('token');
+  const headers = { 'Authorization': 'Bearer ' + token };
+  const container = document.getElementById('flatUnitsView');
+  container.innerHTML = `<p class="text-xs text-gray-500 py-8 text-center">Loading…</p>`;
+  try {
+    const [devsRes, propsRes, unitsRes] = await Promise.all([
+      fetch('/api/developers', {headers}),
+      fetch('/api/properties', {headers}),
+      fetch('/api/units', {headers}),
+    ]);
+    const devs = await devsRes.json();
+    const props = await propsRes.json();
+    const units = await unitsRes.json();
+    devCache = devs;
+
+    const sortedDevs = [...devs].sort((a,b)=>a.name.localeCompare(b.name));
+    container.innerHTML = sortedDevs.map(d=>{
+      const devProps = props.filter(p=>p.developer_id===d.id);
+      const devPropIds = new Set(devProps.map(p=>p.id));
+      const devUnits = units.filter(u=>devPropIds.has(u.property_id));
+      if(!devUnits.length) return '';
+      // group this developer's units by property
+      const byProp = {};
+      devUnits.forEach(u=>{ (byProp[u.property_id] = byProp[u.property_id]||[]).push(u); });
+      const propGroups = Object.keys(byProp).map(pid=>{
+        const p = devProps.find(x=>x.id===pid);
+        return { prop: p, units: byProp[pid].sort((a,b)=>a.unit_name.localeCompare(b.unit_name)) };
+      }).filter(g=>g.prop).sort((a,b)=>a.prop.name.localeCompare(b.prop.name));
+
+      return `
+        <div>
+          <div class="flex items-center gap-2 mb-3 pb-2 border-b border-white/8">
+            ${d.logo_url ? `<img src="${d.logo_url}" class="w-6 h-6 rounded object-cover">` : ''}
+            <h4 class="font-semibold text-sm text-white">${d.name}</h4>
+            <span class="text-xs text-gray-500">${devUnits.length} unit${devUnits.length===1?'':'s'}</span>
+          </div>
+          <div class="space-y-4">
+            ${propGroups.map(g=>`
+              <div>
+                <p class="text-xs font-medium text-gray-400 mb-2 pl-1">${g.prop.name}</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  ${g.units.map(u=>`
+                    <div onclick="jumpToProperty('${g.prop.id}','${g.prop.name.replace(/'/g,"\\'")}','${g.prop.property_type}','${d.id}','${d.name.replace(/'/g,"\\'")}','${u.id}')" class="card overflow-hidden cursor-pointer hover:border-orange-500/40 transition-colors">
+                      <div class="w-full h-28 bg-white/5 flex items-center justify-center overflow-hidden">
+                        ${u.image_url ? `<img src="${u.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-600 text-xs">No photo</span>`}
+                      </div>
+                      <div class="p-3 space-y-1">
+                        <div class="flex items-start justify-between gap-2">
+                          <p class="font-semibold text-white text-sm leading-tight">${u.unit_name}</p>
+                          <span class="badge ${(u.units_left??1)<=0?'bg-red':'bg-green'} shrink-0">${(u.units_left??1)<=0 ? 'Sold Out' : (u.units_left??1)+' left'}</span>
+                        </div>
+                        <p class="text-orange-500 text-xs font-semibold">${peso(u.tcp)}</p>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }).join('') || `<p class="text-center text-gray-500 text-xs py-8">No units yet.</p>`;
+  } catch(err) {
+    console.error('Error loading flat units view:', err);
+    container.innerHTML = `<p class="text-center text-gray-500 text-xs py-8">Failed to load units.</p>`;
+  }
+}
+
 function enterProperties(){
   currentDevId=null;
   document.getElementById('devPropsView').classList.add('hidden');
   document.getElementById('unitsView').classList.add('hidden');
   document.getElementById('devListView').classList.remove('hidden');
+  setPropSortLevel('developers');
   renderDevelopers();
 }
 async function renderDevelopers(){
@@ -3688,8 +3851,8 @@ async function renderCommission(){
         <td class="px-5 py-3 text-xs">${peso(r.tcn)}</td>
         <td class="px-5 py-3 text-xs">${r.rate}%</td>
         <td class="px-5 py-3 text-xs">${peso(r.gross)}</td>
-        <td class="px-5 py-3 text-xs text-red-400">(${peso(r.withholding)})</td>
-        <td class="px-5 py-3 text-xs text-red-400">(${peso(r.percentageTax)})</td>
+        <td class="px-5 py-3 text-xs text-red-400">-${peso(r.withholding)}</td>
+        <td class="px-5 py-3 text-xs text-red-400">-${peso(r.percentageTax)}</td>
         <td class="px-5 py-3 text-xs text-orange-400 font-semibold">${peso(r.net)}</td>
       </tr>
     `).join('') || `<tr><td colspan="10" class="px-5 py-5 text-center text-gray-500 text-xs">No ${level.replace('_',' ')}s yet.</td></tr>`;
@@ -3941,8 +4104,8 @@ function doCompute(){
   const percTax = comm*0.03;
   const netComm = comm - withholding - percTax;
   document.getElementById('cAmount').textContent=peso(comm);
-  document.getElementById('cWithholding').textContent='('+peso(withholding)+')';
-  document.getElementById('cPercTax').textContent='('+peso(percTax)+')';
+  document.getElementById('cWithholding').textContent='-'+peso(withholding);
+  document.getElementById('cPercTax').textContent='-'+peso(percTax);
   document.getElementById('cNetCommission').textContent=peso(netComm);
   document.getElementById('cSP').textContent=peso(price);
   document.getElementById('cSR').textContent=rate+'%';
@@ -4296,6 +4459,46 @@ async function clearLogs(){
 // ══════════════════════════════════════
 // SETTINGS
 // ══════════════════════════════════════
+let cachedAnnualSalesTarget = null;
+
+async function fetchAnnualSalesTarget(){
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/sales-target', { headers: { 'Authorization': 'Bearer ' + token } });
+    const data = await res.json();
+    cachedAnnualSalesTarget = data.annual_sales_target != null ? Number(data.annual_sales_target) : null;
+  } catch(err) {
+    console.error('Error loading sales target:', err);
+    cachedAnnualSalesTarget = null;
+  }
+  return cachedAnnualSalesTarget;
+}
+
+async function renderSettings(){
+  document.getElementById('setSalesTargetYear').textContent = new Date().getFullYear();
+  const target = await fetchAnnualSalesTarget();
+  document.getElementById('setSalesTarget').value = target ? target.toLocaleString('en-PH') : '';
+}
+
+async function saveSalesTarget(){
+  const raw = document.getElementById('setSalesTarget').value.replace(/,/g,'').trim();
+  try {
+    const token = localStorage.getItem('token');
+    await fetch('/api/sales-target', {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ annual_sales_target: raw || null }),
+    });
+    cachedAnnualSalesTarget = raw ? Number(raw) : null;
+    document.getElementById('salesTargetMsg').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('salesTargetMsg').classList.add('hidden'),2000);
+    addLog('Annual sales target updated');
+  } catch(err) {
+    console.error('Error saving sales target:', err);
+    alert('Failed to save sales target.');
+  }
+}
+
 function saveProfile(){
   const adminId = document.getElementById('setAdminId').value.trim();
   const name    = document.getElementById('setName').value.trim();
