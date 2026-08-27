@@ -629,7 +629,7 @@ async function fetchAllPropData(){
 }
 
 let propSortLevel = 'developers';
-function setPropListSortLevel(level){
+window.setPropListSortLevel = function(level){
   propSortLevel = level;
   document.querySelectorAll('#propSortPills .prop-pill').forEach(btn=>{
     const active = btn.dataset.level === level;
@@ -737,7 +737,7 @@ function renderFlatUnitsList(){
   }).join('') || `<p class="text-center text-gray-500 text-xs py-8">No units yet.</p>`;
 }
 
-function jumpToPropListItem(devId, devName, propId, propName, unitId){
+window.jumpToPropListItem = function(devId, devName, propId, propName, unitId){
   propViewDeveloper(devId, devName);
   propViewProperty(propId, propName);
   if(unitId) viewUnitDetail(unitId);
