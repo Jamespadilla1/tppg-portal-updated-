@@ -430,61 +430,72 @@ tr:hover td{background:rgba(0,0,0,.02)}
         </div>
       </div>
 
-      <!-- COMMISSION RECEIVABLES (tranches from developers) -->
+      <!-- INCENTIVES & OVERRIDE (per-sale, set by clicking through Commission Records) -->
       <div class="card overflow-hidden">
-        <div class="px-5 py-3 border-b border-white/8 flex items-center justify-between">
-          <div>
-            <h3 class="font-semibold text-sm">Commission Receivables</h3>
-            <p class="text-xs text-gray-500 mt-0.5">Log of commission releases from developers — monthly tranches or annual payouts. Includes per-sale manager overrides and agent incentive; incentive is visible only to the specific agent who made that sale, not their team.</p>
-          </div>
-          <button onclick="openAddReceivableModal()" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Release</button>
+        <div class="px-5 py-3 border-b border-white/8">
+          <h3 class="font-semibold text-sm">Incentives & Override</h3>
+          <p class="text-xs text-gray-500 mt-0.5">Click a sale under Commission Records above to set an incentive for the agent and an override for whoever they report to. Incentive is visible only to that agent; override is visible only to the recipient.</p>
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
-            <th class="text-left px-5 py-2">Developer</th><th class="text-left px-5 py-2">Linked Sale</th><th class="text-left px-5 py-2">Amount</th><th class="text-left px-5 py-2">Release Date</th><th class="text-left px-5 py-2">Type</th><th class="text-left px-5 py-2">Notes</th><th class="text-left px-5 py-2">Overrides &amp; Incentive</th><th class="text-left px-5 py-2">Actions</th>
+            <th class="text-left px-5 py-2">Seller</th><th class="text-left px-5 py-2">Client</th><th class="text-left px-5 py-2">Incentive</th><th class="text-left px-5 py-2">Override Recipient</th><th class="text-left px-5 py-2">Override Amount</th><th class="text-left px-5 py-2">Date</th>
           </tr></thead>
           <tbody id="receivablesBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
       </div>
     </div>
 
-    <!-- ADD/EDIT COMMISSION RECEIVABLE -->
-    <div id="receivableModal" class="modal-backdrop">
+    <!-- INCENTIVE & OVERRIDE (set per sale) -->
+    <div id="incentiveOverrideModal" class="modal-backdrop">
       <div class="modal-box">
-        <button onclick="closeModal('receivableModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
-        <h3 class="font-bold text-lg mb-4" id="receivableModalTitle">Add Commission Release</h3>
+        <button onclick="closeModal('incentiveOverrideModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+        <h3 class="font-bold text-lg mb-1" id="ioTitle">Incentive & Override</h3>
+        <p class="text-xs text-gray-500 mb-4">Incentive is visible only to the agent who made this sale. Override is visible only to the person they report to.</p>
+        <input type="hidden" id="ioBuyerId">
+        <input type="hidden" id="ioOverrideField">
         <div class="space-y-3">
-          <input id="recI" type="hidden">
-          <input id="recDeveloper" type="hidden">
-          <div><label class="text-xs text-gray-400 mb-1 block">Linked Sale *</label><select id="recBuyer" class="field" onchange="onRecBuyerChange()"><option value="">— Select the sale —</option></select></div>
-          <p id="recDevPreview" class="text-xs text-gray-500 -mt-2"></p>
-          <div id="recAnnualAmountRow"><label class="text-xs text-gray-400 mb-1 block">Amount (₱) *</label><input id="recAmount" type="text" inputmode="numeric" class="field" placeholder="500,000" oninput="formatMoneyInput(this);syncReceivableTotal()"></div>
-          <div id="recTrancheFields" class="hidden grid grid-cols-2 gap-3">
-            <div><label class="text-xs text-gray-400 mb-1 block">Monthly Amount (₱) *</label><input id="recMonthlyAmount" type="text" inputmode="numeric" class="field" placeholder="15,000" oninput="formatMoneyInput(this);syncReceivableTotal()"></div>
-            <div><label class="text-xs text-gray-400 mb-1 block">Number of Months *</label><input id="recTrancheMonths" type="number" min="1" class="field" placeholder="24" oninput="syncReceivableTotal()"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Incentive for this sale (₱)</label><input id="ioIncentive" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
+          <div id="ioOverrideRow">
+            <label class="text-xs text-gray-400 mb-1 block" id="ioOverrideLabel">Override amount (₱)</label>
+            <input id="ioOverride" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)">
           </div>
-          <p id="recTrancheTotal" class="text-xs text-gray-500 hidden"></p>
-          <div><label class="text-xs text-gray-400 mb-1 block">Release Date *</label><input id="recDate" type="date" class="field"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Type</label><select id="recType" class="field" onchange="onRecTypeChange()">
-            <option value="Monthly Tranche">Monthly Tranche</option>
-            <option value="Annual">Annual</option>
-          </select></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Notes</label><textarea id="recNotes" class="field" rows="2"></textarea></div>
-
-          <div class="border-t border-white/8 pt-3 mt-1">
-            <p class="text-xs text-gray-400 font-semibold mb-2">Overrides &amp; Incentive</p>
-            <div class="grid grid-cols-2 gap-3">
-              <div><label class="text-xs text-gray-400 mb-1 block">Team Leader Override (₱)</label><input id="recOvTL" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
-              <div><label class="text-xs text-gray-400 mb-1 block">Sales Manager Override (₱)</label><input id="recOvSM" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
-              <div><label class="text-xs text-gray-400 mb-1 block">Unit Manager Override (₱)</label><input id="recOvUM" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
-              <div><label class="text-xs text-gray-400 mb-1 block">Incentive (₱)</label><input id="recOvIncentive" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
-            </div>
-            <p class="text-xs text-gray-600 italic mt-2">Each manager/Team Leader sees only their own override amount. Incentive is visible only to the agent who made this sale.</p>
-          </div>
-
-          <p id="recErr" class="text-red-400 text-xs hidden">Linked sale, amount, and release date are required.</p>
-          <button onclick="saveReceivable()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save</button>
+          <p id="ioNoOverrideNote" class="hidden text-xs text-gray-500 italic">This seller has no one above them in the reporting chain, so no override applies here.</p>
+          <div><label class="text-xs text-gray-400 mb-1 block">Date</label><input id="ioDate" type="date" class="field"></div>
+          <p id="ioErr" class="text-red-400 text-xs hidden"></p>
+          <button onclick="saveIncentiveOverride()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save</button>
         </div>
+      </div>
+    </div>
+
+    <!-- MONTHLY DOWN PAYMENT — DEVELOPER RELEASES -->
+    <div id="monthlyReleaseModal" class="modal-backdrop">
+      <div class="modal-box">
+        <button onclick="closeModal('monthlyReleaseModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+        <h3 class="font-bold text-lg mb-1" id="mrTitle">Monthly Down Payment Releases</h3>
+        <p class="text-xs text-gray-500 mb-4">Record how the developer is releasing commission for this Monthly Down Payment sale.</p>
+        <input type="hidden" id="mrBuyerId">
+        <div class="flex gap-2 mb-4" id="mrModePills">
+          <button type="button" data-mode="schedule" onclick="setMonthlyReleaseMode('schedule')" class="mr-pill flex-1 px-3 py-2 rounded-lg text-xs font-medium border border-white/10 text-gray-400 hover:text-white transition-colors">By Schedule</button>
+          <button type="button" data-mode="rows" onclick="setMonthlyReleaseMode('rows')" class="mr-pill flex-1 px-3 py-2 rounded-lg text-xs font-medium border border-white/10 text-gray-400 hover:text-white transition-colors">Add Rows Manually</button>
+        </div>
+
+        <div id="mrScheduleFields" class="space-y-3">
+          <div><label class="text-xs text-gray-400 mb-1 block">Monthly Amount (₱)</label><input id="mrMonthlyAmount" type="text" inputmode="numeric" class="field" placeholder="15,000" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Number of Months</label><input id="mrMonths" type="number" min="1" class="field" placeholder="12"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Start Date</label><input id="mrStartDate" type="date" class="field"></div>
+        </div>
+
+        <div id="mrRowsFields" class="hidden space-y-2">
+          <div class="flex gap-2 items-end mb-1">
+            <div class="flex-1"><label class="text-xs text-gray-400 mb-1 block">Add multiple rows at once</label><input id="mrBulkCount" type="number" min="1" class="field" placeholder="e.g. 6"></div>
+            <button type="button" onclick="addMonthlyRowsBulk()" class="bg-white/8 hover:bg-white/12 text-gray-300 px-4 py-2.5 rounded-lg text-xs font-medium transition-colors shrink-0">Add Rows</button>
+          </div>
+          <div id="mrRowsList" class="space-y-2"></div>
+          <button type="button" onclick="addMonthlyRow()" class="text-xs text-orange-400 hover:text-orange-300 transition-colors">+ Add Row</button>
+        </div>
+
+        <p id="mrErr" class="text-red-400 text-xs hidden mt-3"></p>
+        <button onclick="saveMonthlyRelease()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors mt-3">Save</button>
       </div>
     </div>
 
@@ -3675,10 +3686,21 @@ async function deleteBuyerAdmin(id){
   }
 }
 
-window.openCommClientRecords = (role, id, name) => {
+let allReceivablesCache = [];
+
+window.openCommClientRecords = async (role, id, name) => {
   const records = commBuyersCache.filter(b => b.input_by_role===role && b.input_by_id===id);
   document.getElementById('commClientsTitle').textContent = `${name}'s Client Records`;
   document.getElementById('commClientsSubtitle').textContent = `${records.length} record${records.length===1?'':'s'} added by this ${COMM_ROLE_LABEL[role]||role} · click a record to add its commission release`;
+
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/commission-receivables', { headers: { 'Authorization': 'Bearer ' + token } });
+    allReceivablesCache = await res.json();
+  } catch(err) {
+    console.error('Error loading commission receivables:', err);
+    allReceivablesCache = [];
+  }
 
   document.getElementById('commClientsList').innerHTML = records.map(b=>{
     const unit = commUnitsCache.find(u=>u.id===b.unit_id);
@@ -3686,10 +3708,18 @@ window.openCommClientRecords = (role, id, name) => {
     const projectName = unit ? '—' : (b.manual_property_name || '—');
     const tcp = b.net_selling_price || (unit ? unit.tcp : b.manual_tcp);
     const bookingLabel = b.booking_requirements_complete ? (COMM_BOOKING_LABEL[b.booking_requirements_complete] || b.booking_requirements_complete) : '—';
-    const clickable = COMM_RELEASE_TERMS.includes(b.payment_option);
-    const clickAttrs = clickable ? `onclick="openQuickRelease('${b.id}','${b.name.replace(/'/g,"\\'")}','${b.payment_option}')" class="rounded-lg border border-white/8 bg-white/4 p-4 cursor-pointer hover:border-orange-300 hover:bg-orange-500/8 transition-colors"` : `class="rounded-lg border border-white/8 bg-white/4 p-4"`;
+    const isMonthlyDP = b.payment_option === 'Monthly Down Payment';
+    const isQuickRelease = COMM_RELEASE_TERMS.includes(b.payment_option);
+    let releaseBtn = '';
+    if(isMonthlyDP){
+      releaseBtn = `<button onclick="openMonthlyRelease('${b.id}','${b.name.replace(/'/g,"\\'")}')" class="text-[11px] px-2.5 py-1 rounded-md bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-colors">Add Monthly Releases</button>`;
+    } else if(isQuickRelease){
+      releaseBtn = `<button onclick="openQuickRelease('${b.id}','${b.name.replace(/'/g,"\\'")}','${b.payment_option}')" class="text-[11px] px-2.5 py-1 rounded-md bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-colors">Add Release</button>`;
+    }
+    const releases = allReceivablesCache.filter(r=>r.buyer_id===b.id).sort((a,b2)=>new Date(a.release_date)-new Date(b2.release_date));
+    const releasesTotal = releases.reduce((s,r)=>s+(Number(r.amount)||0),0);
     return `
-      <div ${clickAttrs}>
+      <div class="rounded-lg border border-white/8 bg-white/4 p-4">
         <div class="flex items-center justify-between mb-2">
           <p class="font-semibold text-sm">${b.name}</p>
           <span class="text-orange-400 font-semibold text-sm">${tcp ? peso(tcp) : '—'}</span>
@@ -3704,11 +3734,26 @@ window.openCommClientRecords = (role, id, name) => {
           <p><span class="text-gray-600">Booking Complete:</span> ${bookingLabel}</p>
           <p><span class="text-gray-600">Date Added:</span> ${new Date(b.created_at).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})}</p>
         </div>
-        ${b.payment_option==='Monthly Down Payment' ? `
+        ${isMonthlyDP ? `
         <div class="mt-3 pt-3 border-t border-white/8">
           <span class="badge bg-blue">Months to Pay: ${b.dp_months || '—'}</span>
         </div>` : ''}
-        ${clickable ? `<p class="text-[11px] text-orange-400 mt-2">Click to add a commission release for this sale →</p>` : ''}
+        ${releases.length ? `
+        <div class="mt-3 pt-3 border-t border-white/8">
+          <p class="text-[11px] text-gray-500 uppercase tracking-wide mb-1.5">Recorded Releases (${releases.length}) · Total: ${peso(releasesTotal)}</p>
+          <div class="space-y-1 max-h-28 overflow-y-auto">
+            ${releases.map(r=>`
+              <div class="flex justify-between text-xs">
+                <span class="text-gray-400">${new Date(r.release_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})} <span class="text-gray-600">· ${r.release_type}</span></span>
+                <span class="text-green-400 font-medium">${peso(r.amount)}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>` : ''}
+        ${releaseBtn ? `
+        <div class="mt-3 pt-3 border-t border-white/8 flex flex-wrap gap-2">
+          ${releaseBtn}
+        </div>` : ''}
       </div>`;
   }).join('') || '<p class="text-center text-gray-500 text-xs py-8">No client records added by this person yet.</p>';
 
@@ -3840,7 +3885,7 @@ async function renderCommission(){
 // ══════════════════════════════════════
 // COMMISSION RECEIVABLES (tranches from developers)
 // ══════════════════════════════════════
-let receivablesCache = [], receivablesDevsCache = [], receivablesBuyersCache = [], receivablesUnitsCache = [], receivablesPropsCache = [];
+let receivablesBuyersCache = [], receivablesUnitsCache = [], receivablesPropsCache = [];
 
 // Resolve a buyer's input_by_role/input_by_id to the actual person who made the sale (agent/TL/SM/UM)
 function resolveSellerPerson(role, id){
@@ -3865,203 +3910,222 @@ async function renderReceivables(){
   const token = localStorage.getItem('token');
   const headers = { 'Authorization': 'Bearer ' + token };
   try {
-    const [recRes, devsRes, buyersRes, unitsRes, propsRes] = await Promise.all([
-      fetch('/api/commission-receivables', {headers}),
-      fetch('/api/developers', {headers}),
+    const [buyersRes, unitsRes, propsRes] = await Promise.all([
       fetch('/api/buyers', {headers}),
       fetch('/api/units', {headers}),
       fetch('/api/properties', {headers}),
     ]);
-    receivablesCache = await recRes.json();
-    receivablesDevsCache = await devsRes.json();
     receivablesBuyersCache = await buyersRes.json();
     receivablesUnitsCache = await unitsRes.json();
     receivablesPropsCache = await propsRes.json();
     await fetchTeamStructureData(); // loads umCache, smCache, tlCache, teamAgentsCache
 
-    document.getElementById('receivablesBody').innerHTML = receivablesCache.map(r => {
-      const dev = receivablesDevsCache.find(d=>d.id===r.developer_id);
-      const buyer = receivablesBuyersCache.find(b=>b.id===r.buyer_id);
-      const sellerLabel = buyer ? sellerLabelForBuyer(buyer) : '—';
-      const trancheInfo = (r.release_type==='Monthly Tranche' && r.monthly_amount && r.tranche_months)
-        ? `${peso(r.monthly_amount)}/mo × ${r.tranche_months} mo` : '';
-      const ovParts = [];
-      if(buyer && buyer.override_team_leader)   ovParts.push(`TL: ${peso(buyer.override_team_leader)}`);
-      if(buyer && buyer.override_sales_manager) ovParts.push(`SM: ${peso(buyer.override_sales_manager)}`);
-      if(buyer && buyer.override_unit_manager)  ovParts.push(`UM: ${peso(buyer.override_unit_manager)}`);
-      const ovSummary = ovParts.length ? ovParts.join(' · ') : '—';
-      const incentiveSummary = buyer && buyer.incentive_amount ? `Incentive: ${peso(buyer.incentive_amount)}` : '';
+    const rows = [...receivablesBuyersCache].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+
+    document.getElementById('receivablesBody').innerHTML = rows.map(b => {
+      const sellerLabel = sellerLabelForBuyer(b);
+      const recipient = getOverrideRecipient(b.input_by_role, b.input_by_id);
+      const overrideAmount = recipient ? b[recipient.field] : null;
+      const clickAttrs = `onclick="openIncentiveOverride('${b.id}','${b.name.replace(/'/g,"\\'")}','${b.input_by_role}','${b.input_by_id}')" class="cursor-pointer hover:bg-orange-500/5 transition-colors"`;
       return `
-      <tr>
-        <td class="px-5 py-3 text-xs">${dev ? dev.name : '—'}</td>
+      <tr ${clickAttrs}>
         <td class="px-5 py-3 text-xs">${sellerLabel}</td>
-        <td class="px-5 py-3 text-xs text-orange-400 font-semibold">${peso(r.amount)}${trancheInfo ? `<div class="text-gray-500 font-normal">${trancheInfo}</div>` : ''}</td>
-        <td class="px-5 py-3 text-xs">${new Date(r.release_date).toLocaleDateString()}</td>
-        <td class="px-5 py-3 text-xs"><span class="badge bg-blue">${r.release_type}</span></td>
-        <td class="px-5 py-3 text-xs text-gray-400">${r.notes||'—'}</td>
-        <td class="px-5 py-3 text-xs text-green-400">${ovSummary}${incentiveSummary ? `<div class="text-purple-400 font-semibold mt-0.5">${incentiveSummary}</div>` : ''}</td>
-        <td class="px-5 py-3 flex gap-2">
-          <button onclick="openEditReceivableModal('${r.id}')" class="text-xs text-orange-400 hover:text-orange-300">Edit</button>
-          <button onclick="deleteReceivable('${r.id}')" class="text-xs text-red-400 hover:text-red-300">Delete</button>
-        </td>
+        <td class="px-5 py-3 text-xs">${b.name}</td>
+        <td class="px-5 py-3 text-xs text-purple-400 font-semibold">${b.incentive_amount ? peso(b.incentive_amount) : '—'}</td>
+        <td class="px-5 py-3 text-xs">${recipient ? `${recipient.person.name} (${COMM_ROLE_LABEL[recipient.tier]})` : '—'}</td>
+        <td class="px-5 py-3 text-xs text-green-400 font-semibold">${overrideAmount ? peso(overrideAmount) : '—'}</td>
+        <td class="px-5 py-3 text-xs text-gray-400">${b.incentive_date ? new Date(b.incentive_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'}) : '—'}</td>
       </tr>`;
-    }).join('') || `<tr><td colspan="8" class="px-5 py-5 text-center text-gray-500 text-xs">No commission releases logged yet.</td></tr>`;
+    }).join('') || `<tr><td colspan="6" class="px-5 py-5 text-center text-gray-500 text-xs">No sales recorded yet.</td></tr>`;
   } catch(err) {
     console.error('Error loading receivables:', err);
   }
 }
 
-function populateRecBuyerOptions(selectedBuyerId){
-  document.getElementById('recBuyer').innerHTML = `<option value="">— Select the sale —</option>` +
-    receivablesBuyersCache.map(b=>`<option value="${b.id}" ${b.id===selectedBuyerId?'selected':''}>${sellerLabelForBuyer(b)}</option>`).join('');
-}
+// Determine who a given seller (agent/TL/SM) reports to, for auto-assigning the override.
+// Checks the immediate superior first (team_leader_id), then sales_manager_id, then unit_manager_id.
+// Unit Managers have no superior — no override is possible for their own sales.
+function getOverrideRecipient(sellerRole, sellerId){
+  let person;
+  if(sellerRole==='agent') person = teamAgentsCache.find(a=>a.id===sellerId);
+  else if(sellerRole==='team_leader') person = tlCache.find(t=>t.id===sellerId);
+  else if(sellerRole==='sales_manager') person = smCache.find(s=>s.id===sellerId);
+  else return null; // unit_manager: no one above them
 
-function onRecBuyerChange(){
-  const buyerId = document.getElementById('recBuyer').value;
-  const buyer = receivablesBuyersCache.find(b=>b.id===buyerId);
-  const unit = buyer ? receivablesUnitsCache.find(u=>u.id===buyer.unit_id) : null;
-  const prop = unit ? receivablesPropsCache.find(p=>p.id===unit.property_id) : null;
-  const dev = prop ? receivablesDevsCache.find(d=>d.id===prop.developer_id) : null;
-  document.getElementById('recDeveloper').value = dev ? dev.id : '';
-  document.getElementById('recDevPreview').textContent = dev ? `Developer: ${dev.name}` : (buyer ? 'No developer could be determined from this sale — check the unit/property.' : '');
-  document.getElementById('recOvTL').value = buyer && buyer.override_team_leader ? Number(buyer.override_team_leader).toLocaleString('en-US') : '';
-  document.getElementById('recOvSM').value = buyer && buyer.override_sales_manager ? Number(buyer.override_sales_manager).toLocaleString('en-US') : '';
-  document.getElementById('recOvUM').value = buyer && buyer.override_unit_manager ? Number(buyer.override_unit_manager).toLocaleString('en-US') : '';
-  document.getElementById('recOvIncentive').value = buyer && buyer.incentive_amount ? Number(buyer.incentive_amount).toLocaleString('en-US') : '';
-}
-
-function onRecTypeChange(){
-  const isTranche = document.getElementById('recType').value === 'Monthly Tranche';
-  document.getElementById('recTrancheFields').classList.toggle('hidden', !isTranche);
-  document.getElementById('recAnnualAmountRow').classList.toggle('hidden', isTranche);
-  document.getElementById('recTrancheTotal').classList.toggle('hidden', !isTranche);
-  syncReceivableTotal();
-}
-
-function syncReceivableTotal(){
-  const isTranche = document.getElementById('recType').value === 'Monthly Tranche';
-  if(!isTranche) return;
-  const monthly = parseMoney(document.getElementById('recMonthlyAmount').value);
-  const months = parseInt(document.getElementById('recTrancheMonths').value, 10) || 0;
-  const total = monthly * months;
-  document.getElementById('recAmount').value = total > 0 ? total.toLocaleString('en-US') : '';
-  document.getElementById('recTrancheTotal').textContent = (monthly>0 && months>0)
-    ? `${peso(monthly)}/month for ${months} month${months===1?'':'s'} = ${peso(total)} total`
-    : '';
-}
-
-function openAddReceivableModal(){
-  document.getElementById('receivableModalTitle').textContent = 'Add Commission Release';
-  document.getElementById('recI').value = '';
-  document.getElementById('recDeveloper').value = '';
-  document.getElementById('recDevPreview').textContent = '';
-  populateRecBuyerOptions('');
-  document.getElementById('recAmount').value = '';
-  document.getElementById('recMonthlyAmount').value = '';
-  document.getElementById('recTrancheMonths').value = '';
-  document.getElementById('recDate').value = '';
-  document.getElementById('recType').value = 'Monthly Tranche';
-  document.getElementById('recNotes').value = '';
-  document.getElementById('recOvTL').value = '';
-  document.getElementById('recOvSM').value = '';
-  document.getElementById('recOvUM').value = '';
-  document.getElementById('recOvIncentive').value = '';
-  document.getElementById('recErr').classList.add('hidden');
-  onRecTypeChange();
-  openModal('receivableModal');
-}
-function openEditReceivableModal(id){
-  const r = receivablesCache.find(x=>x.id===id);
-  if(!r) return;
-  document.getElementById('receivableModalTitle').textContent = 'Edit Commission Release';
-  document.getElementById('recI').value = r.id;
-  document.getElementById('recDeveloper').value = r.developer_id;
-  populateRecBuyerOptions(r.buyer_id || '');
-  const buyer = receivablesBuyersCache.find(b=>b.id===r.buyer_id);
-  const dev = receivablesDevsCache.find(d=>d.id===r.developer_id);
-  document.getElementById('recDevPreview').textContent = dev ? `Developer: ${dev.name}` : '';
-  document.getElementById('recAmount').value = r.amount ? Number(r.amount).toLocaleString('en-US') : '';
-  document.getElementById('recMonthlyAmount').value = r.monthly_amount ? Number(r.monthly_amount).toLocaleString('en-US') : '';
-  document.getElementById('recTrancheMonths').value = r.tranche_months || '';
-  document.getElementById('recDate').value = r.release_date;
-  document.getElementById('recType').value = r.release_type;
-  document.getElementById('recNotes').value = r.notes || '';
-  document.getElementById('recOvTL').value = buyer && buyer.override_team_leader ? Number(buyer.override_team_leader).toLocaleString('en-US') : '';
-  document.getElementById('recOvSM').value = buyer && buyer.override_sales_manager ? Number(buyer.override_sales_manager).toLocaleString('en-US') : '';
-  document.getElementById('recOvUM').value = buyer && buyer.override_unit_manager ? Number(buyer.override_unit_manager).toLocaleString('en-US') : '';
-  document.getElementById('recOvIncentive').value = buyer && buyer.incentive_amount ? Number(buyer.incentive_amount).toLocaleString('en-US') : '';
-  document.getElementById('recErr').classList.add('hidden');
-  onRecTypeChange();
-  openModal('receivableModal');
-}
-async function saveReceivable(){
-  const id = document.getElementById('recI').value;
-  const buyer_id = document.getElementById('recBuyer').value;
-  const developer_id = document.getElementById('recDeveloper').value;
-  const release_type = document.getElementById('recType').value;
-  const isTranche = release_type === 'Monthly Tranche';
-  const monthly_amount = isTranche ? parseMoney(document.getElementById('recMonthlyAmount').value) : null;
-  const tranche_months = isTranche ? (parseInt(document.getElementById('recTrancheMonths').value, 10) || null) : null;
-  const amount = parseMoney(document.getElementById('recAmount').value);
-  const release_date = document.getElementById('recDate').value;
-
-  if(!buyer_id || !developer_id || !amount || !release_date || (isTranche && (!monthly_amount || !tranche_months))){
-    document.getElementById('recErr').classList.remove('hidden');
-    return;
+  if(!person) return null;
+  if(person.team_leader_id){
+    const tl = tlCache.find(t=>t.id===person.team_leader_id);
+    if(tl) return { tier:'team_leader', field:'override_team_leader', person: tl };
   }
-  document.getElementById('recErr').classList.add('hidden');
+  if(person.sales_manager_id){
+    const sm = smCache.find(s=>s.id===person.sales_manager_id);
+    if(sm) return { tier:'sales_manager', field:'override_sales_manager', person: sm };
+  }
+  if(person.unit_manager_id){
+    const um = umCache.find(u=>u.id===person.unit_manager_id);
+    if(um) return { tier:'unit_manager', field:'override_unit_manager', person: um };
+  }
+  return null;
+}
 
-  const token = localStorage.getItem('token');
-  const payload = {
-    developer_id,
-    buyer_id,
-    amount,
-    release_date,
-    release_type,
-    monthly_amount,
-    tranche_months,
-    notes: document.getElementById('recNotes').value.trim(),
-  };
+window.openIncentiveOverride = (buyerId, clientName, sellerRole, sellerId) => {
+  const buyer = receivablesBuyersCache.find(b=>b.id===buyerId) || commBuyersCache.find(b=>b.id===buyerId);
+  const recipient = getOverrideRecipient(sellerRole, sellerId);
+
+  document.getElementById('ioBuyerId').value = buyerId;
+  document.getElementById('ioOverrideField').value = recipient ? recipient.field : '';
+  document.getElementById('ioTitle').textContent = `Incentive & Override — ${clientName}`;
+  document.getElementById('ioIncentive').value = buyer && buyer.incentive_amount ? Number(buyer.incentive_amount).toLocaleString('en-US') : '';
+  document.getElementById('ioDate').value = buyer && buyer.incentive_date ? buyer.incentive_date.slice(0,10) : '';
+
+  if(recipient){
+    document.getElementById('ioOverrideRow').classList.remove('hidden');
+    document.getElementById('ioOverrideLabel').textContent = `Override for ${recipient.person.name} (${COMM_ROLE_LABEL[recipient.tier]})`;
+    const existingVal = buyer ? buyer[recipient.field] : null;
+    document.getElementById('ioOverride').value = existingVal ? Number(existingVal).toLocaleString('en-US') : '';
+    document.getElementById('ioNoOverrideNote').classList.add('hidden');
+  } else {
+    document.getElementById('ioOverrideRow').classList.add('hidden');
+    document.getElementById('ioOverride').value = '';
+    document.getElementById('ioNoOverrideNote').classList.remove('hidden');
+  }
+
+  document.getElementById('ioErr').classList.add('hidden');
+  openModal('incentiveOverrideModal');
+};
+
+window.saveIncentiveOverride = async () => {
+  const buyerId = document.getElementById('ioBuyerId').value;
+  const overrideField = document.getElementById('ioOverrideField').value;
+  const incentive_amount = document.getElementById('ioIncentive').value.replace(/,/g,'').trim();
+  const override_amount = document.getElementById('ioOverride').value.replace(/,/g,'').trim();
+  const incentive_date = document.getElementById('ioDate').value;
+
+  const payload = { incentive_amount: incentive_amount || null, incentive_date: incentive_date || null };
+  if(overrideField) payload[overrideField] = override_amount || null;
+
   try {
-    const url = id ? `/api/commission-receivables/${id}` : '/api/commission-receivables';
-    await fetch(url, {
-      method: id ? 'PUT' : 'POST',
-      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    await fetch(`/api/buyers/${buyer_id}/overrides`, {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`/api/buyers/${buyerId}/overrides`, {
       method: 'PATCH',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        override_team_leader: parseMoney(document.getElementById('recOvTL').value) || null,
-        override_sales_manager: parseMoney(document.getElementById('recOvSM').value) || null,
-        override_unit_manager: parseMoney(document.getElementById('recOvUM').value) || null,
-        incentive_amount: parseMoney(document.getElementById('recOvIncentive').value) || null,
-      })
+      body: JSON.stringify(payload),
     });
-    await fetch('/api/logs', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: `Commission release of ${peso(amount)} ${id?'updated':'logged'}`, actor: 'Admin', role: 'admin' })
-    });
-    closeModal('receivableModal');
-    renderReceivables();
+    if(!res.ok) throw new Error('Save failed');
+    closeModal('incentiveOverrideModal');
+    closeModal('commClientsModal');
+    if(typeof renderReceivables === 'function') renderReceivables();
   } catch(err) {
-    console.error('Error saving receivable:', err);
-    alert('Failed to save.');
+    console.error('Error saving incentive & override:', err);
+    document.getElementById('ioErr').textContent = 'Failed to save. Please try again.';
+    document.getElementById('ioErr').classList.remove('hidden');
   }
-}
-async function deleteReceivable(id){
-  if(!confirm('Delete this commission release entry?')) return;
+};
+
+// ── MONTHLY DOWN PAYMENT: developer release schedule ──
+let mrMode = 'schedule';
+let mrRowCount = 0;
+
+window.openMonthlyRelease = (buyerId, clientName) => {
+  document.getElementById('mrBuyerId').value = buyerId;
+  document.getElementById('mrTitle').textContent = `Monthly Down Payment Releases — ${clientName}`;
+  document.getElementById('mrMonthlyAmount').value = '';
+  document.getElementById('mrMonths').value = '';
+  document.getElementById('mrStartDate').value = '';
+  document.getElementById('mrRowsList').innerHTML = '';
+  document.getElementById('mrBulkCount').value = '';
+  mrRowCount = 0;
+  addMonthlyRow();
+  setMonthlyReleaseMode('schedule');
+  document.getElementById('mrErr').classList.add('hidden');
+  openModal('monthlyReleaseModal');
+};
+
+window.setMonthlyReleaseMode = (mode) => {
+  mrMode = mode;
+  document.querySelectorAll('#mrModePills .mr-pill').forEach(btn=>{
+    const active = btn.dataset.mode === mode;
+    btn.classList.toggle('border-orange-500/50', active);
+    btn.classList.toggle('bg-orange-500/10', active);
+    btn.classList.toggle('text-orange-600', active);
+    btn.classList.toggle('border-white/10', !active);
+    btn.classList.toggle('text-gray-400', !active);
+  });
+  document.getElementById('mrScheduleFields').classList.toggle('hidden', mode!=='schedule');
+  document.getElementById('mrRowsFields').classList.toggle('hidden', mode!=='rows');
+};
+
+window.addMonthlyRow = () => {
+  mrRowCount++;
+  const rowId = 'mrRow' + mrRowCount;
+  const div = document.createElement('div');
+  div.id = rowId;
+  div.className = 'flex gap-2 items-end';
+  div.innerHTML = `
+    <div class="flex-1"><label class="text-xs text-gray-400 mb-1 block">Date</label><input type="date" class="field mr-row-date"></div>
+    <div class="flex-1"><label class="text-xs text-gray-400 mb-1 block">Amount (₱)</label><input type="text" inputmode="numeric" class="field mr-row-amount" placeholder="0" oninput="formatMoneyInput(this)"></div>
+    <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-red-400 hover:text-red-300 text-xs pb-2.5">&times;</button>
+  `;
+  document.getElementById('mrRowsList').appendChild(div);
+};
+
+window.addMonthlyRowsBulk = () => {
+  const countInput = document.getElementById('mrBulkCount');
+  const count = parseInt(countInput.value, 10) || 0;
+  if(count < 1) return;
+  for(let i=0; i<count; i++) addMonthlyRow();
+  countInput.value = '';
+};
+
+window.saveMonthlyRelease = async () => {
+  const buyer_id = document.getElementById('mrBuyerId').value;
   const token = localStorage.getItem('token');
+  document.getElementById('mrErr').classList.add('hidden');
+
   try {
-    await fetch(`/api/commission-receivables/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
-    renderReceivables();
+    if(mrMode === 'schedule'){
+      const monthly_amount = parseMoney(document.getElementById('mrMonthlyAmount').value);
+      const tranche_months = parseInt(document.getElementById('mrMonths').value, 10) || 0;
+      const release_date = document.getElementById('mrStartDate').value;
+      if(!monthly_amount || !tranche_months || !release_date){
+        document.getElementById('mrErr').textContent = 'Monthly amount, number of months, and start date are all required.';
+        document.getElementById('mrErr').classList.remove('hidden');
+        return;
+      }
+      const amount = monthly_amount * tranche_months;
+      const res = await fetch('/api/commission-receivables', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ buyer_id, amount, release_date, release_type: 'Monthly Tranche', monthly_amount, tranche_months }),
+      });
+      if(!res.ok) throw new Error('Save failed');
+    } else {
+      const rows = [...document.querySelectorAll('#mrRowsList > div')].map(div => ({
+        date: div.querySelector('.mr-row-date').value,
+        amount: parseMoney(div.querySelector('.mr-row-amount').value),
+      })).filter(r => r.date && r.amount);
+      if(!rows.length){
+        document.getElementById('mrErr').textContent = 'Add at least one row with a date and amount.';
+        document.getElementById('mrErr').classList.remove('hidden');
+        return;
+      }
+      const results = await Promise.all(rows.map(r => fetch('/api/commission-receivables', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ buyer_id, amount: r.amount, release_date: r.date, release_type: 'Monthly Down Payment' }),
+      })));
+      if(results.some(r=>!r.ok)) throw new Error('Save failed');
+    }
+    closeModal('monthlyReleaseModal');
+    closeModal('commClientsModal');
+    if(typeof renderReceivables === 'function') renderReceivables();
   } catch(err) {
-    console.error('Error deleting receivable:', err);
-    alert('Failed to delete.');
+    console.error('Error saving monthly release:', err);
+    document.getElementById('mrErr').textContent = 'Failed to save. Please try again.';
+    document.getElementById('mrErr').classList.remove('hidden');
   }
-}
+};
+
 
 // ══════════════════════════════════════
 // COMPUTATION
