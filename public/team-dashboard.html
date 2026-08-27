@@ -164,8 +164,15 @@
           </div>
           <div id="propSearchResults" class="mt-3"></div>
         </div>
-        <p class="text-xs text-gray-500 mb-3">Select a developer to view their properties.</p>
+        <div class="flex gap-2 mb-3" id="propSortPills">
+          <button type="button" data-level="developers" onclick="setPropListSortLevel('developers')" class="prop-pill px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-500 hover:text-gray-800 transition-colors">Developers</button>
+          <button type="button" data-level="properties" onclick="setPropListSortLevel('properties')" class="prop-pill px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-500 hover:text-gray-800 transition-colors">Properties</button>
+          <button type="button" data-level="units" onclick="setPropListSortLevel('units')" class="prop-pill px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-500 hover:text-gray-800 transition-colors">Units</button>
+        </div>
+        <p class="text-xs text-gray-500 mb-3" id="propSortHint">Select a developer to view their properties.</p>
         <div id="propDevGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
+        <div id="propFlatPropertiesView" class="hidden space-y-6"></div>
+        <div id="propFlatUnitsView" class="hidden space-y-6"></div>
       </div>
 
       <!-- LEVEL 2: A developer's properties -->
@@ -210,8 +217,8 @@
         </div>
         <div class="border-t border-gray-200 pt-3 space-y-1.5">
           <div class="flex justify-between text-sm"><span class="text-gray-500">Gross Commission</span><span class="font-semibold" id="commGrossVal">₱0</span></div>
-          <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Withholding Tax (10%)</span><span class="text-red-500" id="commWithVal">-₱0</span></div>
-          <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Percentage Tax (3%)</span><span class="text-red-500" id="commPercVal">-₱0</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Withholding Tax (10%)</span><span class="text-red-500" id="commWithVal">(₱0)</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Percentage Tax (3%)</span><span class="text-red-500" id="commPercVal">(₱0)</span></div>
           <div class="flex justify-between text-sm font-semibold pt-1.5 border-t border-gray-200"><span>Net Commission</span><span class="text-orange-600" id="commNetVal">₱0</span></div>
         </div>
       </div>
@@ -270,8 +277,8 @@
             <p class="text-xs text-gray-400 uppercase tracking-wide mb-1">Gross Commission</p>
             <p id="calcAmount" class="text-3xl font-bold text-orange-400">₱0</p>
             <div class="mt-3 pt-3 border-t border-orange-500/20 space-y-1.5">
-              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Withholding Tax (10%)</span><span class="text-red-400" id="calcWithholding">-₱0</span></div>
-              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Percentage Tax (3%)</span><span class="text-red-400" id="calcPercTax">-₱0</span></div>
+              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Withholding Tax (10%)</span><span class="text-red-400" id="calcWithholding">(₱0)</span></div>
+              <div class="flex justify-between text-xs"><span class="text-gray-400">Less: Percentage Tax (3%)</span><span class="text-red-400" id="calcPercTax">(₱0)</span></div>
               <div class="flex justify-between text-sm font-semibold pt-1.5 border-t border-orange-500/20"><span class="text-white">Net Commission</span><span class="text-orange-400" id="calcNetCommission">₱0</span></div>
             </div>
           </div>
@@ -621,12 +628,128 @@ async function fetchAllPropData(){
   propAllUnits = await unitsRes.json();
 }
 
+let propSortLevel = 'developers';
+function setPropListSortLevel(level){
+  propSortLevel = level;
+  document.querySelectorAll('#propSortPills .prop-pill').forEach(btn=>{
+    const active = btn.dataset.level === level;
+    btn.classList.toggle('border-orange-500', active);
+    btn.classList.toggle('bg-orange-50', active);
+    btn.classList.toggle('text-orange-600', active);
+    btn.classList.toggle('border-gray-200', !active);
+    btn.classList.toggle('text-gray-500', !active);
+  });
+  document.getElementById('propDevGrid').classList.toggle('hidden', level!=='developers');
+  document.getElementById('propFlatPropertiesView').classList.toggle('hidden', level!=='properties');
+  document.getElementById('propFlatUnitsView').classList.toggle('hidden', level!=='units');
+  const hints = {
+    developers: 'Select a developer to view their properties.',
+    properties: 'All properties across every developer, grouped by developer.',
+    units: 'All units across every property, grouped by developer.',
+  };
+  document.getElementById('propSortHint').textContent = hints[level];
+  if(level==='properties') renderFlatPropertiesList();
+  if(level==='units') renderFlatUnitsList();
+}
+
+function renderFlatPropertiesList(){
+  const container = document.getElementById('propFlatPropertiesView');
+  const sortedDevs = [...propAllDevs].sort((a,b)=>a.name.localeCompare(b.name));
+  container.innerHTML = sortedDevs.map(d=>{
+    const devProps = propAllProps.filter(p=>p.developer_id===d.id).sort((a,b)=>a.name.localeCompare(b.name));
+    if(!devProps.length) return '';
+    return `
+      <div>
+        <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200">
+          ${d.logo_url ? `<img src="${d.logo_url}" class="w-6 h-6 rounded object-cover">` : ''}
+          <h4 class="font-semibold text-sm">${d.name}</h4>
+          <span class="text-xs text-gray-500">${devProps.length} propert${devProps.length===1?'y':'ies'}</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          ${devProps.map(p=>`
+            <div onclick="jumpToPropListItem('${d.id}','${d.name.replace(/'/g,"\\'")}','${p.id}','${p.name.replace(/'/g,"\\'")}','')" class="card overflow-hidden cursor-pointer">
+              <div class="w-full h-32 bg-gray-50 flex items-center justify-center overflow-hidden">
+                ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-400 text-xs">No photo</span>`}
+              </div>
+              <div class="p-3 space-y-1">
+                <p class="font-semibold text-sm">${p.name}</p>
+                <p class="text-xs text-gray-500">${p.location||'—'}</p>
+                <p class="text-xs text-gray-500">${p.property_type||'Condo'}</p>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('') || `<p class="text-center text-gray-500 text-xs py-8">No properties yet.</p>`;
+}
+
+function renderFlatUnitsList(){
+  const container = document.getElementById('propFlatUnitsView');
+  const sortedDevs = [...propAllDevs].sort((a,b)=>a.name.localeCompare(b.name));
+  container.innerHTML = sortedDevs.map(d=>{
+    const devProps = propAllProps.filter(p=>p.developer_id===d.id);
+    const devPropIds = new Set(devProps.map(p=>p.id));
+    const devUnits = propAllUnits.filter(u=>devPropIds.has(u.property_id));
+    if(!devUnits.length) return '';
+    const byProp = {};
+    devUnits.forEach(u=>{ (byProp[u.property_id] = byProp[u.property_id]||[]).push(u); });
+    const propGroups = Object.keys(byProp).map(pid=>{
+      const p = devProps.find(x=>x.id===pid);
+      return { prop: p, units: byProp[pid].sort((a,b)=>a.unit_name.localeCompare(b.unit_name)) };
+    }).filter(g=>g.prop).sort((a,b)=>a.prop.name.localeCompare(b.prop.name));
+
+    return `
+      <div>
+        <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200">
+          ${d.logo_url ? `<img src="${d.logo_url}" class="w-6 h-6 rounded object-cover">` : ''}
+          <h4 class="font-semibold text-sm">${d.name}</h4>
+          <span class="text-xs text-gray-500">${devUnits.length} unit${devUnits.length===1?'':'s'}</span>
+        </div>
+        <div class="space-y-4">
+          ${propGroups.map(g=>`
+            <div>
+              <p class="text-xs font-medium text-gray-500 mb-2 pl-1">${g.prop.name}</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                ${g.units.map(u=>{
+                  const left = u.units_left ?? 1;
+                  const soldOut = left <= 0;
+                  return `
+                  <div onclick="jumpToPropListItem('${d.id}','${d.name.replace(/'/g,"\\'")}','${g.prop.id}','${g.prop.name.replace(/'/g,"\\'")}','${u.id}')" class="card overflow-hidden cursor-pointer ${soldOut?'opacity-50':''}">
+                    <div class="w-full h-28 bg-gray-50 flex items-center justify-center overflow-hidden">
+                      ${u.image_url ? `<img src="${u.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-400 text-xs">No photo</span>`}
+                    </div>
+                    <div class="p-3 space-y-1">
+                      <div class="flex items-start justify-between gap-2">
+                        <p class="font-semibold text-sm leading-tight">${u.unit_name}</p>
+                        <span class="badge ${soldOut?'bg-red':'bg-green'} shrink-0">${soldOut ? 'Sold Out' : left+' left'}</span>
+                      </div>
+                      <p class="text-orange-600 font-bold text-sm">${peso(u.tcp)}</p>
+                    </div>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('') || `<p class="text-center text-gray-500 text-xs py-8">No units yet.</p>`;
+}
+
+function jumpToPropListItem(devId, devName, propId, propName, unitId){
+  propViewDeveloper(devId, devName);
+  propViewProperty(propId, propName);
+  if(unitId) viewUnitDetail(unitId);
+}
+
 async function enterPropDevelopers(){
   propCurrentDevId = null; propCurrentPropId = null;
   document.getElementById('propDevListView').classList.remove('hidden');
   document.getElementById('propListView').classList.add('hidden');
   document.getElementById('propUnitsView').classList.add('hidden');
   await fetchAllPropData();
+  setPropListSortLevel('developers');
   document.getElementById('propDevGrid').innerHTML = propAllDevs.map(d => `
     <div onclick="propViewDeveloper('${d.id}','${d.name.replace(/'/g,"\\'")}')" class="card overflow-hidden cursor-pointer text-center">
       <div class="w-full h-28 bg-gray-50 flex items-center justify-center overflow-hidden">
@@ -850,8 +973,8 @@ async function renderCommissionPersonal(){
   document.getElementById('commTCN').textContent = peso(tcn);
   document.getElementById('commRateVal').textContent = rate + '%';
   document.getElementById('commGrossVal').textContent = peso(gross);
-  document.getElementById('commWithVal').textContent = '-' + peso(withholding);
-  document.getElementById('commPercVal').textContent = '-' + peso(percTax);
+  document.getElementById('commWithVal').textContent = '(' + peso(withholding) + ')';
+  document.getElementById('commPercVal').textContent = '(' + peso(percTax) + ')';
   document.getElementById('commNetVal').textContent = peso(net);
 
   const withIncentive = buyers.filter(b=>b.incentive_amount);
@@ -1065,8 +1188,8 @@ window.computeCalc = () => {
   const percTax = comm*0.03;
   const netComm = comm - withholding - percTax;
   document.getElementById('calcAmount').textContent = peso(comm);
-  document.getElementById('calcWithholding').textContent = '-'+peso(withholding);
-  document.getElementById('calcPercTax').textContent = '-'+peso(percTax);
+  document.getElementById('calcWithholding').textContent = '('+peso(withholding)+')';
+  document.getElementById('calcPercTax').textContent = '('+peso(percTax)+')';
   document.getElementById('calcNetCommission').textContent = peso(netComm);
   result.classList.remove('hidden');
 };
