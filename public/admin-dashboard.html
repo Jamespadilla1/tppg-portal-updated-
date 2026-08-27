@@ -3851,8 +3851,8 @@ async function renderCommission(){
         <td class="px-5 py-3 text-xs">${peso(r.tcn)}</td>
         <td class="px-5 py-3 text-xs">${r.rate}%</td>
         <td class="px-5 py-3 text-xs">${peso(r.gross)}</td>
-        <td class="px-5 py-3 text-xs text-red-400">-${peso(r.withholding)}</td>
-        <td class="px-5 py-3 text-xs text-red-400">-${peso(r.percentageTax)}</td>
+        <td class="px-5 py-3 text-xs text-red-400">(${peso(r.withholding)})</td>
+        <td class="px-5 py-3 text-xs text-red-400">(${peso(r.percentageTax)})</td>
         <td class="px-5 py-3 text-xs text-orange-400 font-semibold">${peso(r.net)}</td>
       </tr>
     `).join('') || `<tr><td colspan="10" class="px-5 py-5 text-center text-gray-500 text-xs">No ${level.replace('_',' ')}s yet.</td></tr>`;
@@ -4104,8 +4104,8 @@ function doCompute(){
   const percTax = comm*0.03;
   const netComm = comm - withholding - percTax;
   document.getElementById('cAmount').textContent=peso(comm);
-  document.getElementById('cWithholding').textContent='-'+peso(withholding);
-  document.getElementById('cPercTax').textContent='-'+peso(percTax);
+  document.getElementById('cWithholding').textContent='('+peso(withholding)+')';
+  document.getElementById('cPercTax').textContent='('+peso(percTax)+')';
   document.getElementById('cNetCommission').textContent=peso(netComm);
   document.getElementById('cSP').textContent=peso(price);
   document.getElementById('cSR').textContent=rate+'%';
