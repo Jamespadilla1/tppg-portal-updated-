@@ -184,15 +184,6 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <!-- Secondary operational stats -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3" id="ovSecondaryStats"></div>
 
-      <div class="card p-5">
-        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <h3 class="font-semibold text-sm">Units Availability</h3>
-          <p class="text-xs text-gray-500" id="ovPortfolioScale"></p>
-        </div>
-        <div class="flex gap-1 h-3 rounded-full overflow-hidden mb-3" id="unitsStatusBar"></div>
-        <div class="grid grid-cols-3 gap-3 text-center" id="unitsStatusLegend"></div>
-      </div>
-
       <!-- Sales Trend: YTD cumulative + per-month breakdown -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div class="card p-5">
@@ -214,14 +205,28 @@ tr:hover td{background:rgba(0,0,0,.02)}
         <div id="ovTopPerformers" class="divide-y divide-white/6"></div>
       </div>
 
-      <div class="card overflow-hidden">
-        <div class="px-5 py-3 border-b border-white/8 flex justify-between items-center">
-          <h3 class="font-semibold text-sm">Recent Commission Receivables</h3>
-          <button onclick="go('commission',document.querySelectorAll('.nav-link')[5])" class="text-xs text-orange-400 hover:underline">View all →</button>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="card overflow-hidden">
+          <div class="px-5 py-3 border-b border-white/8 flex justify-between items-center">
+            <h3 class="font-semibold text-sm">Recent Commission Receivables</h3>
+            <button onclick="go('commission',document.querySelectorAll('.nav-link')[5])" class="text-xs text-orange-400 hover:underline">View all →</button>
+          </div>
+          <div id="ovRecentReceivables" class="divide-y divide-white/6 max-h-64 overflow-y-auto"></div>
         </div>
-        <div id="ovRecentReceivables" class="divide-y divide-white/6 max-h-64 overflow-y-auto"></div>
-      </div>
 
+        <div class="card overflow-hidden">
+          <div class="px-5 py-3 border-b border-white/8 flex justify-between items-center">
+            <h3 class="font-semibold text-sm">Recently Added Units</h3>
+            <button onclick="go('properties',document.querySelectorAll('.nav-link')[2])" class="text-xs text-orange-400 hover:underline">View all →</button>
+          </div>
+          <div class="overflow-x-auto max-h-64 overflow-y-auto"><table class="w-full text-sm">
+            <thead class="sticky top-0 bg-[#ffffff]"><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
+              <th class="text-left px-5 py-2">Unit</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Status</th>
+            </tr></thead>
+            <tbody id="overviewTable" class="divide-y divide-white/6 text-gray-300"></tbody>
+          </table></div>
+        </div>
+      </div>
       <div class="card overflow-hidden">
         <div class="px-5 py-3 border-b border-white/8"><h3 class="font-semibold text-sm">Recent Activity</h3></div>
         <div id="overviewLogs" class="divide-y divide-white/6 max-h-40 overflow-y-auto"></div>
@@ -251,7 +256,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
     <div id="sec-properties" class="section space-y-4">
       <!-- LEVEL 1: Developer cards -->
       <div id="devListView">
-        <div class="card p-4 mb-3">
+        <div class="card p-6 mb-3" style="border:2px solid #ea580c33;box-shadow:0 4px 16px rgba(234,88,12,.08)">
           <div class="flex gap-2 flex-wrap items-end">
             <div><label class="text-xs text-gray-400 mb-1 block">Type</label><select id="plSearchType" class="field w-36">
               <option value="">All Types</option>
@@ -264,7 +269,11 @@ tr:hover td{background:rgba(0,0,0,.02)}
               <option value="RFO">RFO</option>
               <option value="Pre-selling">Pre-selling</option>
             </select></div>
-            <div class="flex-1 min-w-[140px]"><label class="text-xs text-gray-400 mb-1 block">Location</label><input id="plSearchLoc" type="text" placeholder="Type any location…" class="field" onkeydown="if(event.key==='Enter')searchPropertiesGlobal('pl')"></div>
+            <div class="flex-1 min-w-[160px] relative">
+              <label class="text-xs text-gray-400 mb-1 block">Search by Unit, Property, or Location</label>
+              <svg class="absolute left-3 top-1/2 translate-y-1 w-4 h-4 text-orange-400 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input id="plSearchLoc" type="text" placeholder="e.g. Olive, Parc Regency, Cebu City…" class="field pl-9" style="font-size:.95rem" onkeydown="if(event.key==='Enter')searchPropertiesGlobal('pl')">
+            </div>
             <div><label class="text-xs text-gray-400 mb-1 block">Filter By</label><select id="plSearchBudgetType" class="field w-32" onchange="updateBudgetLabels('pl')">
               <option value="tcp">TCP</option>
               <option value="dp">Monthly DP</option>
@@ -272,7 +281,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
             </select></div>
             <div><label class="text-xs text-gray-400 mb-1 block" id="plSearchMinLabel">Min TCP (₱)</label><input id="plSearchBudgetMin" type="text" inputmode="numeric" placeholder="0" class="field w-32" oninput="formatMoneyInput(this)"></div>
             <div><label class="text-xs text-gray-400 mb-1 block" id="plSearchMaxLabel">Max TCP (₱)</label><input id="plSearchBudgetMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-32" oninput="formatMoneyInput(this)"></div>
-            <button onclick="searchPropertiesGlobal('pl')" class="bg-orange-500 hover:bg-orange-600 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">Search</button>
+            <button onclick="searchPropertiesGlobal('pl')" class="bg-orange-500 hover:bg-orange-600 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors">Search</button>
           </div>
           <div id="plSearchResults" class="mt-3"></div>
         </div>
@@ -1302,8 +1311,6 @@ async function renderOverview(){
 
     const approvedAgents = agents.filter(a=>a.status==='approved');
     const pending = agents.filter(a=>a.status==='pending');
-    const inStock = units.filter(u=>(u.units_left??1)>0);
-    const soldOut = units.filter(u=>(u.units_left??1)<=0);
     function ovUnitTCP(unitId){ const u = units.find(x=>x.id===unitId); return u ? Number(u.tcp)||0 : 0; }
     function saleValue(b){ return b.net_selling_price ? Number(b.net_selling_price) : (b.unit_id ? ovUnitTCP(b.unit_id) : (Number(b.manual_tcp)||0)); }
     const totalSalesValue = buyers.reduce((s,b)=>s + saleValue(b), 0);
@@ -1342,21 +1349,6 @@ async function renderOverview(){
       ovSecondaryCard({ icon: OV_ICONS.clock, label:'Pending Applications', value: pending.length, accent: pending.length>0?'#ca8a04':'#9ca3af' }) +
       ovSecondaryCard({ icon: OV_ICONS.users, label:'Total Clients', value: buyers.length, accent:'#111827' }) +
       ovSecondaryCard({ icon: OV_ICONS.layers, label:'Team Managers', value: ums.length + sms.length + tls.length, accent:'#111827' });
-
-    document.getElementById('ovPortfolioScale').textContent = `${devs.length} developers · ${props.length} properties · ${units.length} units`;
-
-    // Units in stock vs sold out
-    const totalUnits = units.length || 1;
-    const segs = [
-      { label:'In Stock', count: inStock.length, color:'#22c55e' },
-      { label:'Sold Out', count: soldOut.length, color:'#ef4444' },
-    ];
-    document.getElementById('unitsStatusBar').innerHTML = segs.map(s =>
-      s.count ? `<div style="width:${(s.count/totalUnits*100)}%;background:${s.color}"></div>` : ''
-    ).join('');
-    document.getElementById('unitsStatusLegend').innerHTML = segs.map(s => `
-      <div><p class="text-lg font-bold" style="color:${s.color}">${s.count}</p><p class="text-xs text-gray-500">${s.label}</p></div>
-    `).join('');
 
     // ── Sales Trend: YTD cumulative running total ──
     const ytdByMonth = {};
@@ -1423,6 +1415,15 @@ async function renderOverview(){
       </div>`;
     }).join('') || '<div class="px-5 py-4 text-xs text-gray-600">No commission releases logged yet.</div>';
 
+    // Recently added units
+    document.getElementById('overviewTable').innerHTML = units.slice(0,5).map(u=>`
+      <tr>
+        <td class="px-5 py-2 font-medium text-white text-xs">${u.unit_name}</td>
+        <td class="px-5 py-2 text-xs">${peso(u.tcp)}</td>
+        <td class="px-5 py-2"><span class="badge ${(u.units_left??1)<=0?'bg-red':'bg-green'}">${(u.units_left??1)<=0 ? 'Sold Out' : (u.units_left??1)+' left'}</span></td>
+      </tr>
+    `).join('') || `<tr><td colspan="3" class="px-5 py-4 text-center text-gray-500 text-xs">No units yet.</td></tr>`;
+
     // pending badge
     const pb = document.getElementById('pendingAlert');
     pending.length>0 ? pb.classList.remove('hidden') : pb.classList.add('hidden');
@@ -1475,13 +1476,13 @@ async function searchPropertiesGlobal(context){
     const allUnits = await unitsRes.json();
 
     const filtered = allProps.filter(p => {
+      const propUnits = allUnits.filter(u=>u.property_id===p.id);
       const mt = !type || p.property_type === type;
-      const ms = !selling || p.selling_status === selling || allUnits.some(u=>u.property_id===p.id && u.construction_status===selling);
-      const ml = !loc || (p.location||'').toLowerCase().includes(loc) || p.name.toLowerCase().includes(loc);
+      const ms = !selling || p.selling_status === selling || propUnits.some(u=>u.construction_status===selling);
+      const ml = !loc || (p.location||'').toLowerCase().includes(loc) || p.name.toLowerCase().includes(loc) || propUnits.some(u=>(u.unit_name||'').toLowerCase().includes(loc));
       if(!mt || !ms || !ml) return false;
 
       if(anyBudget){
-        const propUnits = allUnits.filter(u=>u.property_id===p.id);
         const hasMatch = propUnits.some(u=>{
           let value;
           if(budgetType==='dp'){
@@ -1499,10 +1500,14 @@ async function searchPropertiesGlobal(context){
       return true;
     });
 
-    // For each result, find the specific unit that matched (if a budget filter was used) so clicking jumps straight to it
+    // For each result, find the specific unit that matched (by unit name, or by budget filter) so clicking jumps straight to it
     function matchingUnitFor(p){
-      if(!anyBudget) return null;
       const propUnits = allUnits.filter(u=>u.property_id===p.id);
+      if(loc){
+        const byName = propUnits.find(u=>(u.unit_name||'').toLowerCase().includes(loc));
+        if(byName) return byName;
+      }
+      if(!anyBudget) return null;
       return propUnits.find(u=>{
         let value;
         if(budgetType==='dp'){
@@ -1963,6 +1968,7 @@ async function renderFlatUnits(){
       const devPropIds = new Set(devProps.map(p=>p.id));
       const devUnits = units.filter(u=>devPropIds.has(u.property_id));
       if(!devUnits.length) return '';
+      // group this developer's units by property
       const byProp = {};
       devUnits.forEach(u=>{ (byProp[u.property_id] = byProp[u.property_id]||[]).push(u); });
       const propGroups = Object.keys(byProp).map(pid=>{
@@ -4424,9 +4430,6 @@ async function clearLogs(){
   }
 }
 
-// ══════════════════════════════════════
-// SETTINGS
-// ══════════════════════════════════════
 // ══════════════════════════════════════
 // SETTINGS
 // ══════════════════════════════════════
