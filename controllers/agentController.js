@@ -143,10 +143,14 @@ const promoteAgent = async (req, res) => {
     };
     if (target_role === 'sales_manager') {
       insertData.unit_manager_id = unit_manager_id || null;
+      insertData.previous_role = 'agent';
+      insertData.previous_id = req.params.id;
     }
     if (target_role === 'team_leader') {
       insertData.unit_manager_id = unit_manager_id || null;
       insertData.sales_manager_id = sales_manager_id || null;
+      insertData.previous_role = 'agent';
+      insertData.previous_id = req.params.id;
     }
 
     const { data: newRecord, error: insertErr } = await supabase

@@ -260,7 +260,10 @@
       <div class="card overflow-hidden">
         <div class="flex items-center justify-between p-4 border-b border-gray-200">
           <h3 class="font-semibold text-sm">Team Sales &amp; Buyers</h3>
-          <button onclick="openModal('addBuyerModal')" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Client</button>
+          <div class="flex items-center gap-4">
+            <button id="viewSalesHistoryLink" onclick="openSalesHistoryModal()" class="hidden text-xs text-blue-600 hover:text-blue-700 hover:underline font-medium">View Sales History</button>
+            <button onclick="openModal('addBuyerModal')" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Client</button>
+          </div>
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
@@ -350,6 +353,21 @@
   </div>
 </div>
 
+<!-- VIEW SALES HISTORY (pre-promotion sales, view-only) -->
+<div id="salesHistoryModal" class="modal-backdrop">
+  <div class="modal-box max-w-3xl">
+    <button onclick="closeModal('salesHistoryModal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-700 text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-1">Sales History</h3>
+    <p class="text-xs text-gray-500 mb-4">Sales you recorded under your previous role, before your most recent promotion. This is for reference only — it doesn't count toward your current commission.</p>
+    <div class="overflow-x-auto"><table class="w-full text-sm">
+      <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
+        <th class="text-left px-3 py-2">Client</th><th class="text-left px-3 py-2">Project</th><th class="text-left px-3 py-2">Unit</th><th class="text-left px-3 py-2">TCP</th><th class="text-left px-3 py-2">Date</th>
+      </tr></thead>
+      <tbody id="salesHistoryBody" class="divide-y divide-gray-200 text-gray-700"></tbody>
+    </table></div>
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -379,6 +397,31 @@ document.getElementById('sidebarRoleLabel').textContent = 'TPPG ' + (ROLE_LABELS
 document.getElementById('sidebarName').textContent = name || '—';
 document.getElementById('sidebarRole2').textContent = (ROLE_LABELS[role] || '—') + (localStorage.getItem('personId') ? ' · ' + localStorage.getItem('personId') : '');
 document.getElementById('sidebarInitials').textContent = (name || '?')[0].toUpperCase();
+
+// "View Sales History" is only meaningful for people who were promoted (TL/SM) — Unit Manager excluded.
+if(role === 'team_leader' || role === 'sales_manager'){
+  document.getElementById('viewSalesHistoryLink').classList.remove('hidden');
+}
+window.openSalesHistoryModal = async function(){
+  const tbody = document.getElementById('salesHistoryBody');
+  tbody.innerHTML = `<tr><td colspan="5" class="px-3 py-5 text-center text-gray-400 text-xs">Loading…</td></tr>`;
+  openModal('salesHistoryModal');
+  try {
+    const res = await fetch('/api/buyers/history', { headers: { 'Authorization': 'Bearer ' + token } });
+    const history = await res.json();
+    tbody.innerHTML = history.map(b => `
+      <tr>
+        <td class="px-3 py-2 text-xs font-medium">${b.name}</td>
+        <td class="px-3 py-2 text-xs text-gray-500">${b.manual_property_name || '—'}</td>
+        <td class="px-3 py-2 text-xs text-gray-500">${b.manual_unit_name || '—'}</td>
+        <td class="px-3 py-2 text-xs text-orange-600">${b.manual_tcp ? peso(b.manual_tcp) : '—'}</td>
+        <td class="px-3 py-2 text-xs text-gray-500">${new Date(b.created_at).toLocaleDateString()}</td>
+      </tr>`).join('') || `<tr><td colspan="5" class="px-3 py-5 text-center text-gray-400 text-xs">No sales history from a previous role yet.</td></tr>`;
+  } catch(err) {
+    console.error('Error loading sales history:', err);
+    tbody.innerHTML = `<tr><td colspan="5" class="px-3 py-5 text-center text-red-400 text-xs">Failed to load sales history.</td></tr>`;
+  }
+};
 
 // ── REPORTS TO badge (Sales Manager / Team Leader: who they report up to) ──
 async function renderReportsToBadge(){
