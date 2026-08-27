@@ -827,6 +827,39 @@ tr:hover td{background:rgba(0,0,0,.02)}
   </div>
 </div>
 
+<!-- EDIT AGENT -->
+<div id="editAgentModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('editAgentModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-4">Edit Agent</h3>
+    <div class="space-y-3">
+      <input id="eAgI" type="hidden">
+      <div><label class="text-xs text-gray-400 mb-1 block">Full Name *</label><input id="eAgName" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Email *</label><input id="eAgEmail" type="email" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Phone</label><input id="eAgPhone" type="text" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Reports To *</label><select id="eAgReportType" class="field" onchange="toggleEditAgentReportTarget()">
+        <option value="">— Select —</option>
+        <option value="team_leader">Team Leader</option>
+        <option value="sales_manager">Sales Manager</option>
+        <option value="unit_manager">Unit Manager</option>
+      </select></div>
+      <div id="eAgTLRow" class="hidden"><select id="eAgTL" class="field"><option value="">— Select Team Leader —</option></select></div>
+      <div id="eAgSMRow" class="hidden"><select id="eAgSM" class="field"><option value="">— Select Sales Manager —</option></select></div>
+      <div id="eAgUMRow" class="hidden"><select id="eAgUM" class="field"><option value="">— Select Unit Manager —</option></select></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Commission Rank</label>
+        <select id="eAgRank" class="field" onchange="document.getElementById('eAgRate').value = this.selectedOptions[0].dataset.rate">
+          <option value="Property Specialist" data-rate="2.0">Property Specialist (2.0%)</option>
+          <option value="Junior PS" data-rate="2.5">Junior PS (2.5%)</option>
+          <option value="Senior PS" data-rate="2.75">Senior PS (2.75%)</option>
+        </select>
+        <input id="eAgRate" type="hidden">
+      </div>
+      <p id="eAgErr" class="text-red-400 text-xs hidden">Name, email, and a specific reporting manager are all required.</p>
+      <button onclick="updateAgentDirect()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Agent</button>
+    </div>
+  </div>
+</div>
+
 <div id="addDevModal" class="modal-backdrop">
   <div class="modal-box">
     <button onclick="closeModal('addDevModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
@@ -2956,6 +2989,7 @@ async function renderTeamsAgents(){
           <td class="px-5 py-3 text-xs">${reportsTo}</td>
           <td class="px-5 py-3 flex gap-2 flex-wrap">
             <button onclick="viewAgent('${a.id}')" class="text-xs text-blue-400 hover:text-blue-300">View</button>
+            <button onclick="openEditAgentModal('${a.id}')" class="text-xs text-yellow-400 hover:text-yellow-300">Edit</button>
             <button onclick="openPromoteModal('${a.id}','${a.name.replace(/'/g,"\\'")}')" class="text-xs text-green-400 hover:text-green-300">Promote</button>
             <button onclick="agentAction('${a.id}','suspended')" class="text-xs text-purple-400 hover:text-purple-300">Suspend</button>
           </td>
@@ -3279,6 +3313,77 @@ async function saveAgentDirect(){
   } catch(err) {
     console.error('Error saving agent:', err);
     alert('Failed to save agent.');
+  }
+}
+
+function toggleEditAgentReportTarget(){
+  const type = document.getElementById('eAgReportType').value;
+  document.getElementById('eAgTLRow').classList.toggle('hidden', type!=='team_leader');
+  document.getElementById('eAgSMRow').classList.toggle('hidden', type!=='sales_manager');
+  document.getElementById('eAgUMRow').classList.toggle('hidden', type!=='unit_manager');
+}
+async function openEditAgentModal(id){
+  await fetchTeamStructureData();
+  const a = teamAgentsCache.find(x=>x.id===id);
+  if(!a) return;
+  document.getElementById('eAgTL').innerHTML = `<option value="">— Select Team Leader —</option>` + tlCache.map(tl=>`<option value="${tl.id}">${tl.name}</option>`).join('');
+  document.getElementById('eAgSM').innerHTML = `<option value="">— Select Sales Manager —</option>` + smCache.map(sm=>`<option value="${sm.id}">${sm.name}</option>`).join('');
+  document.getElementById('eAgUM').innerHTML = `<option value="">— Select Unit Manager —</option>` + umCache.map(um=>`<option value="${um.id}">${um.name}</option>`).join('');
+
+  document.getElementById('eAgI').value = a.id;
+  document.getElementById('eAgName').value = a.name || '';
+  document.getElementById('eAgEmail').value = a.email || '';
+  document.getElementById('eAgPhone').value = a.phone || '';
+  document.getElementById('eAgRank').value = a.commission_rank || 'Property Specialist';
+  document.getElementById('eAgRate').value = a.commission_rate || '2.0';
+
+  let reportType = '';
+  if(a.team_leader_id) reportType = 'team_leader';
+  else if(a.sales_manager_id) reportType = 'sales_manager';
+  else if(a.unit_manager_id) reportType = 'unit_manager';
+  document.getElementById('eAgReportType').value = reportType;
+  toggleEditAgentReportTarget();
+  if(reportType==='team_leader') document.getElementById('eAgTL').value = a.team_leader_id;
+  if(reportType==='sales_manager') document.getElementById('eAgSM').value = a.sales_manager_id;
+  if(reportType==='unit_manager') document.getElementById('eAgUM').value = a.unit_manager_id;
+
+  document.getElementById('eAgErr').classList.add('hidden');
+  openModal('editAgentModal');
+}
+async function updateAgentDirect(){
+  const id = document.getElementById('eAgI').value;
+  const name = document.getElementById('eAgName').value.trim();
+  const email = document.getElementById('eAgEmail').value.trim();
+  const reportType = document.getElementById('eAgReportType').value;
+  const teamLeaderId = document.getElementById('eAgTL').value;
+  const salesManagerId = document.getElementById('eAgSM').value;
+  const unitManagerId = document.getElementById('eAgUM').value;
+  const hasManager = (reportType==='team_leader' && teamLeaderId) || (reportType==='sales_manager' && salesManagerId) || (reportType==='unit_manager' && unitManagerId);
+  if(!name || !email || !reportType || !hasManager){ document.getElementById('eAgErr').classList.remove('hidden'); return; }
+  document.getElementById('eAgErr').classList.add('hidden');
+
+  const payload = {
+    name, email,
+    phone: document.getElementById('eAgPhone').value.trim(),
+    team_leader_id: reportType==='team_leader' ? teamLeaderId : null,
+    sales_manager_id: reportType==='sales_manager' ? salesManagerId : null,
+    unit_manager_id: reportType==='unit_manager' ? unitManagerId : null,
+    commission_rank: document.getElementById('eAgRank').value,
+    commission_rate: parseFloat(document.getElementById('eAgRate').value),
+  };
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch(`/api/agents/${id}`, {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if(!res.ok) throw new Error('Failed to update agent');
+    closeModal('editAgentModal');
+    renderTeamsAgents();
+  } catch(err) {
+    console.error('Error updating agent:', err);
+    alert('Failed to update agent.');
   }
 }
 
