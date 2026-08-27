@@ -72,8 +72,10 @@ const deleteTeamLeader = async (req, res) => {
 };
 
 // POST /api/team-leaders/:id/promote — promote a Team Leader to Sales Manager (admin only)
-// Migrates the record into sales_managers, reusing the hashed password, and carries their
-// sales/commission history forward by reassigning their buyer records to the new role/id.
+// Migrates the record into sales_managers, reusing the hashed password. This is a deliberate
+// clean break: sales/buyers recorded as a Team Leader are NOT carried into the new role's
+// commission totals — but the new record remembers who they were, so their pre-promotion
+// sales can still be viewed as history (see getPreviousRoleSalesHistory in buyerController.js).
 const promoteTeamLeader = async (req, res) => {
   try {
     const { unit_manager_id } = req.body;
@@ -90,17 +92,12 @@ const promoteTeamLeader = async (req, res) => {
         status: 'active',
         commission_rank: 'Sales Manager',
         commission_rate: 3.25,
+        previous_role: 'team_leader',
+        previous_id: req.params.id,
       }])
       .select()
       .single();
     if (insertErr) throw insertErr;
-
-    const { error: reassignErr } = await supabase
-      .from('buyers')
-      .update({ input_by_role: 'sales_manager', input_by_id: newRecord.id })
-      .eq('input_by_role', 'team_leader')
-      .eq('input_by_id', req.params.id);
-    if (reassignErr) console.error('Failed to carry over sales history on promotion:', reassignErr);
 
     const { error: deleteErr } = await supabase.from('team_leaders').delete().eq('id', req.params.id);
     if (deleteErr) throw deleteErr;
