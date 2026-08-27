@@ -127,6 +127,13 @@
           <tbody id="ovRecentBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
         </table></div>
       </div>
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-gray-200">
+          <h3 class="font-semibold text-sm">Hot Properties</h3>
+          <p class="text-xs text-gray-500 mt-0.5">Running low on inventory — worth pushing to your team</p>
+        </div>
+        <div id="ovHotProperties" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-5"></div>
+      </div>
     </div>
 
     <!-- MY TEAM -->
@@ -609,6 +616,36 @@ async function renderOverview(){
         <td class="px-5 py-2 text-xs">${b.unit?b.unit.unit_name:'—'}</td>
         <td class="px-5 py-2 text-xs text-orange-600">${b.unit?peso(b.unit.tcp):'—'}</td>
       </tr>`).join('') || `<tr><td colspan="3" class="px-5 py-4 text-center text-gray-500 text-xs">No clients yet.</td></tr>`;
+
+    // ── Hot Properties: lowest remaining inventory first, still available ──
+    // Populate the shared property caches (used by jumpToPropListItem) in case Properties hasn't been visited yet
+    await fetchAllPropData();
+    const hotList = propAllProps.map(p=>{
+      const units = propAllUnits.filter(u=>u.property_id===p.id);
+      const totalLeft = units.reduce((s,u)=>s+Math.max(u.units_left??1,0),0);
+      const prices = units.map(u=>Number(u.tcp)||0).filter(v=>v>0);
+      const minPrice = prices.length ? Math.min(...prices) : null;
+      const maxPrice = prices.length ? Math.max(...prices) : null;
+      const dev = propAllDevs.find(d=>d.id===p.developer_id);
+      return { prop: p, dev, totalLeft, unitCount: units.length, minPrice, maxPrice };
+    }).filter(h=>h.unitCount>0 && h.totalLeft>0).sort((a,b)=>a.totalLeft-b.totalLeft).slice(0,5);
+
+    document.getElementById('ovHotProperties').innerHTML = hotList.map(h=>`
+      <div onclick="jumpToPropListItem('${h.dev?h.dev.id:''}','${h.dev?h.dev.name.replace(/'/g,"\\'"):''}','${h.prop.id}','${h.prop.name.replace(/'/g,"\\'")}','')" class="card overflow-hidden cursor-pointer">
+        <div class="w-full h-28 bg-gray-50 flex items-center justify-center overflow-hidden">
+          ${h.prop.image_url ? `<img src="${h.prop.image_url}" class="w-full h-full object-cover">` : `<span class="text-gray-400 text-xs">No photo</span>`}
+        </div>
+        <div class="p-3 space-y-1">
+          <div class="flex items-start justify-between gap-2">
+            <p class="font-semibold text-sm leading-tight">${h.prop.name}</p>
+            <span class="badge ${h.totalLeft<=2?'bg-red':'bg-yellow'} shrink-0">${h.totalLeft} left</span>
+          </div>
+          <p class="text-xs text-gray-500">${h.prop.location||'—'}</p>
+          <p class="text-xs text-gray-500">${h.dev?h.dev.name:'—'}</p>
+          ${h.minPrice ? `<p class="text-orange-600 font-bold text-sm">${h.minPrice===h.maxPrice ? peso(h.minPrice) : peso(h.minPrice)+' – '+peso(h.maxPrice)}</p>` : ''}
+        </div>
+      </div>
+    `).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-4">No properties running low right now.</p>`;
   } catch(err) { console.error('Error loading overview:', err); }
 }
 
