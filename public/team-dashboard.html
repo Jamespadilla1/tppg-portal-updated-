@@ -1290,5 +1290,35 @@ renderOverview();
 });
 </script>
 <div id="toastStack"></div>
+<script>
+// ── DOUBLE-CLICK / DOUBLE-SUBMIT GUARD ──
+// Applies to every Save/Add/Update/Promote/Delete/Approve/etc. button in the app.
+// The moment one of these buttons is clicked, it's disabled for a short cooldown so a
+// rapid second click can't fire the same action twice (e.g. adding the same client twice).
+(function(){
+  var GUARD_PATTERN = /^(save|add|update|promote|approve|reject|delete|suspend|reinstate|yes,|confirm|change password|register)/i;
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('button');
+    if(!btn || !btn.hasAttribute('onclick')) return;
+    if(btn.dataset.guarding === '1'){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
+    var label = (btn.textContent || '').trim();
+    if(!GUARD_PATTERN.test(label)) return;
+    btn.dataset.guarding = '1';
+    var prevOpacity = btn.style.opacity;
+    var prevCursor = btn.style.cursor;
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'not-allowed';
+    setTimeout(function(){
+      btn.dataset.guarding = '';
+      btn.style.opacity = prevOpacity;
+      btn.style.cursor = prevCursor;
+    }, 1500);
+  }, true);
+})();
+</script>
 </body>
 </html>
