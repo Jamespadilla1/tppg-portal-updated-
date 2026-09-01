@@ -4327,10 +4327,20 @@ async function renderReports(){
 }
 
 function unitTCP(units, unitId){ const u = units.find(x=>x.id===unitId); return u ? Number(u.tcp)||0 : 0; }
+// A sale's actual value: prefer Net Selling Price (the real commissionable amount), then a linked
+// unit's TCP (legacy sales that still reference Property Listings), then the manual TCP entered
+// on the free-text sales log (how virtually all sales are recorded now that Add Client no longer
+// depends on Property Listings being accurate).
+function reportSaleValue(units, b){
+  if(b.net_selling_price) return Number(b.net_selling_price) || 0;
+  const u = units.find(x=>x.id===b.unit_id);
+  if(u) return Number(u.tcp) || 0;
+  return Number(b.manual_tcp) || 0;
+}
 
 function renderSalesSummaryReport({devs, props, units, buyers}){
   document.getElementById('reportTitle').textContent = 'Sales Summary';
-  const withValue = buyers.map(b=>({ ...b, value: unitTCP(units, b.unit_id), unit: units.find(u=>u.id===b.unit_id) }));
+  const withValue = buyers.map(b=>({ ...b, value: reportSaleValue(units, b), unit: units.find(u=>u.id===b.unit_id) }));
   const totalValue = withValue.reduce((s,b)=>s+b.value,0);
   const avgValue = withValue.length ? totalValue/withValue.length : 0;
   const soldCount = units.filter(u=>(u.units_left??1)<=0).length;
@@ -4356,12 +4366,13 @@ function renderSalesSummaryReport({devs, props, units, buyers}){
     options:{ plugins:{ title:{display:true,text:'Sales Value by Month',color:'#9ca3af'}, legend:{display:false} }, scales:{ x:{ticks:{color:'#9ca3af'}}, y:{ticks:{color:'#9ca3af'}} } }
   });
 
-  // Chart 2: Sales value by developer
+  // Chart 2: Sales value by developer (falls back to the manually-entered project name
+  // for sales that aren't linked to a real Property Listings unit)
   const byDev = {};
   withValue.forEach(b=>{
     const prop = b.unit ? props.find(p=>p.id===b.unit.property_id) : null;
     const dev = prop ? devs.find(d=>d.id===prop.developer_id) : null;
-    const name = dev ? dev.name : 'Unassigned';
+    const name = dev ? dev.name : (b.manual_property_name ? b.manual_property_name : 'Unassigned');
     byDev[name] = (byDev[name]||0) + b.value;
   });
   const devLabels = Object.keys(byDev);
@@ -4371,15 +4382,15 @@ function renderSalesSummaryReport({devs, props, units, buyers}){
     options:{ plugins:{ title:{display:true,text:'Sales Value by Developer',color:'#9ca3af'}, legend:{display:false} }, scales:{ x:{ticks:{color:'#9ca3af'}}, y:{ticks:{color:'#9ca3af'}} } }
   });
 
-  currentReportHeaders = ['Client','Unit','TCP','Date'];
-  currentReportRows = withValue.map(b=>[b.name, b.unit?b.unit.unit_name:'—', b.value, new Date(b.created_at).toLocaleDateString()]);
+  currentReportHeaders = ['Client','Project / Unit','TCP','Date'];
+  currentReportRows = withValue.map(b=>[b.name, b.unit ? b.unit.unit_name : (b.manual_property_name || b.manual_unit_name ? `${b.manual_property_name||'—'}${b.manual_unit_name?' / '+b.manual_unit_name:''}` : '—'), b.value, new Date(b.created_at).toLocaleDateString()]);
   document.getElementById('reportTableHead').innerHTML = currentReportHeaders.map(h=>`<th class="text-left px-5 py-2">${h}</th>`).join('');
   document.getElementById('reportTableBody').innerHTML = currentReportRows.map(r=>`<tr><td class="px-5 py-2 text-xs">${r[0]}</td><td class="px-5 py-2 text-xs">${r[1]}</td><td class="px-5 py-2 text-xs text-orange-400">${peso(r[2])}</td><td class="px-5 py-2 text-xs">${r[3]}</td></tr>`).join('') || `<tr><td colspan="4" class="px-5 py-4 text-center text-gray-500 text-xs">No sales yet.</td></tr>`;
 }
 
 function renderTeamPerformanceReport({units, buyers, agents, tls, sms, ums}){
   document.getElementById('reportTitle').textContent = 'Team Performance';
-  function personalValue(role, id){ return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id).reduce((s,b)=>s+unitTCP(units,b.unit_id),0); }
+  function personalValue(role, id){ return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id).reduce((s,b)=>s+reportSaleValue(units,b),0); }
 
   const all = [
     ...agents.map(a=>({ name:a.name, role:'Agent', roleId:a.agent_id, value:personalValue('agent',a.id) })),
@@ -4464,7 +4475,7 @@ function renderCommissionPayoutReport({units, buyers, agents, tls, sms, ums}){
       const personal = buyers.filter(b=>b.input_by_role===role && b.input_by_id===p.id);
       const rate = p.commission_rate || defaultRate;
       personal.forEach(b=>{
-        const v = unitTCP(units, b.unit_id);
+        const v = reportSaleValue(units, b);
         tcn += v; count++;
         const g = v*rate/100;
         gross += g;
