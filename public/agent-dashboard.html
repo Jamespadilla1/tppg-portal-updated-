@@ -264,7 +264,7 @@
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
-            <th class="text-left px-5 py-2">Buyer Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Project</th><th class="text-left px-5 py-2">Unit Purchased</th><th class="text-left px-5 py-2">Reservation Date</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Net Selling Price</th><th class="text-left px-5 py-2">Payment Option</th><th class="text-left px-5 py-2">Booking Complete</th>
+            <th class="text-left px-5 py-2">Buyer Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Project</th><th class="text-left px-5 py-2">Unit Purchased</th><th class="text-left px-5 py-2">Reservation Date</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Net Selling Price</th><th class="text-left px-5 py-2">Payment Option</th><th class="text-left px-5 py-2">Booking Complete</th><th class="text-left px-5 py-2">Actions</th>
           </tr></thead>
           <tbody id="clientsBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
         </table></div>
@@ -438,6 +438,23 @@ document.querySelectorAll('.modal-backdrop').forEach(m => {
   m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); });
 });
 window.logout = () => { localStorage.clear(); window.location.href = 'index.html'; };
+
+// Re-add: reuse an existing client's contact details for a new purchase, without retyping them.
+// Purchase-specific fields (project/unit/price/date/terms) are left blank for the new sale.
+window.reAddClient = function(buyerId){
+  const b = myClientsCache.find(x=>x.id===buyerId);
+  if(!b) return;
+  document.getElementById('bName').value = b.name || '';
+  document.getElementById('bEmail').value = b.email || '';
+  document.getElementById('bPhone').value = b.phone || '';
+  document.getElementById('bAddr').value = b.address || '';
+  ['bManualUnit','bManualProp','bReservationDate','bManualTCP','bNetSellingPrice','bDpMonths'].forEach(id=>{ document.getElementById(id).value = ''; });
+  document.getElementById('bPaymentOption').value = '';
+  document.getElementById('bBookingComplete').value = '';
+  document.getElementById('bDpMonthsWrap').classList.add('hidden');
+  document.getElementById('bErr').classList.add('hidden');
+  openModal('addBuyerModal');
+};
 
 window.showToast = function(text, sub){
   const stack = document.getElementById('toastStack');
@@ -1119,6 +1136,7 @@ async function renderTeamReports(){
 }
 
 // ── MY SALES & CLIENTS ──
+let myClientsCache = [];
 async function loadMyClients(){
   try {
     const [buyersRes, unitsRes, propsRes, devsRes] = await Promise.all([
@@ -1138,6 +1156,7 @@ async function loadMyClients(){
       const developer = property ? devsCache.find(d=>d.id===property.developer_id) : null;
       return { ...b, unit, property, developer };
     });
+    myClientsCache = buyers;
 
     const totalValue = buyers.reduce((s,b)=>s + saleTCP(b), 0);
     const best = buyers.length ? buyers.reduce((a,b)=> (saleTCP(b) > saleTCP(a)) ? b : a) : null;
@@ -1158,7 +1177,8 @@ async function loadMyClients(){
         <td class="px-5 py-3 text-orange-600 text-xs">${b.net_selling_price ? peso(b.net_selling_price) : '—'}</td>
         <td class="px-5 py-3 text-gray-500 text-xs">${b.payment_option ? (b.payment_option + (b.payment_option==='Monthly Down Payment' && b.dp_months ? ` (${b.dp_months} mo)` : '')) : '—'}</td>
         <td class="px-5 py-3 text-xs">${b.booking_requirements_complete === 'yes' ? `<span class="badge badge-green">Yes</span>` : (b.booking_requirements_complete === 'no' ? `<span class="badge badge-yellow">No</span>` : '—')}</td>
-      </tr>`).join('') || `<tr><td colspan="10" class="px-5 py-5 text-center text-gray-500 text-xs">No buyers recorded yet.</td></tr>`;
+        <td class="px-5 py-3 text-xs"><button onclick="reAddClient('${b.id}')" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">Re-add</button></td>
+      </tr>`).join('') || `<tr><td colspan="11" class="px-5 py-5 text-center text-gray-500 text-xs">No buyers recorded yet.</td></tr>`;
   } catch(err) {
     console.error('Error loading clients:', err);
   }

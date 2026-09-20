@@ -267,7 +267,7 @@
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
-            <th class="text-left px-5 py-2">Buyer Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Project</th><th class="text-left px-5 py-2">Unit Purchased</th><th class="text-left px-5 py-2">Reservation Date</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Net Selling Price</th><th class="text-left px-5 py-2">Payment Option</th><th class="text-left px-5 py-2">Booking Complete</th><th class="text-left px-5 py-2">Sold By</th><th class="text-left px-5 py-2">My Override</th>
+            <th class="text-left px-5 py-2">Buyer Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Project</th><th class="text-left px-5 py-2">Unit Purchased</th><th class="text-left px-5 py-2">Reservation Date</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Net Selling Price</th><th class="text-left px-5 py-2">Payment Option</th><th class="text-left px-5 py-2">Booking Complete</th><th class="text-left px-5 py-2">Sold By</th><th class="text-left px-5 py-2">My Override</th><th class="text-left px-5 py-2">Actions</th>
           </tr></thead>
           <tbody id="clientsBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
         </table></div>
@@ -473,6 +473,22 @@ document.querySelectorAll('.modal-backdrop').forEach(m => {
   m.addEventListener('click', e => { if(e.target === m) m.classList.remove('open'); });
 });
 window.logout = () => { localStorage.clear(); window.location.href = 'index.html'; };
+
+let myClientsCache = [];
+// Re-add: reuse an existing client's contact details for a new purchase, without retyping them.
+// Purchase-specific fields (project/unit/price/date/terms) are left blank for the new sale.
+window.reAddClient = function(buyerId){
+  const b = myClientsCache.find(x=>x.id===buyerId);
+  if(!b) return;
+  document.getElementById('bName').value = b.name || '';
+  document.getElementById('bEmail').value = b.email || '';
+  document.getElementById('bPhone').value = b.phone || '';
+  document.getElementById('bAddr').value = b.address || '';
+  ['bManualUnit','bManualProp','bResDate','bManualTCP','bNSP','bPayOption'].forEach(id=>{ document.getElementById(id).value = ''; });
+  document.getElementById('bBookingComplete').value = 'false';
+  document.getElementById('bErr').classList.add('hidden');
+  openModal('addBuyerModal');
+};
 
 window.showToast = function(text, sub){
   const stack = document.getElementById('toastStack');
@@ -1219,7 +1235,9 @@ async function loadMyClients(){
         <td class="px-5 py-3 text-xs">${b.booking_complete ? `<span class="badge badge-green">Yes</span>` : `<span class="badge badge-yellow">No</span>`}</td>
         <td class="px-5 py-3 text-gray-500 text-xs">${soldByLabel(b)}</td>
         <td class="px-5 py-3 text-green-600 text-xs font-semibold">${myOverrideFor(b)}</td>
-      </tr>`).join('') || `<tr><td colspan="12" class="px-5 py-5 text-center text-gray-500 text-xs">No buyers recorded yet.</td></tr>`;
+        <td class="px-5 py-3 text-xs">${b.input_by_id === localStorage.getItem('personId') ? `<button onclick="reAddClient('${b.id}')" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">Re-add</button>` : '—'}</td>
+      </tr>`).join('') || `<tr><td colspan="13" class="px-5 py-5 text-center text-gray-500 text-xs">No buyers recorded yet.</td></tr>`;
+    myClientsCache = buyers;
   } catch(err) {
     console.error('Error loading clients:', err);
   }
