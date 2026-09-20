@@ -236,7 +236,7 @@
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
-            <th class="text-left px-5 py-2">Client</th><th class="text-left px-5 py-2">Property / Unit</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Incentive</th>
+            <th class="text-left px-5 py-2">Client</th><th class="text-left px-5 py-2">Property / Unit</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Incentive</th><th class="text-left px-5 py-2">Reason</th>
           </tr></thead>
           <tbody id="incentiveBody" class="divide-y divide-gray-200 text-gray-700"></tbody>
         </table></div>
@@ -1066,7 +1066,8 @@ async function renderCommissionPersonal(){
       <td class="px-5 py-3 text-xs text-gray-500">${salePropertyLabel(b)}</td>
       <td class="px-5 py-3 text-xs text-orange-600">${saleTCP(b) ? peso(saleTCP(b)) : '—'}</td>
       <td class="px-5 py-3 text-xs text-purple-600 font-semibold">${peso(b.incentive_amount)}</td>
-    </tr>`).join('') || `<tr><td colspan="4" class="px-5 py-5 text-center text-gray-400 text-xs">No incentives recorded yet.</td></tr>`;
+      <td class="px-5 py-3 text-xs text-gray-500 italic">${b.incentive_reason || '—'}</td>
+    </tr>`).join('') || `<tr><td colspan="5" class="px-5 py-5 text-center text-gray-400 text-xs">No incentives recorded yet.</td></tr>`;
 
   renderMyReceivables();
 }

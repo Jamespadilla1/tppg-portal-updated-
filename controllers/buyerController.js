@@ -187,7 +187,7 @@ const updateBuyer = async (req, res) => {
 // PATCH /api/buyers/:id/overrides — admin only: set manager override amounts + incentive for a sale
 const setBuyerOverrides = async (req, res) => {
   try {
-    const { override_team_leader, override_sales_manager, override_unit_manager, incentive_amount, incentive_date } = req.body;
+    const { override_team_leader, override_sales_manager, override_unit_manager, incentive_amount, incentive_reason, incentive_date } = req.body;
     const { data: buyer, error } = await supabase
       .from('buyers')
       .update({
@@ -195,6 +195,7 @@ const setBuyerOverrides = async (req, res) => {
         override_sales_manager: override_sales_manager || null,
         override_unit_manager: override_unit_manager || null,
         incentive_amount: incentive_amount || null,
+        incentive_reason: incentive_reason || null,
         incentive_date: incentive_date || null,
         updated_at: new Date(),
       })

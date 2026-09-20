@@ -455,6 +455,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
         <input type="hidden" id="ioOverrideField">
         <div class="space-y-3">
           <div><label class="text-xs text-gray-400 mb-1 block">Incentive for this sale (₱)</label><input id="ioIncentive" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Reason for incentive <span class="text-gray-600">(optional)</span></label><input id="ioIncentiveReason" type="text" class="field" placeholder="e.g. Fast closing, referral bonus, top performer this month"></div>
           <div id="ioOverrideRow">
             <label class="text-xs text-gray-400 mb-1 block" id="ioOverrideLabel">Override amount (₱)</label>
             <input id="ioOverride" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)">
@@ -4040,7 +4041,7 @@ async function renderReceivables(){
       <tr ${clickAttrs}>
         <td class="px-5 py-3 text-xs">${sellerLabel}</td>
         <td class="px-5 py-3 text-xs">${b.name}</td>
-        <td class="px-5 py-3 text-xs text-purple-400 font-semibold">${b.incentive_amount ? peso(b.incentive_amount) : '—'}</td>
+        <td class="px-5 py-3 text-xs text-purple-400 font-semibold">${b.incentive_amount ? peso(b.incentive_amount) : '—'}${b.incentive_reason ? `<div class="text-gray-500 font-normal italic mt-0.5">${b.incentive_reason}</div>` : ''}</td>
         <td class="px-5 py-3 text-xs">${recipient ? `${recipient.person.name} (${COMM_ROLE_LABEL[recipient.tier]})` : '—'}</td>
         <td class="px-5 py-3 text-xs text-green-400 font-semibold">${overrideAmount ? peso(overrideAmount) : '—'}</td>
         <td class="px-5 py-3 text-xs text-gray-400">${b.incentive_date ? new Date(b.incentive_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'}) : '—'}</td>
@@ -4085,6 +4086,7 @@ window.openIncentiveOverride = (buyerId, clientName, sellerRole, sellerId) => {
   document.getElementById('ioOverrideField').value = recipient ? recipient.field : '';
   document.getElementById('ioTitle').textContent = `Incentive & Override — ${clientName}`;
   document.getElementById('ioIncentive').value = buyer && buyer.incentive_amount ? Number(buyer.incentive_amount).toLocaleString('en-US') : '';
+  document.getElementById('ioIncentiveReason').value = buyer && buyer.incentive_reason ? buyer.incentive_reason : '';
   document.getElementById('ioDate').value = buyer && buyer.incentive_date ? buyer.incentive_date.slice(0,10) : '';
 
   if(recipient){
@@ -4107,10 +4109,11 @@ window.saveIncentiveOverride = async () => {
   const buyerId = document.getElementById('ioBuyerId').value;
   const overrideField = document.getElementById('ioOverrideField').value;
   const incentive_amount = document.getElementById('ioIncentive').value.replace(/,/g,'').trim();
+  const incentive_reason = document.getElementById('ioIncentiveReason').value.trim();
   const override_amount = document.getElementById('ioOverride').value.replace(/,/g,'').trim();
   const incentive_date = document.getElementById('ioDate').value;
 
-  const payload = { incentive_amount: incentive_amount || null, incentive_date: incentive_date || null };
+  const payload = { incentive_amount: incentive_amount || null, incentive_reason: incentive_reason || null, incentive_date: incentive_date || null };
   if(overrideField) payload[overrideField] = override_amount || null;
 
   try {
@@ -4493,12 +4496,14 @@ function renderCommissionPayoutReport({units, buyers, agents, tls, sms, ums}){
   const totalGross = levels.reduce((s,l)=>s+l.gross,0);
   const totalNet = levels.reduce((s,l)=>s+l.net,0);
   const totalTax = totalGross - totalNet;
+  const totalIncentives = buyers.reduce((s,b)=>s + (Number(b.incentive_amount)||0), 0);
 
   document.getElementById('reportCards').innerHTML = [
     ['Total Gross Commission', peso(totalGross), ''],
     ['Total Taxes Withheld', peso(totalTax), 'text-red-400'],
     ['Total Net Commission', peso(totalNet), 'text-orange-400'],
     ['Total Sales Counted', levels.reduce((s,l)=>s+l.count,0), ''],
+    ['Total Incentives Paid', peso(totalIncentives), 'text-purple-400'],
   ].map(([l,v,c])=>reportCard(l,v,c)).join('');
 
   reportChart1 = drawChart('reportChart1', reportChart1, {
