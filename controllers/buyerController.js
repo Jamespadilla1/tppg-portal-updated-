@@ -100,6 +100,16 @@ const createBuyer = async (req, res) => {
     const { name, email, phone, address, unit_id, manual_property_name, manual_unit_name, manual_tcp, reservation_date, net_selling_price, payment_option, dp_months, booking_requirements_complete } = req.body;
     const input_by_name = await lookupPersonName(req.user.role, req.user.id);
 
+    // If this sale is linked to a real listed unit, snapshot that unit's CURRENT price at the
+    // moment of sale into manual_tcp. This locks the price in permanently — if Admin edits the
+    // unit's TCP later, this and every other already-recorded sale keeps showing what the buyer
+    // actually agreed to pay, instead of silently updating to the new price.
+    let lockedTcp = unit_id ? null : (manual_tcp || null);
+    if (unit_id) {
+      const { data: unitRow } = await supabase.from('units').select('tcp').eq('id', unit_id).single();
+      if (unitRow) lockedTcp = unitRow.tcp;
+    }
+
     const { data: buyer, error } = await supabase
       .from('buyers')
       .insert([{
@@ -107,7 +117,7 @@ const createBuyer = async (req, res) => {
         unit_id: unit_id || null,
         manual_property_name: unit_id ? null : (manual_property_name || null),
         manual_unit_name: unit_id ? null : (manual_unit_name || null),
-        manual_tcp: unit_id ? null : (manual_tcp || null),
+        manual_tcp: lockedTcp,
         reservation_date: reservation_date || null,
         net_selling_price: net_selling_price || null,
         payment_option: payment_option || null,
@@ -148,6 +158,15 @@ const updateBuyer = async (req, res) => {
     }
 
     const { name, email, phone, address, unit_id, manual_property_name, manual_unit_name, manual_tcp } = req.body;
+
+    // Same price-locking rule as createBuyer: if this sale is (re)linked to a real unit,
+    // snapshot that unit's CURRENT price now rather than leaving it to drift with future edits.
+    let lockedTcp = unit_id ? null : (manual_tcp || null);
+    if (unit_id) {
+      const { data: unitRow } = await supabase.from('units').select('tcp').eq('id', unit_id).single();
+      if (unitRow) lockedTcp = unitRow.tcp;
+    }
+
     const { data: buyer, error } = await supabase
       .from('buyers')
       .update({
@@ -155,7 +174,7 @@ const updateBuyer = async (req, res) => {
         unit_id: unit_id || null,
         manual_property_name: unit_id ? null : (manual_property_name || null),
         manual_unit_name: unit_id ? null : (manual_unit_name || null),
-        manual_tcp: unit_id ? null : (manual_tcp || null),
+        manual_tcp: lockedTcp,
         updated_at: new Date()
       })
       .eq('id', req.params.id)

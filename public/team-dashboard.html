@@ -1030,8 +1030,8 @@ window.searchPropsGlobal = async function(context){
 // ── COMMISSION (personal) ──
 function saleTCP(b){
   if(b.net_selling_price) return Number(b.net_selling_price) || 0;
-  if(b.unit) return Number(b.unit.tcp) || 0;
   if(b.manual_tcp) return Number(b.manual_tcp) || 0;
+  if(b.unit) return Number(b.unit.tcp) || 0;
   return 0;
 }
 function salePropertyLabel(b){
@@ -1111,7 +1111,7 @@ async function renderTeamReports(){
     const units = await unitsRes.json();
     const teamData = await fetchMyTeamData();
 
-    const withValue = buyers.map(b => ({ ...b, value: b.net_selling_price ? Number(b.net_selling_price) : (b.unit_id ? unitTCP(units, b.unit_id) : (Number(b.manual_tcp)||0)) }));
+    const withValue = buyers.map(b => ({ ...b, value: b.net_selling_price ? Number(b.net_selling_price) : (b.manual_tcp ? Number(b.manual_tcp) : (b.unit_id ? unitTCP(units, b.unit_id) : 0)) }));
     const totalValue = withValue.reduce((s,b)=>s+b.value,0);
     const teamSize = role==='unit_manager' ? (teamData.salesManagers.length + teamData.teamLeaders.length + teamData.agents.length)
       : role==='sales_manager' ? (teamData.teamLeaders.length + teamData.agents.length)

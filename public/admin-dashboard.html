@@ -1357,7 +1357,7 @@ async function renderOverview(){
     const approvedAgents = agents.filter(a=>a.status==='approved');
     const pending = agents.filter(a=>a.status==='pending');
     function ovUnitTCP(unitId){ const u = units.find(x=>x.id===unitId); return u ? Number(u.tcp)||0 : 0; }
-    function saleValue(b){ return b.net_selling_price ? Number(b.net_selling_price) : (b.unit_id ? ovUnitTCP(b.unit_id) : (Number(b.manual_tcp)||0)); }
+    function saleValue(b){ return b.net_selling_price ? Number(b.net_selling_price) : (b.manual_tcp ? Number(b.manual_tcp) : (b.unit_id ? ovUnitTCP(b.unit_id) : 0)); }
     const totalSalesValue = buyers.reduce((s,b)=>s + saleValue(b), 0);
 
     // Total Net Commission across all levels (same formula used in Reports > Commission Payout)
@@ -3516,7 +3516,7 @@ function switchSBTab(tab){
 
 function personalSalesValue(role, id){
   return sbBuyersCache.filter(b=>b.input_by_role===role && b.input_by_id===id)
-    .reduce((s,b)=>{ const u = sbUnitsCache.find(x=>x.id===b.unit_id); return s + (u ? Number(u.tcp)||0 : (Number(b.manual_tcp)||0)); }, 0);
+    .reduce((s,b)=>{ if(b.manual_tcp) return s + Number(b.manual_tcp); const u = sbUnitsCache.find(x=>x.id===b.unit_id); return s + (u ? Number(u.tcp)||0 : 0); }, 0);
 }
 function personalClientCount(role, id){
   return sbBuyersCache.filter(b=>b.input_by_role===role && b.input_by_id===id).length;
@@ -3700,8 +3700,8 @@ async function renderBuyers(){
       return { ...b, unit, property, developer };
     });
     function saleTCP(b){
-      if(b.unit) return Number(b.unit.tcp) || 0;
       if(b.manual_tcp) return Number(b.manual_tcp) || 0;
+      if(b.unit) return Number(b.unit.tcp) || 0;
       return 0;
     }
     const totalValue = withUnit.reduce((s,b)=>s + saleTCP(b), 0);
@@ -3941,7 +3941,7 @@ async function renderCommission(){
 
     function saleValue(b){
       const u = units.find(x=>x.id===b.unit_id);
-      return b.net_selling_price ? Number(b.net_selling_price) : (u ? Number(u.tcp)||0 : (Number(b.manual_tcp)||0));
+      return b.net_selling_price ? Number(b.net_selling_price) : (b.manual_tcp ? Number(b.manual_tcp) : (u ? Number(u.tcp)||0 : 0));
     }
     function personalTCN(role, id){
       return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id).reduce((s,b)=>s+saleValue(b), 0);
@@ -4330,15 +4330,15 @@ async function renderReports(){
 }
 
 function unitTCP(units, unitId){ const u = units.find(x=>x.id===unitId); return u ? Number(u.tcp)||0 : 0; }
-// A sale's actual value: prefer Net Selling Price (the real commissionable amount), then a linked
-// unit's TCP (legacy sales that still reference Property Listings), then the manual TCP entered
-// on the free-text sales log (how virtually all sales are recorded now that Add Client no longer
-// depends on Property Listings being accurate).
+// A sale's actual value: prefer Net Selling Price (the real commissionable amount), then the price
+// frozen on the sale at the time it was made (manual_tcp — set for every sale, whether linked to a
+// real unit or free-text, so editing a unit's TCP later never retroactively changes past sales),
+// then a live unit lookup only as a last resort for legacy records that predate this snapshot.
 function reportSaleValue(units, b){
   if(b.net_selling_price) return Number(b.net_selling_price) || 0;
+  if(b.manual_tcp) return Number(b.manual_tcp) || 0;
   const u = units.find(x=>x.id===b.unit_id);
-  if(u) return Number(u.tcp) || 0;
-  return Number(b.manual_tcp) || 0;
+  return u ? Number(u.tcp) || 0 : 0;
 }
 
 function renderSalesSummaryReport({devs, props, units, buyers}){
