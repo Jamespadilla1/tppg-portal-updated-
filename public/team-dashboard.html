@@ -327,6 +327,30 @@
   </main>
 </div>
 
+<!-- PERSON INFO POPUP (click a seller's name in Team Sales & Buyers) -->
+<div id="personInfoModal" class="modal-backdrop">
+  <div class="modal-box max-w-sm">
+    <button onclick="closeModal('personInfoModal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-700 text-xl">&times;</button>
+    <div class="flex items-center gap-3 mb-4">
+      <div id="piAvatar" class="w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-lg shrink-0">?</div>
+      <div>
+        <p id="piName" class="font-bold text-base">—</p>
+        <span id="piRole" class="badge badge-blue text-xs">—</span>
+      </div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex justify-between"><span class="text-gray-500">ID</span><span class="font-mono text-gray-700" id="piId">—</span></div>
+      <div class="flex justify-between"><span class="text-gray-500">Email</span><span class="text-gray-700" id="piEmail">—</span></div>
+      <div class="flex justify-between"><span class="text-gray-500">Phone</span><span class="text-gray-700" id="piPhone">—</span></div>
+      <div class="flex justify-between"><span class="text-gray-500">Reports To</span><span class="text-gray-700" id="piReportsTo">—</span></div>
+    </div>
+    <div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-200">
+      <div class="bg-gray-50 rounded-lg p-3 border border-gray-200 text-center"><p class="text-gray-500 text-xs mb-0.5">Personal Sales</p><p class="font-bold" id="piSalesCount">0</p></div>
+      <div class="bg-gray-50 rounded-lg p-3 border border-gray-200 text-center"><p class="text-gray-500 text-xs mb-0.5">Sales Value</p><p class="text-orange-600 font-bold" id="piSalesValue">₱0</p></div>
+    </div>
+  </div>
+</div>
+
 <!-- ADD BUYER -->
 <div id="addBuyerModal" class="modal-backdrop">
   <div class="modal-box">
@@ -1203,13 +1227,55 @@ async function loadMyClients(){
     const teamData = await fetchMyTeamData();
 
     const ROLE_LABEL_MAP = { agent: 'Agent', team_leader: 'Team Leader', sales_manager: 'Sales Manager', unit_manager: 'Unit Manager' };
+    window.showPersonInfoModal = function(name, roleLabel, roleId, email, phone, reportsTo, salesCount, salesValue){
+      document.getElementById('piAvatar').textContent = (name||'?')[0].toUpperCase();
+      document.getElementById('piName').textContent = name;
+      document.getElementById('piRole').textContent = roleLabel;
+      document.getElementById('piId').textContent = roleId || '—';
+      document.getElementById('piEmail').textContent = email || '—';
+      document.getElementById('piPhone').textContent = phone || '—';
+      document.getElementById('piReportsTo').textContent = reportsTo || '—';
+      document.getElementById('piSalesCount').textContent = salesCount;
+      document.getElementById('piSalesValue').textContent = peso(salesValue);
+      openModal('personInfoModal');
+    };
+    function reportsToFor(person, role){
+      if(role==='agent'){
+        if(person.team_leader_id){ const tl = teamData.teamLeaders.find(t=>t.id===person.team_leader_id); return tl ? `${tl.name} (Team Leader)` : '—'; }
+        if(person.sales_manager_id){ const sm = teamData.salesManagers.find(s=>s.id===person.sales_manager_id); return sm ? `${sm.name} (Sales Manager)` : '—'; }
+        return 'Unassigned';
+      }
+      if(role==='team_leader'){
+        if(person.sales_manager_id){ const sm = teamData.salesManagers.find(s=>s.id===person.sales_manager_id); return sm ? `${sm.name} (Sales Manager)` : '—'; }
+        return 'Unassigned';
+      }
+      if(role==='sales_manager') return 'Solo / Unit Manager';
+      return '—';
+    }
     function soldByLabel(b){
-      if(b.input_by_id === localStorage.getItem('personId')) return `${name} (${ROLE_LABELS[role]})`;
-      const pools = { agent: teamData.agents, team_leader: teamData.teamLeaders, sales_manager: teamData.salesManagers };
-      const pool = pools[b.input_by_role] || [];
-      const person = pool.find(p=>p.id===b.input_by_id);
-      if(person) return `${person.name} (${ROLE_LABEL_MAP[b.input_by_role]||b.input_by_role})`;
-      return b.input_by_name ? `${b.input_by_name} (former ${ROLE_LABEL_MAP[b.input_by_role]||b.input_by_role})` : 'Unknown';
+      const idFieldMap = { agent: 'agent_id', team_leader: 'tl_id', sales_manager: 'sm_id' };
+      const isSelf = b.input_by_id === localStorage.getItem('personId');
+      const person = isSelf ? { name, [idFieldMap[role]||'id']: localStorage.getItem('personId') } :
+        (() => {
+          const pools = { agent: teamData.agents, team_leader: teamData.teamLeaders, sales_manager: teamData.salesManagers };
+          const pool = pools[b.input_by_role] || [];
+          return pool.find(p=>p.id===b.input_by_id) || null;
+        })();
+      if(!person) return b.input_by_name ? `${b.input_by_name} (former ${ROLE_LABEL_MAP[b.input_by_role]||b.input_by_role})` : 'Unknown';
+
+      const theRole = isSelf ? role : b.input_by_role;
+      const roleId = person[idFieldMap[theRole]] || '';
+      const rTo = isSelf ? reportsToFor(person, theRole) : reportsToFor(person, theRole);
+      const personalBuyers = rawBuyers.filter(x=>x.input_by_role===theRole && x.input_by_id===b.input_by_id);
+      const salesValue = personalBuyers.reduce((s,x)=>{
+        if(x.net_selling_price) return s + Number(x.net_selling_price);
+        if(x.manual_tcp) return s + Number(x.manual_tcp);
+        const u = myUnitsCache.find(y=>y.id===x.unit_id);
+        return s + (u ? Number(u.tcp)||0 : 0);
+      }, 0);
+      const displayName = isSelf ? name : person.name;
+      const nameSafe = displayName.replace(/'/g,"\\'");
+      return `<button onclick="showPersonInfoModal('${nameSafe}','${ROLE_LABEL_MAP[theRole]}','${roleId}','${person.email||''}','${person.phone||''}','${(rTo||'').replace(/'/g,"\\'")}',${personalBuyers.length},${salesValue})" class="text-blue-600 hover:text-blue-700 hover:underline">${displayName} (${ROLE_LABEL_MAP[theRole]})</button>`;
     }
     function myOverrideFor(b){
       const fieldMap = { team_leader: 'override_team_leader', sales_manager: 'override_sales_manager', unit_manager: 'override_unit_manager' };
