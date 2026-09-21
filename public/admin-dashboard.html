@@ -549,6 +549,21 @@ tr:hover td{background:rgba(0,0,0,.02)}
         <button id="repTab-portfolio" onclick="switchReportTab('portfolio')" class="pf-btn px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Portfolio Overview</button>
       </div>
 
+      <div id="salesFilterBar" class="card p-4 space-y-3">
+        <div class="flex gap-2 flex-wrap items-end">
+          <div><label class="text-xs text-gray-400 mb-1 block">Date From</label><input id="sfDateFrom" type="date" class="field w-36"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Date To</label><input id="sfDateTo" type="date" class="field w-36"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Developer</label><select id="sfDeveloper" class="field w-40" onchange="onSfDeveloperChange()"><option value="">All Developers</option></select></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Property</label><select id="sfProperty" class="field w-40"><option value="">All Properties</option></select></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Agent / Team Member</label><select id="sfPerson" class="field w-44"><option value="">Everyone</option></select></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Min TCP (₱)</label><input id="sfTcpMin" type="text" inputmode="numeric" placeholder="0" class="field w-28" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Max TCP (₱)</label><input id="sfTcpMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-28" oninput="formatMoneyInput(this)"></div>
+          <button onclick="applySalesFilters()" class="bg-orange-500 hover:bg-orange-600 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">Apply Filters</button>
+          <button onclick="clearSalesFilters()" class="px-4 py-2.5 rounded-lg text-sm font-medium border border-white/10 text-gray-400 hover:text-white transition-colors">Clear</button>
+        </div>
+        <p id="sfSummary" class="text-xs text-gray-500"></p>
+      </div>
+
       <div class="card p-5 space-y-4">
         <div class="flex items-center justify-between flex-wrap gap-2">
           <h3 class="font-semibold text-sm" id="reportTitle">Sales Summary</h3>
@@ -4359,6 +4374,7 @@ function switchReportTab(tab){
   const btn = document.getElementById('repTab-'+tab);
   btn.classList.add('active-pf','border-orange-500/50','bg-orange-500/10','text-orange-400');
   btn.classList.remove('border-white/10','text-gray-400');
+  document.getElementById('salesFilterBar').classList.toggle('hidden', tab!=='sales');
   renderReports();
 }
 
@@ -4372,6 +4388,9 @@ function drawChart(canvasId, existingChart, config){
 function reportCard(label, value, cls){
   return `<div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">${label}</p><p class="text-xl font-bold ${cls||''}">${value}</p></div>`;
 }
+
+let reportsRawData = null;
+let salesFilters = { dateFrom:'', dateTo:'', developerId:'', propertyId:'', personKey:'', tcpMin:0, tcpMax:Infinity };
 
 async function renderReports(){
   const token = localStorage.getItem('token');
@@ -4392,8 +4411,12 @@ async function renderReports(){
     const ums = await umRes.json();
 
     const data = { devs, props, units, buyers, agents, tls, sms, ums };
+    reportsRawData = data;
 
-    if(currentReportTab==='sales') renderSalesSummaryReport(data);
+    if(currentReportTab==='sales'){
+      populateSalesFilterOptions(data);
+      renderSalesSummaryReport(filterSalesData(data));
+    }
     else if(currentReportTab==='team') renderTeamPerformanceReport(data);
     else if(currentReportTab==='inventory') renderInventoryReport(data);
     else if(currentReportTab==='commission') renderCommissionPayoutReport(data);
@@ -4413,6 +4436,75 @@ function reportSaleValue(units, b){
   if(b.manual_tcp) return Number(b.manual_tcp) || 0;
   const u = units.find(x=>x.id===b.unit_id);
   return u ? Number(u.tcp) || 0 : 0;
+}
+
+function populateSalesFilterOptions(data){
+  const devSel = document.getElementById('sfDeveloper');
+  if(devSel.options.length <= 1){ // only populate once per page load, preserve selection across re-renders
+    devSel.innerHTML = `<option value="">All Developers</option>` + data.devs.map(d=>`<option value="${d.id}">${d.name}</option>`).join('');
+    onSfDeveloperChange();
+    const personSel = document.getElementById('sfPerson');
+    const all = [
+      ...data.agents.map(a=>({ key:`agent:${a.id}`, name:`${a.name} (Agent)` })),
+      ...data.tls.map(t=>({ key:`team_leader:${t.id}`, name:`${t.name} (Team Leader)` })),
+      ...data.sms.map(s=>({ key:`sales_manager:${s.id}`, name:`${s.name} (Sales Manager)` })),
+      ...data.ums.map(u=>({ key:`unit_manager:${u.id}`, name:`${u.name} (Unit Manager)` })),
+    ];
+    personSel.innerHTML = `<option value="">Everyone</option>` + all.map(p=>`<option value="${p.key}">${p.name}</option>`).join('');
+  }
+}
+function onSfDeveloperChange(){
+  const devId = document.getElementById('sfDeveloper').value;
+  const propSel = document.getElementById('sfProperty');
+  const props = devId ? reportsRawData.props.filter(p=>p.developer_id===devId) : reportsRawData.props;
+  const current = propSel.value;
+  propSel.innerHTML = `<option value="">All Properties</option>` + props.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  if(props.some(p=>p.id===current)) propSel.value = current;
+}
+function applySalesFilters(){
+  salesFilters = {
+    dateFrom: document.getElementById('sfDateFrom').value,
+    dateTo: document.getElementById('sfDateTo').value,
+    developerId: document.getElementById('sfDeveloper').value,
+    propertyId: document.getElementById('sfProperty').value,
+    personKey: document.getElementById('sfPerson').value,
+    tcpMin: parseMoney(document.getElementById('sfTcpMin').value),
+    tcpMax: document.getElementById('sfTcpMax').value ? parseMoney(document.getElementById('sfTcpMax').value) : Infinity,
+  };
+  if(reportsRawData) renderSalesSummaryReport(filterSalesData(reportsRawData));
+}
+function clearSalesFilters(){
+  ['sfDateFrom','sfDateTo','sfTcpMin','sfTcpMax'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('sfDeveloper').value = '';
+  onSfDeveloperChange();
+  document.getElementById('sfProperty').value = '';
+  document.getElementById('sfPerson').value = '';
+  salesFilters = { dateFrom:'', dateTo:'', developerId:'', propertyId:'', personKey:'', tcpMin:0, tcpMax:Infinity };
+  if(reportsRawData) renderSalesSummaryReport(filterSalesData(reportsRawData));
+}
+function filterSalesData(data){
+  const f = salesFilters;
+  const anyFilter = f.dateFrom || f.dateTo || f.developerId || f.propertyId || f.personKey || f.tcpMin || f.tcpMax !== Infinity;
+  const filteredBuyers = data.buyers.filter(b=>{
+    if(f.dateFrom && new Date(b.created_at) < new Date(f.dateFrom)) return false;
+    if(f.dateTo && new Date(b.created_at) > new Date(f.dateTo + 'T23:59:59')) return false;
+    if(f.personKey){
+      const [pRole, pId] = f.personKey.split(':');
+      if(b.input_by_role !== pRole || b.input_by_id !== pId) return false;
+    }
+    const unit = data.units.find(u=>u.id===b.unit_id);
+    const prop = unit ? data.props.find(p=>p.id===unit.property_id) : null;
+    if(f.developerId && (!prop || prop.developer_id !== f.developerId)) return false;
+    if(f.propertyId && (!prop || prop.id !== f.propertyId)) return false;
+    const value = b.net_selling_price ? Number(b.net_selling_price) : (b.manual_tcp ? Number(b.manual_tcp) : (unit ? Number(unit.tcp)||0 : 0));
+    if(f.tcpMin && value < f.tcpMin) return false;
+    if(f.tcpMax !== Infinity && value > f.tcpMax) return false;
+    return true;
+  });
+  document.getElementById('sfSummary').textContent = anyFilter
+    ? `Showing ${filteredBuyers.length} of ${data.buyers.length} sales matching your filters.`
+    : `Showing all ${data.buyers.length} sales. Use the filters above to narrow this down.`;
+  return { ...data, buyers: filteredBuyers };
 }
 
 function renderSalesSummaryReport({devs, props, units, buyers}){
