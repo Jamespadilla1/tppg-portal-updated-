@@ -339,13 +339,21 @@
       <div><label class="text-xs text-gray-500 mb-1 block">Address</label><input id="bAddr" type="text" class="field"></div>
       <div><label class="text-xs text-gray-500 mb-1 block">Unit Purchased</label><input id="bManualUnit" type="text" class="field" placeholder="e.g. Unit 305"></div>
       <div><label class="text-xs text-gray-500 mb-1 block">Project</label><input id="bManualProp" type="text" class="field" placeholder="e.g. Avenir Iloilo"></div>
-      <div><label class="text-xs text-gray-500 mb-1 block">Reservation Date</label><input id="bResDate" type="date" class="field"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Reservation Date</label><input id="bReservationDate" type="date" class="field"></div>
       <div><label class="text-xs text-gray-500 mb-1 block">Total Contract Price (₱)</label><input id="bManualTCP" type="text" inputmode="numeric" class="field" placeholder="3,500,000" oninput="formatMoneyInput(this)"></div>
-      <div><label class="text-xs text-gray-500 mb-1 block">Net Selling Price (if available) (₱)</label><input id="bNSP" type="text" inputmode="numeric" class="field" placeholder="3,300,000" oninput="formatMoneyInput(this)"></div>
-      <div><label class="text-xs text-gray-500 mb-1 block">Payment Option</label><input id="bPayOption" type="text" class="field" placeholder="e.g. Bank financing, 20% DP over 24 months"></div>
-      <div><label class="text-xs text-gray-500 mb-1 block">Complete Booking Requirements?</label><select id="bBookingComplete" class="field">
-        <option value="false">No</option>
-        <option value="true">Yes</option>
+      <div><label class="text-xs text-gray-500 mb-1 block">Net Selling Price (if available) (₱)</label><input id="bNetSellingPrice" type="text" inputmode="numeric" class="field" placeholder="3,300,000" oninput="formatMoneyInput(this)"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Payment Terms</label><select id="bPaymentOption" class="field" onchange="onPaymentTermsChange()">
+        <option value="">— Select —</option>
+        <option value="Monthly Down Payment">Monthly Down Payment</option>
+        <option value="Spot Cash">Spot Cash</option>
+        <option value="Full Down Payment">Full Down Payment</option>
+        <option value="Pre Selling">Pre Selling</option>
+      </select></div>
+      <div id="bDpMonthsWrap" class="hidden"><label class="text-xs text-gray-500 mb-1 block">Number of Months to Pay</label><input id="bDpMonths" type="number" min="1" step="1" class="field" placeholder="e.g. 12"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Complete Booking Requirements</label><select id="bBookingComplete" class="field">
+        <option value="">— Select —</option>
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
       </select></div>
       <p id="bErr" class="text-red-500 text-xs hidden">Name is required.</p>
       <button onclick="saveBuyer()" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Client</button>
@@ -484,8 +492,10 @@ window.reAddClient = function(buyerId){
   document.getElementById('bEmail').value = b.email || '';
   document.getElementById('bPhone').value = b.phone || '';
   document.getElementById('bAddr').value = b.address || '';
-  ['bManualUnit','bManualProp','bResDate','bManualTCP','bNSP','bPayOption'].forEach(id=>{ document.getElementById(id).value = ''; });
-  document.getElementById('bBookingComplete').value = 'false';
+  ['bManualUnit','bManualProp','bReservationDate','bManualTCP','bNetSellingPrice','bDpMonths'].forEach(id=>{ document.getElementById(id).value = ''; });
+  document.getElementById('bPaymentOption').value = '';
+  document.getElementById('bBookingComplete').value = '';
+  document.getElementById('bDpMonthsWrap').classList.add('hidden');
   document.getElementById('bErr').classList.add('hidden');
   openModal('addBuyerModal');
 };
@@ -1231,8 +1241,8 @@ async function loadMyClients(){
         <td class="px-5 py-3 text-gray-500 text-xs">${b.reservation_date ? new Date(b.reservation_date).toLocaleDateString() : '—'}</td>
         <td class="px-5 py-3 text-orange-600 text-xs">${b.unit ? peso(b.unit.tcp) : (b.manual_tcp ? peso(b.manual_tcp) : '—')}</td>
         <td class="px-5 py-3 text-orange-600 text-xs">${b.net_selling_price ? peso(b.net_selling_price) : '—'}</td>
-        <td class="px-5 py-3 text-gray-500 text-xs">${b.payment_option || '—'}</td>
-        <td class="px-5 py-3 text-xs">${b.booking_complete ? `<span class="badge badge-green">Yes</span>` : `<span class="badge badge-yellow">No</span>`}</td>
+        <td class="px-5 py-3 text-gray-500 text-xs">${b.payment_option ? (b.payment_option + (b.payment_option==='Monthly Down Payment' && b.dp_months ? ` (${b.dp_months} mo)` : '')) : '—'}</td>
+        <td class="px-5 py-3 text-xs">${b.booking_requirements_complete === 'yes' ? `<span class="badge badge-green">Yes</span>` : (b.booking_requirements_complete === 'no' ? `<span class="badge badge-yellow">No</span>` : '—')}</td>
         <td class="px-5 py-3 text-gray-500 text-xs">${soldByLabel(b)}</td>
         <td class="px-5 py-3 text-green-600 text-xs font-semibold">${myOverrideFor(b)}</td>
         <td class="px-5 py-3 text-xs">${b.input_by_id === localStorage.getItem('personId') ? `<button onclick="reAddClient('${b.id}')" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">Re-add</button>` : '—'}</td>
@@ -1242,10 +1252,16 @@ async function loadMyClients(){
     console.error('Error loading clients:', err);
   }
 }
+window.onPaymentTermsChange = () => {
+  const isMonthly = document.getElementById('bPaymentOption').value === 'Monthly Down Payment';
+  document.getElementById('bDpMonthsWrap').classList.toggle('hidden', !isMonthly);
+  if(!isMonthly) document.getElementById('bDpMonths').value = '';
+};
 window.saveBuyer = async () => {
   const name2 = document.getElementById('bName').value.trim();
   if(!name2){ document.getElementById('bErr').classList.remove('hidden'); return; }
   document.getElementById('bErr').classList.add('hidden');
+  const paymentOption = document.getElementById('bPaymentOption').value.trim();
   try {
     const res = await fetch('/api/buyers', {
       method: 'POST',
@@ -1257,17 +1273,18 @@ window.saveBuyer = async () => {
         address: document.getElementById('bAddr').value.trim(),
         manual_unit_name: document.getElementById('bManualUnit').value.trim(),
         manual_property_name: document.getElementById('bManualProp').value.trim(),
-        reservation_date: document.getElementById('bResDate').value,
+        reservation_date: document.getElementById('bReservationDate').value || null,
         manual_tcp: parseMoney(document.getElementById('bManualTCP').value),
-        net_selling_price: parseMoney(document.getElementById('bNSP').value),
-        payment_option: document.getElementById('bPayOption').value.trim(),
-        booking_complete: document.getElementById('bBookingComplete').value === 'true',
+        net_selling_price: parseMoney(document.getElementById('bNetSellingPrice').value),
+        payment_option: paymentOption,
+        dp_months: paymentOption==='Monthly Down Payment' ? (document.getElementById('bDpMonths').value || null) : null,
+        booking_requirements_complete: document.getElementById('bBookingComplete').value || null,
       })
     });
     if(!res.ok) throw new Error('Save failed');
     closeModal('addBuyerModal');
-    ['bName','bEmail','bPhone','bAddr','bManualProp','bManualUnit','bManualTCP','bResDate','bNSP','bPayOption'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('bBookingComplete').value = 'false';
+    ['bName','bEmail','bPhone','bAddr','bManualProp','bManualUnit','bManualTCP','bReservationDate','bNetSellingPrice','bPaymentOption','bDpMonths','bBookingComplete'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('bDpMonthsWrap').classList.add('hidden');
     loadMyClients();
     showToast('Client added successfully!', name2);
   } catch(err) {
