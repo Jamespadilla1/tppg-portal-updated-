@@ -259,8 +259,9 @@
       </div>
       <div class="card overflow-hidden">
         <div class="flex items-center justify-between p-4 border-b border-gray-200">
-          <h3 class="font-semibold text-sm">Team Sales &amp; Buyers</h3>
+          <h3 class="font-semibold text-sm" id="clientsTitle">Team Sales &amp; Buyers</h3>
           <div class="flex items-center gap-4">
+            <button id="showArchivedBtn" onclick="toggleShowArchived()" class="text-xs text-gray-500 hover:text-gray-700 hover:underline font-medium">Show Archived</button>
             <button id="viewSalesHistoryLink" onclick="openSalesHistoryModal()" class="hidden text-xs text-blue-600 hover:text-blue-700 hover:underline font-medium">View Sales History</button>
             <button onclick="openModal('addBuyerModal')" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Client</button>
           </div>
@@ -1203,7 +1204,7 @@ async function renderTeamReports(){
       byPerson[b.input_by_id] = (byPerson[b.input_by_id]||0) + b.value;
     });
     function nameFor(id){
-      if(id===myUserId) return name;
+      if(id===myUserId) return `${name} (me)`;
       const found = [...teamData.salesManagers, ...teamData.teamLeaders, ...teamData.agents].find(p=>p.id===id);
       return found ? found.name : 'Unknown';
     }
@@ -1220,10 +1221,33 @@ async function renderTeamReports(){
 }
 
 // ── MY SALES & CLIENTS ──
+let showingArchivedClients = false;
+window.toggleShowArchived = function(){
+  showingArchivedClients = !showingArchivedClients;
+  document.getElementById('showArchivedBtn').textContent = showingArchivedClients ? 'Show Active' : 'Show Archived';
+  document.getElementById('clientsTitle').textContent = showingArchivedClients ? 'My Archived Clients' : 'Team Sales & Buyers';
+  loadMyClients();
+};
+async function archiveClient(id){
+  if(!confirm('Archive this client? You can restore it later from "Show Archived".')) return;
+  try {
+    await fetch(`/api/buyers/${id}`, { method:'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+    loadMyClients();
+  } catch(err) { console.error('Error archiving client:', err); alert('Failed to archive client.'); }
+}
+async function restoreClient(id){
+  try {
+    await fetch(`/api/buyers/${id}/restore`, { method:'PATCH', headers: { 'Authorization': 'Bearer ' + token } });
+    loadMyClients();
+  } catch(err) { console.error('Error restoring client:', err); alert('Failed to restore client.'); }
+}
 async function loadMyClients(){
   try {
+    // "Show Archived" only shows YOUR OWN archived clients (not the whole team's), since archiving
+    // is scoped to whoever added the record — the personal /api/buyers endpoint already handles that.
+    const buyersUrl = showingArchivedClients ? '/api/buyers?archived=true' : '/api/buyers/team';
     const [buyersRes, unitsRes, propsRes, devsRes] = await Promise.all([
-      fetch('/api/buyers/team', { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch(buyersUrl, { headers: { 'Authorization': 'Bearer ' + token } }),
       fetch('/api/units',  { headers: { 'Authorization': 'Bearer ' + token } }),
       fetch('/api/properties', { headers: { 'Authorization': 'Bearer ' + token } }),
       fetch('/api/developers', { headers: { 'Authorization': 'Bearer ' + token } }),
@@ -1306,7 +1330,7 @@ async function loadMyClients(){
     document.getElementById('clientBest').textContent  = best ? (best.unit ? best.unit.unit_name : (best.manual_unit_name || best.manual_property_name || '—')) : '—';
 
     document.getElementById('clientsBody').innerHTML = buyers.map(b => `
-      <tr>
+      <tr class="${showingArchivedClients ? 'opacity-60' : ''}">
         <td class="px-5 py-3 font-medium text-xs">${b.name}</td>
         <td class="px-5 py-3 text-gray-500 text-xs">${b.email||'—'}</td>
         <td class="px-5 py-3 text-gray-500 text-xs">${b.phone||'—'}</td>
@@ -1317,10 +1341,14 @@ async function loadMyClients(){
         <td class="px-5 py-3 text-orange-600 text-xs">${b.net_selling_price ? peso(b.net_selling_price) : '—'}</td>
         <td class="px-5 py-3 text-gray-500 text-xs">${b.payment_option ? (b.payment_option + (b.payment_option==='Monthly Down Payment' && b.dp_months ? ` (${b.dp_months} mo)` : '')) : '—'}</td>
         <td class="px-5 py-3 text-xs">${b.booking_requirements_complete === 'yes' ? `<span class="badge badge-green">Yes</span>` : (b.booking_requirements_complete === 'no' ? `<span class="badge badge-yellow">No</span>` : '—')}</td>
-        <td class="px-5 py-3 text-gray-500 text-xs">${soldByLabel(b)}</td>
+        <td class="px-5 py-3 text-gray-500 text-xs">${showingArchivedClients ? `${name} (${ROLE_LABEL_MAP[role]})` : soldByLabel(b)}</td>
         <td class="px-5 py-3 text-green-600 text-xs font-semibold">${myOverrideFor(b)}</td>
-        <td class="px-5 py-3 text-xs">${b.input_by_id === myUserId ? `<button onclick="reAddClient('${b.id}')" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">Re-add</button>` : '—'}</td>
-      </tr>`).join('') || `<tr><td colspan="13" class="px-5 py-5 text-center text-gray-500 text-xs">No buyers recorded yet.</td></tr>`;
+        <td class="px-5 py-3 text-xs flex gap-2">
+          ${showingArchivedClients
+            ? `<button onclick="restoreClient('${b.id}')" class="text-green-600 hover:text-green-700 hover:underline font-medium">Restore</button>`
+            : (b.input_by_id === myUserId ? `<button onclick="reAddClient('${b.id}')" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">Re-add</button><button onclick="archiveClient('${b.id}')" class="text-red-500 hover:text-red-600 hover:underline font-medium">Archive</button>` : '—')}
+        </td>
+      </tr>`).join('') || `<tr><td colspan="13" class="px-5 py-5 text-center text-gray-500 text-xs">${showingArchivedClients ? 'No archived clients.' : 'No buyers recorded yet.'}</td></tr>`;
     myClientsCache = buyers;
   } catch(err) {
     console.error('Error loading clients:', err);
