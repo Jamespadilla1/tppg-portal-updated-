@@ -407,6 +407,14 @@ const token = localStorage.getItem('token');
 const role  = localStorage.getItem('role');
 const name  = localStorage.getItem('name');
 
+// localStorage's 'personId' is the friendly display code (e.g. SM-70556), NOT the actual
+// internal database id that buyer records reference via input_by_id. Decode the login token
+// to get the real id, so "is this my own sale" comparisons actually work.
+let myUserId = null;
+try {
+  myUserId = JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).id;
+} catch(e) { console.error('Could not decode own user id from token:', e); }
+
 if (!token || !['unit_manager','sales_manager','team_leader'].includes(role)) {
   window.location.href = 'index.html';
 }
@@ -1195,7 +1203,7 @@ async function renderTeamReports(){
       byPerson[b.input_by_id] = (byPerson[b.input_by_id]||0) + b.value;
     });
     function nameFor(id){
-      if(id===localStorage.getItem('personId')) return name;
+      if(id===myUserId) return name;
       const found = [...teamData.salesManagers, ...teamData.teamLeaders, ...teamData.agents].find(p=>p.id===id);
       return found ? found.name : 'Unknown';
     }
@@ -1254,7 +1262,7 @@ async function loadMyClients(){
     }
     function soldByLabel(b){
       const idFieldMap = { agent: 'agent_id', team_leader: 'tl_id', sales_manager: 'sm_id' };
-      const isSelf = b.input_by_id === localStorage.getItem('personId');
+      const isSelf = b.input_by_id === myUserId;
       const person = isSelf ? { name, [idFieldMap[role]||'id']: localStorage.getItem('personId') } :
         (() => {
           const pools = { agent: teamData.agents, team_leader: teamData.teamLeaders, sales_manager: teamData.salesManagers };
@@ -1311,7 +1319,7 @@ async function loadMyClients(){
         <td class="px-5 py-3 text-xs">${b.booking_requirements_complete === 'yes' ? `<span class="badge badge-green">Yes</span>` : (b.booking_requirements_complete === 'no' ? `<span class="badge badge-yellow">No</span>` : '—')}</td>
         <td class="px-5 py-3 text-gray-500 text-xs">${soldByLabel(b)}</td>
         <td class="px-5 py-3 text-green-600 text-xs font-semibold">${myOverrideFor(b)}</td>
-        <td class="px-5 py-3 text-xs">${b.input_by_id === localStorage.getItem('personId') ? `<button onclick="reAddClient('${b.id}')" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">Re-add</button>` : '—'}</td>
+        <td class="px-5 py-3 text-xs">${b.input_by_id === myUserId ? `<button onclick="reAddClient('${b.id}')" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">Re-add</button>` : '—'}</td>
       </tr>`).join('') || `<tr><td colspan="13" class="px-5 py-5 text-center text-gray-500 text-xs">No buyers recorded yet.</td></tr>`;
     myClientsCache = buyers;
   } catch(err) {
