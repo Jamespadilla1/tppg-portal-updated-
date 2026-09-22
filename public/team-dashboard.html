@@ -697,7 +697,7 @@ async function renderOverview(){
   try {
     const teamData = await loadMyTeam();
     const { buyers } = await fetchMyClientsData();
-    const totalValue = buyers.reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
+    const totalValue = buyers.filter(b=>!b.cancelled).reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
     const availableUnits = myUnitsCache.filter(u=>(u.units_left??1)>0).length;
 
     const teamSize = role==='unit_manager' ? (teamData.salesManagers.length + teamData.teamLeaders.length + teamData.agents.length)
@@ -1088,6 +1088,7 @@ window.searchPropsGlobal = async function(context){
 
 // ── COMMISSION (personal) ──
 function saleTCP(b){
+  if(b.cancelled) return 0;
   if(b.net_selling_price) return Number(b.net_selling_price) || 0;
   if(b.manual_tcp) return Number(b.manual_tcp) || 0;
   if(b.unit) return Number(b.unit.tcp) || 0;
@@ -1170,7 +1171,7 @@ async function renderTeamReports(){
     const units = await unitsRes.json();
     const teamData = await fetchMyTeamData();
 
-    const withValue = buyers.map(b => ({ ...b, value: b.net_selling_price ? Number(b.net_selling_price) : (b.manual_tcp ? Number(b.manual_tcp) : (b.unit_id ? unitTCP(units, b.unit_id) : 0)) }));
+    const withValue = buyers.map(b => ({ ...b, value: b.cancelled ? 0 : (b.net_selling_price ? Number(b.net_selling_price) : (b.manual_tcp ? Number(b.manual_tcp) : (b.unit_id ? unitTCP(units, b.unit_id) : 0))) }));
     const totalValue = withValue.reduce((s,b)=>s+b.value,0);
     const teamSize = role==='unit_manager' ? (teamData.salesManagers.length + teamData.teamLeaders.length + teamData.agents.length)
       : role==='sales_manager' ? (teamData.teamLeaders.length + teamData.agents.length)
@@ -1240,6 +1241,14 @@ async function restoreClient(id){
     await fetch(`/api/buyers/${id}/restore`, { method:'PATCH', headers: { 'Authorization': 'Bearer ' + token } });
     loadMyClients();
   } catch(err) { console.error('Error restoring client:', err); alert('Failed to restore client.'); }
+}
+async function cancelClient(id){
+  if(!confirm('Cancel this sale? This is FINAL and cannot be undone — it stays visible but is excluded from commission and reports.')) return;
+  try {
+    const res = await fetch(`/api/buyers/${id}/cancel`, { method:'PATCH', headers: { 'Authorization': 'Bearer ' + token } });
+    if(!res.ok){ const err = await res.json(); alert(err.message || 'Failed to cancel sale.'); return; }
+    loadMyClients();
+  } catch(err) { console.error('Error cancelling sale:', err); alert('Failed to cancel sale.'); }
 }
 async function loadMyClients(){
   try {
@@ -1330,8 +1339,8 @@ async function loadMyClients(){
     document.getElementById('clientBest').textContent  = best ? (best.unit ? best.unit.unit_name : (best.manual_unit_name || best.manual_property_name || '—')) : '—';
 
     document.getElementById('clientsBody').innerHTML = buyers.map(b => `
-      <tr class="${showingArchivedClients ? 'opacity-60' : ''}">
-        <td class="px-5 py-3 font-medium text-xs">${b.name}</td>
+      <tr class="${(showingArchivedClients || b.cancelled) ? 'opacity-60' : ''}">
+        <td class="px-5 py-3 font-medium text-xs">${b.name}${b.cancelled ? ` <span class="badge badge-red">Cancelled</span>` : ''}</td>
         <td class="px-5 py-3 text-gray-500 text-xs">${b.email||'—'}</td>
         <td class="px-5 py-3 text-gray-500 text-xs">${b.phone||'—'}</td>
         <td class="px-5 py-3 text-gray-500 text-xs">${b.property ? b.property.name : (b.manual_property_name || '—')}</td>
@@ -1346,7 +1355,9 @@ async function loadMyClients(){
         <td class="px-5 py-3 text-xs flex gap-2">
           ${showingArchivedClients
             ? `<button onclick="restoreClient('${b.id}')" class="text-green-600 hover:text-green-700 hover:underline font-medium">Restore</button>`
-            : (b.input_by_id === myUserId ? `<button onclick="reAddClient('${b.id}')" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">Re-add</button><button onclick="archiveClient('${b.id}')" class="text-red-500 hover:text-red-600 hover:underline font-medium">Archive</button>` : '—')}
+            : (b.input_by_id === myUserId
+                ? `<button onclick="reAddClient('${b.id}')" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">Re-add</button>${b.cancelled ? '' : `<button onclick="cancelClient('${b.id}')" class="text-yellow-600 hover:text-yellow-700 hover:underline font-medium">Cancel</button>`}<button onclick="archiveClient('${b.id}')" class="text-red-500 hover:text-red-600 hover:underline font-medium">Archive</button>`
+                : '—')}
         </td>
       </tr>`).join('') || `<tr><td colspan="13" class="px-5 py-5 text-center text-gray-500 text-xs">${showingArchivedClients ? 'No archived clients.' : 'No buyers recorded yet.'}</td></tr>`;
     myClientsCache = buyers;

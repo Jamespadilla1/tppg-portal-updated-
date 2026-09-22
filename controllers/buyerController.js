@@ -280,4 +280,24 @@ const permanentlyDeleteBuyer = async (req, res) => {
   }
 };
 
-module.exports = { getBuyers, getTeamBuyers, getPreviousRoleSalesHistory, createBuyer, updateBuyer, setBuyerOverrides, deleteBuyer, restoreBuyer, permanentlyDeleteBuyer };
+// PATCH /api/buyers/:id/cancel — Admin can cancel any sale; other roles can only cancel their OWN.
+// This is FINAL (no un-cancel). Cancelled sales stay visible (grayed out) but are excluded from
+// commission and reports — typically used when a buyer stops paying their downpayment.
+const cancelBuyer = async (req, res) => {
+  try {
+    const { data: existing } = await supabase.from('buyers').select('input_by_id, input_by_role, cancelled').eq('id', req.params.id).single();
+    if (!existing) return res.status(404).json({ message: 'Not found.' });
+    if (existing.cancelled) return res.status(400).json({ message: 'This sale is already cancelled.' });
+    if (req.user.role !== 'admin' && (existing.input_by_id !== req.user.id || existing.input_by_role !== req.user.role)) {
+      return res.status(403).json({ message: 'You can only cancel sales you added.' });
+    }
+    const { error } = await supabase.from('buyers').update({ cancelled: true, updated_at: new Date() }).eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ message: 'Sale cancelled.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getBuyers, getTeamBuyers, getPreviousRoleSalesHistory, createBuyer, updateBuyer, setBuyerOverrides, deleteBuyer, restoreBuyer, permanentlyDeleteBuyer, cancelBuyer };

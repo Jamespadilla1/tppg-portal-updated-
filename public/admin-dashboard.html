@@ -1403,14 +1403,14 @@ async function renderOverview(){
     const pending = agents.filter(a=>a.status==='pending');
     function ovUnitTCP(unitId){ const u = units.find(x=>x.id===unitId); return u ? Number(u.tcp)||0 : 0; }
     function saleValue(b){ return b.net_selling_price ? Number(b.net_selling_price) : (b.manual_tcp ? Number(b.manual_tcp) : (b.unit_id ? ovUnitTCP(b.unit_id) : 0)); }
-    const totalSalesValue = buyers.reduce((s,b)=>s + saleValue(b), 0);
+    const totalSalesValue = buyers.filter(b=>!b.cancelled).reduce((s,b)=>s + saleValue(b), 0);
 
     // Total Net Commission across all levels (same formula used in Reports > Commission Payout)
     function ovLevelNet(list, role, defaultRate){
       let net = 0;
       list.forEach(p=>{
         const rate = p.commission_rate || defaultRate;
-        buyers.filter(b=>b.input_by_role===role && b.input_by_id===p.id).forEach(b=>{
+        buyers.filter(b=>b.input_by_role===role && b.input_by_id===p.id && !b.cancelled).forEach(b=>{
           const g = saleValue(b) * rate/100;
           net += g - (g*0.10) - (g*0.03);
         });
@@ -1420,7 +1420,7 @@ async function renderOverview(){
     const totalNetCommission = ovLevelNet(approvedAgents,'agent',2.0) + ovLevelNet(tls,'team_leader',3.0) + ovLevelNet(sms,'sales_manager',3.25) + ovLevelNet(ums,'unit_manager',4.0);
 
     const currentYear = new Date().getFullYear();
-    const ytdBuyers = buyers.filter(b => new Date(b.created_at).getFullYear() === currentYear);
+    const ytdBuyers = buyers.filter(b => new Date(b.created_at).getFullYear() === currentYear && !b.cancelled);
     const ytdSalesValue = ytdBuyers.reduce((s,b)=>s + saleValue(b), 0);
     const target = await fetchAnnualSalesTarget();
     const targetPct = target ? Math.min(100, Math.round((ytdSalesValue / target) * 100)) : null;
@@ -3679,11 +3679,11 @@ function openPersonInfo(role, id){
 }
 
 function personalSalesValue(role, id){
-  return sbBuyersCache.filter(b=>b.input_by_role===role && b.input_by_id===id)
+  return sbBuyersCache.filter(b=>b.input_by_role===role && b.input_by_id===id && !b.cancelled)
     .reduce((s,b)=>{ if(b.manual_tcp) return s + Number(b.manual_tcp); const u = sbUnitsCache.find(x=>x.id===b.unit_id); return s + (u ? Number(u.tcp)||0 : 0); }, 0);
 }
 function personalClientCount(role, id){
-  return sbBuyersCache.filter(b=>b.input_by_role===role && b.input_by_id===id).length;
+  return sbBuyersCache.filter(b=>b.input_by_role===role && b.input_by_id===id && !b.cancelled).length;
 }
 function teamSalesOfAgent(agentId){ return personalSalesValue('agent', agentId); }
 function teamSalesOfTL(tlId){
@@ -3919,8 +3919,8 @@ async function renderBuyers(){
         : (b.input_by_name ? `${b.input_by_name} (former ${ROLE_LABEL[b.input_by_role]||'—'})` : '—');
       const reportsTo = b.input_by_role ? resolveReportsTo(b.input_by_role, b.input_by_id) : '—';
       return `
-      <tr>
-        <td class="px-5 py-3 font-medium text-white text-xs">${b.name}</td>
+      <tr class="${b.cancelled ? 'opacity-50' : ''}">
+        <td class="px-5 py-3 font-medium text-white text-xs">${b.name}${b.cancelled ? ` <span class="badge bg-red">Cancelled</span>` : ''}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${b.email||'—'}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${b.phone||'—'}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${b.developer ? b.developer.name : '—'}</td>
@@ -3932,7 +3932,10 @@ async function renderBuyers(){
         <td class="px-5 py-3 text-orange-400 text-xs">${saleTCP(b) ? peso(saleTCP(b)) : '—'}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${addedBy}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${reportsTo}</td>
-        <td class="px-5 py-3 flex gap-2"><button onclick="deleteBuyerAdmin('${b.id}')" class="text-xs text-red-400 hover:text-red-300">Delete</button></td>
+        <td class="px-5 py-3 flex gap-2">
+          ${b.cancelled ? '' : `<button onclick="cancelBuyerAdmin('${b.id}')" class="text-xs text-yellow-400 hover:text-yellow-300">Cancel</button>`}
+          <button onclick="deleteBuyerAdmin('${b.id}')" class="text-xs text-red-400 hover:text-red-300">Archive</button>
+        </td>
       </tr>`;
     }).join('') || `<tr><td colspan="13" class="px-5 py-5 text-center text-gray-500 text-xs">No clients yet.</td></tr>`;
 
@@ -3944,19 +3947,35 @@ async function renderBuyers(){
     console.error('Error loading sales & buyers:', err);
   }
 }
+async function cancelBuyerAdmin(id){
+  if(!confirm('Cancel this sale? This is FINAL and cannot be undone — the sale stays visible but is excluded from commission and reports.')) return;
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch(`/api/buyers/${id}/cancel`, { method:'PATCH', headers:{ 'Authorization':'Bearer '+token } });
+    if(!res.ok){ const err = await res.json(); alert(err.message || 'Failed to cancel sale.'); return; }
+    await fetch('/api/logs', {
+      method:'POST', headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
+      body: JSON.stringify({ message:`Sale cancelled`, actor:'Admin', role:'admin' })
+    });
+    renderBuyers();
+  } catch(err) {
+    console.error('Error cancelling sale:', err);
+    alert('Failed to cancel sale.');
+  }
+}
 async function deleteBuyerAdmin(id){
-  if(!confirm('Delete this client record?')) return;
+  if(!confirm('Archive this client record? You can restore it later.')) return;
   const token = localStorage.getItem('token');
   try {
     await fetch(`/api/buyers/${id}`, { method:'DELETE', headers:{ 'Authorization':'Bearer '+token } });
     await fetch('/api/logs', {
       method:'POST', headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
-      body: JSON.stringify({ message:`Client record deleted`, actor:'Admin', role:'admin' })
+      body: JSON.stringify({ message:`Client record archived`, actor:'Admin', role:'admin' })
     });
     renderBuyers();
   } catch(err) {
-    console.error('Error deleting client:', err);
-    alert('Failed to delete client.');
+    console.error('Error archiving client:', err);
+    alert('Failed to archive client.');
   }
 }
 
@@ -4108,10 +4127,10 @@ async function renderCommission(){
       return b.net_selling_price ? Number(b.net_selling_price) : (b.manual_tcp ? Number(b.manual_tcp) : (u ? Number(u.tcp)||0 : 0));
     }
     function personalTCN(role, id){
-      return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id).reduce((s,b)=>s+saleValue(b), 0);
+      return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id && !b.cancelled).reduce((s,b)=>s+saleValue(b), 0);
     }
     function personalCount(role, id){
-      return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id).length;
+      return buyers.filter(b=>b.input_by_role===role && b.input_by_id===id && !b.cancelled).length;
     }
 
     const level = document.getElementById('commLevel').value;
@@ -4203,11 +4222,11 @@ async function renderReceivables(){
       const sellerLabel = sellerLabelForBuyer(b);
       const recipient = getOverrideRecipient(b.input_by_role, b.input_by_id);
       const overrideAmount = recipient ? b[recipient.field] : null;
-      const clickAttrs = `onclick="openIncentiveOverride('${b.id}','${b.name.replace(/'/g,"\\'")}','${b.input_by_role}','${b.input_by_id}')" class="cursor-pointer hover:bg-orange-500/5 transition-colors"`;
+      const clickAttrs = `onclick="openIncentiveOverride('${b.id}','${b.name.replace(/'/g,"\\'")}','${b.input_by_role}','${b.input_by_id}')" class="cursor-pointer hover:bg-orange-500/5 transition-colors ${b.cancelled?'opacity-50':''}"`;
       return `
       <tr ${clickAttrs}>
         <td class="px-5 py-3 text-xs">${sellerLabel}</td>
-        <td class="px-5 py-3 text-xs">${b.name}</td>
+        <td class="px-5 py-3 text-xs">${b.name}${b.cancelled ? ` <span class="badge bg-red">Cancelled</span>` : ''}</td>
         <td class="px-5 py-3 text-xs text-purple-400 font-semibold">${b.incentive_amount ? peso(b.incentive_amount) : '—'}${b.incentive_reason ? `<div class="text-gray-500 font-normal italic mt-0.5">${b.incentive_reason}</div>` : ''}</td>
         <td class="px-5 py-3 text-xs">${recipient ? `${recipient.person.name} (${COMM_ROLE_LABEL[recipient.tier]})` : '—'}</td>
         <td class="px-5 py-3 text-xs text-green-400 font-semibold">${overrideAmount ? peso(overrideAmount) : '—'}</td>
@@ -4510,6 +4529,7 @@ function unitTCP(units, unitId){ const u = units.find(x=>x.id===unitId); return 
 // real unit or free-text, so editing a unit's TCP later never retroactively changes past sales),
 // then a live unit lookup only as a last resort for legacy records that predate this snapshot.
 function reportSaleValue(units, b){
+  if(b.cancelled) return 0;
   if(b.net_selling_price) return Number(b.net_selling_price) || 0;
   if(b.manual_tcp) return Number(b.manual_tcp) || 0;
   const u = units.find(x=>x.id===b.unit_id);
@@ -4719,7 +4739,7 @@ function renderCommissionPayoutReport({units, buyers, agents, tls, sms, ums}){
   function calcLevel(list, role, defaultRank, defaultRate){
     let count=0, tcn=0, gross=0, net=0;
     list.forEach(p=>{
-      const personal = buyers.filter(b=>b.input_by_role===role && b.input_by_id===p.id);
+      const personal = buyers.filter(b=>b.input_by_role===role && b.input_by_id===p.id && !b.cancelled);
       const rate = p.commission_rate || defaultRate;
       personal.forEach(b=>{
         const v = reportSaleValue(units, b);
