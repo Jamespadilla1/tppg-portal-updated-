@@ -4,7 +4,8 @@ const { fetchTeamFor } = require('./teamViewController');
 // GET /api/buyers — admin sees all; other roles see only buyers they personally input
 const getBuyers = async (req, res) => {
   try {
-    let query = supabase.from('buyers').select('*').order('created_at', { ascending: false });
+    const { archived } = req.query;
+    let query = supabase.from('buyers').select('*').eq('archived', archived === 'true').order('created_at', { ascending: false });
     if (req.user.role !== 'admin') {
       query = query.eq('input_by_id', req.user.id).eq('input_by_role', req.user.role);
     }
@@ -72,6 +73,7 @@ const getTeamBuyers = async (req, res) => {
       .from('buyers')
       .select('*')
       .or(orFilters.join(','))
+      .eq('archived', false)
       .order('created_at', { ascending: false });
     if (error) throw error;
     res.json(buyers);
@@ -230,25 +232,52 @@ const setBuyerOverrides = async (req, res) => {
   }
 };
 
-// DELETE /api/buyers/:id — admin only (prevents accidental data loss by sales roles)
-// Reverts the linked unit back to Available since the sale record is gone
+// DELETE /api/buyers/:id — Admin can archive any client; other roles can only archive their OWN
 const deleteBuyer = async (req, res) => {
   try {
-    const { data: existing } = await supabase.from('buyers').select('unit_id').eq('id', req.params.id).single();
-
-    const { error } = await supabase.from('buyers').delete().eq('id', req.params.id);
-    if (error) throw error;
-
-    if (existing && existing.unit_id) {
-      const { error: revertErr } = await supabase.from('units').update({ status: 'Available', updated_at: new Date() }).eq('id', existing.unit_id);
-      if (revertErr) console.error('Failed to revert unit to Available:', revertErr);
+    const { data: existing } = await supabase.from('buyers').select('input_by_id, input_by_role').eq('id', req.params.id).single();
+    if (!existing) return res.status(404).json({ message: 'Not found.' });
+    if (req.user.role !== 'admin' && (existing.input_by_id !== req.user.id || existing.input_by_role !== req.user.role)) {
+      return res.status(403).json({ message: 'You can only archive clients you added.' });
     }
 
-    res.json({ message: 'Buyer deleted.' });
+    const { error } = await supabase.from('buyers').update({ archived: true, updated_at: new Date() }).eq('id', req.params.id);
+    if (error) throw error;
+
+    res.json({ message: 'Client archived.' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };
 
-module.exports = { getBuyers, getTeamBuyers, getPreviousRoleSalesHistory, createBuyer, updateBuyer, setBuyerOverrides, deleteBuyer };
+// PATCH /api/buyers/:id/restore — same ownership rule as archiving
+const restoreBuyer = async (req, res) => {
+  try {
+    const { data: existing } = await supabase.from('buyers').select('input_by_id, input_by_role').eq('id', req.params.id).single();
+    if (!existing) return res.status(404).json({ message: 'Not found.' });
+    if (req.user.role !== 'admin' && (existing.input_by_id !== req.user.id || existing.input_by_role !== req.user.role)) {
+      return res.status(403).json({ message: 'You can only restore clients you added.' });
+    }
+    const { error } = await supabase.from('buyers').update({ archived: false, updated_at: new Date() }).eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ message: 'Client restored.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+// DELETE /api/buyers/:id/permanent (admin only) — the real, unrecoverable delete
+const permanentlyDeleteBuyer = async (req, res) => {
+  try {
+    const { error } = await supabase.from('buyers').delete().eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ message: 'Client permanently deleted.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getBuyers, getTeamBuyers, getPreviousRoleSalesHistory, createBuyer, updateBuyer, setBuyerOverrides, deleteBuyer, restoreBuyer, permanentlyDeleteBuyer };

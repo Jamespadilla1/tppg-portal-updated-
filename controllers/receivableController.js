@@ -3,8 +3,8 @@ const supabase = require('../config/db');
 // GET /api/commission-receivables (admin only)
 const getReceivables = async (req, res) => {
   try {
-    const { developer_id } = req.query;
-    let query = supabase.from('commission_receivables').select('*').order('release_date', { ascending: false });
+    const { developer_id, archived } = req.query;
+    let query = supabase.from('commission_receivables').select('*').eq('archived', archived === 'true').order('release_date', { ascending: false });
     if (developer_id) query = query.eq('developer_id', developer_id);
     const { data, error } = await query;
     if (error) throw error;
@@ -33,6 +33,7 @@ const getMyReceivables = async (req, res) => {
       .from('commission_receivables')
       .select('*')
       .in('buyer_id', buyerIds)
+      .eq('archived', false)
       .order('release_date', { ascending: false });
     if (error) throw error;
     res.json(data);
@@ -90,16 +91,40 @@ const updateReceivable = async (req, res) => {
   }
 };
 
-// DELETE /api/commission-receivables/:id (admin only)
+// DELETE /api/commission-receivables/:id (admin only) — archives instead of destroying
 const deleteReceivable = async (req, res) => {
   try {
-    const { error } = await supabase.from('commission_receivables').delete().eq('id', req.params.id);
+    const { error } = await supabase.from('commission_receivables').update({ archived: true }).eq('id', req.params.id);
     if (error) throw error;
-    res.json({ message: 'Deleted.' });
+    res.json({ message: 'Archived.' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };
 
-module.exports = { getReceivables, getMyReceivables, createReceivable, updateReceivable, deleteReceivable };
+// PATCH /api/commission-receivables/:id/restore (admin only)
+const restoreReceivable = async (req, res) => {
+  try {
+    const { error } = await supabase.from('commission_receivables').update({ archived: false }).eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ message: 'Restored.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+// DELETE /api/commission-receivables/:id/permanent (admin only) — the real, unrecoverable delete
+const permanentlyDeleteReceivable = async (req, res) => {
+  try {
+    const { error } = await supabase.from('commission_receivables').delete().eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ message: 'Permanently deleted.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getReceivables, getMyReceivables, createReceivable, updateReceivable, deleteReceivable, restoreReceivable, permanentlyDeleteReceivable };

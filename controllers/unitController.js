@@ -1,14 +1,15 @@
 const supabase = require('../config/db');
 const uploadToStorage = require('../utils/uploadToStorage');
 
-// GET /api/units?property_id=xxx
+// GET /api/units?property_id=xxx&archived=true
 const getUnits = async (req, res) => {
   try {
-    const { property_id } = req.query;
+    const { property_id, archived } = req.query;
 
     let query = supabase
       .from('units')
       .select('*')
+      .eq('archived', archived === 'true')
       .order('created_at', { ascending: false });
 
     if (property_id) query = query.eq('property_id', property_id);
@@ -103,20 +104,47 @@ const updateUnit = async (req, res) => {
   }
 };
 
-// DELETE /api/units/:id (admin only)
+// DELETE /api/units/:id (admin only) — archives instead of destroying
 const deleteUnit = async (req, res) => {
   try {
     const { error } = await supabase
       .from('units')
-      .delete()
+      .update({ archived: true, updated_at: new Date() })
       .eq('id', req.params.id);
 
     if (error) throw error;
-    res.json({ message: 'Unit deleted.' });
+    res.json({ message: 'Unit archived.' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };
 
-module.exports = { getUnits, createUnit, updateUnit, deleteUnit };
+// PATCH /api/units/:id/restore (admin only)
+const restoreUnit = async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('units')
+      .update({ archived: false, updated_at: new Date() })
+      .eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ message: 'Unit restored.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+// DELETE /api/units/:id/permanent (admin only) — the real, unrecoverable delete
+const permanentlyDeleteUnit = async (req, res) => {
+  try {
+    const { error } = await supabase.from('units').delete().eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ message: 'Unit permanently deleted.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getUnits, createUnit, updateUnit, deleteUnit, restoreUnit, permanentlyDeleteUnit };

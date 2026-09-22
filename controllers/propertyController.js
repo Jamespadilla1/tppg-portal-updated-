@@ -4,11 +4,12 @@ const uploadToStorage = require('../utils/uploadToStorage');
 // GET /api/properties
 const getProperties = async (req, res) => {
   try {
-    const { status, developer_id } = req.query;
+    const { status, developer_id, archived } = req.query;
 
     let query = supabase
       .from('properties')
       .select('*')
+      .eq('archived', archived === 'true')
       .order('created_at', { ascending: false });
 
     if (status) query = query.eq('status', status);
@@ -91,20 +92,54 @@ const updateProperty = async (req, res) => {
   }
 };
 
-// DELETE /api/properties/:id (admin only)
+// DELETE /api/properties/:id (admin only) — archives the property and its units instead of destroying them
 const deleteProperty = async (req, res) => {
   try {
     const { error } = await supabase
       .from('properties')
-      .delete()
+      .update({ archived: true, updated_at: new Date() })
       .eq('id', req.params.id);
-
     if (error) throw error;
-    res.json({ message: 'Property deleted.' });
+
+    const { error: unitsErr } = await supabase
+      .from('units')
+      .update({ archived: true, updated_at: new Date() })
+      .eq('property_id', req.params.id);
+    if (unitsErr) console.error('Failed to cascade-archive units:', unitsErr);
+
+    res.json({ message: 'Property archived.' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error.' });
   }
 };
 
-module.exports = { getProperties, createProperty, updateProperty, deleteProperty };
+// PATCH /api/properties/:id/restore (admin only) — restores the property only, not its units
+// (units are restored individually, since some may have been archived separately/intentionally)
+const restoreProperty = async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('properties')
+      .update({ archived: false, updated_at: new Date() })
+      .eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ message: 'Property restored.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+// DELETE /api/properties/:id/permanent (admin only) — the real, unrecoverable delete
+const permanentlyDeleteProperty = async (req, res) => {
+  try {
+    const { error } = await supabase.from('properties').delete().eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ message: 'Property permanently deleted.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getProperties, createProperty, updateProperty, deleteProperty, restoreProperty, permanentlyDeleteProperty };
