@@ -78,10 +78,66 @@ async function fetchTeamFor(id, role) {
   return { salesManagers: [], teamLeaders: [], agents: [] };
 }
 
-// GET /api/my-team — the logged-in Unit Manager / Sales Manager / Team Leader's own downward team
+// For an Agent: they have no downward team (they're the base rank), so "their team" means something
+// different — who they report to (their chain up through TL/SM/UM), and their peers (other agents
+// who report to that same immediate manager).
+async function fetchAgentTeamView(agentId) {
+  const { data: me, error: meErr } = await supabase
+    .from('agents')
+    .select('id, name, email, team_leader_id, sales_manager_id, unit_manager_id')
+    .eq('id', agentId)
+    .single();
+  if (meErr || !me) throw meErr || new Error('Agent not found.');
+
+  let teamLeader = null, salesManager = null, unitManager = null;
+  if (me.team_leader_id) {
+    const { data } = await supabase.from('team_leaders').select('id, name, email, phone, tl_id, sales_manager_id, unit_manager_id').eq('id', me.team_leader_id).single();
+    teamLeader = data || null;
+    if (teamLeader?.sales_manager_id) {
+      const { data: sm } = await supabase.from('sales_managers').select('id, name, email, phone, sm_id, unit_manager_id').eq('id', teamLeader.sales_manager_id).single();
+      salesManager = sm || null;
+    }
+    if (teamLeader?.unit_manager_id) {
+      const { data: um } = await supabase.from('unit_managers').select('id, name, email, phone, um_id').eq('id', teamLeader.unit_manager_id).single();
+      unitManager = um || null;
+    }
+  } else if (me.sales_manager_id) {
+    const { data: sm } = await supabase.from('sales_managers').select('id, name, email, phone, sm_id, unit_manager_id').eq('id', me.sales_manager_id).single();
+    salesManager = sm || null;
+    if (salesManager?.unit_manager_id) {
+      const { data: um } = await supabase.from('unit_managers').select('id, name, email, phone, um_id').eq('id', salesManager.unit_manager_id).single();
+      unitManager = um || null;
+    }
+  } else if (me.unit_manager_id) {
+    const { data: um } = await supabase.from('unit_managers').select('id, name, email, phone, um_id').eq('id', me.unit_manager_id).single();
+    unitManager = um || null;
+  }
+
+  // Peers: other approved agents sharing the same immediate manager
+  let peers = [];
+  if (me.team_leader_id) {
+    const { data } = await supabase.from('agents').select('id, name, email, phone, agent_id, status').eq('team_leader_id', me.team_leader_id).eq('status', 'approved').neq('id', agentId);
+    peers = data || [];
+  } else if (me.sales_manager_id) {
+    const { data } = await supabase.from('agents').select('id, name, email, phone, agent_id, status').eq('sales_manager_id', me.sales_manager_id).eq('status', 'approved').neq('id', agentId);
+    peers = data || [];
+  } else if (me.unit_manager_id) {
+    const { data } = await supabase.from('agents').select('id, name, email, phone, agent_id, status').eq('unit_manager_id', me.unit_manager_id).eq('status', 'approved').neq('id', agentId);
+    peers = data || [];
+  }
+
+  return { reportsTo: { teamLeader, salesManager, unitManager }, peers };
+}
+
+// GET /api/my-team — the logged-in Unit Manager / Sales Manager / Team Leader's own downward team,
+// or (for an Agent) their reporting chain + peers
 const getMyTeam = async (req, res) => {
   try {
     const { id, role } = req.user;
+    if (role === 'agent') {
+      const result = await fetchAgentTeamView(id);
+      return res.json(result);
+    }
     if (!['unit_manager', 'sales_manager', 'team_leader'].includes(role)) {
       return res.status(403).json({ message: 'This account type has no team view.' });
     }

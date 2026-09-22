@@ -75,7 +75,7 @@
   </div>
   <nav class="flex-1 px-3 py-4 space-y-0.5">
     <div class="nav-link active" onclick="showSection('overview',this)"><span class="dot"></span> Dashboard</div>
-    <div class="nav-link" onclick="showSection('team',this)"><span class="dot"></span> My Team</div>
+    <div class="nav-link" onclick="showSection('team',this)"><span class="dot"></span> Team</div>
     <div class="nav-link" onclick="showSection('properties',this)"><span class="dot"></span> Properties</div>
     <div class="nav-link" onclick="showSection('commission',this)"><span class="dot"></span> Commission</div>
     <div class="nav-link" onclick="showSection('sales',this)"><span class="dot"></span> Sales &amp; Buyers</div>
@@ -138,8 +138,15 @@
 
     <!-- MY TEAM -->
     <div id="sec-team" class="section space-y-4">
-      <button id="teamBackBtn" onclick="teamGoBack()" class="hidden text-xs text-gray-400 hover:text-white flex items-center gap-1">← Back</button>
-      <div id="teamChart"></div>
+      <div id="teamReportsToWrap" class="card p-4">
+        <h3 class="font-semibold text-sm mb-3">Reports To</h3>
+        <div id="teamReportsTo" class="flex flex-wrap gap-3"></div>
+      </div>
+      <div class="card p-4">
+        <h3 class="font-semibold text-sm mb-1">Teammates</h3>
+        <p id="teamPeersSubtitle" class="text-xs text-gray-500 mb-3"></p>
+        <div id="teamPeersGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+      </div>
     </div>
 
     <!-- PROPERTIES (view-only) -->
@@ -388,25 +395,17 @@ document.getElementById('sidebarName').textContent = name || '—';
 document.getElementById('sidebarRole2').textContent = (ROLE_LABELS[role] || '—') + (localStorage.getItem('personId') ? ' · ' + localStorage.getItem('personId') : '');
 document.getElementById('sidebarInitials').textContent = (name || '?')[0].toUpperCase();
 
-// ── REPORTS TO badge (Sales Manager / Team Leader: who they report up to) ──
+// ── REPORTS TO badge (who this agent reports up to) ──
 async function renderReportsToBadge(){
-  const myUMId = localStorage.getItem('unitManagerId');
-  const mySMId = localStorage.getItem('salesManagerId');
   const badge = document.getElementById('sidebarReportsTo');
-  const parts = [];
   try {
-    if(role==='team_leader' && mySMId){
-      const res = await fetch('/api/sales-managers', { headers: { 'Authorization': 'Bearer ' + token } });
-      const list = await res.json();
-      const sm = list.find(s=>s.id===mySMId);
-      if(sm) parts.push(`${sm.name} (Sales Manager)`);
-    }
-    if(myUMId){
-      const res = await fetch('/api/unit-managers', { headers: { 'Authorization': 'Bearer ' + token } });
-      const list = await res.json();
-      const um = list.find(u=>u.id===myUMId);
-      if(um) parts.push(`${um.name} (Unit Manager)`);
-    }
+    const res = await fetch('/api/my-team', { headers: { 'Authorization': 'Bearer ' + token } });
+    const data = await res.json();
+    const { teamLeader, salesManager, unitManager } = data.reportsTo || {};
+    const parts = [];
+    if(teamLeader) parts.push(`${teamLeader.name} (Team Leader)`);
+    if(salesManager) parts.push(`${salesManager.name} (Sales Manager)`);
+    if(unitManager) parts.push(`${unitManager.name} (Unit Manager)`);
     if(parts.length){
       badge.textContent = 'Reports to: ' + parts.join(' · ');
       badge.classList.remove('hidden');
@@ -421,10 +420,10 @@ window.showSection = (id, linkEl) => {
   document.getElementById('sec-'+id).classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
   linkEl.classList.add('active');
-  const TITLES = { overview:'Dashboard', team:'My Team', properties:'Properties', commission:'Commission', sales:'Sales & Buyers', compute:'Computation Tool', reports:'Reports & Analytics', profile:'My Profile' };
+  const TITLES = { overview:'Dashboard', team:'Team', properties:'Properties', commission:'Commission', sales:'Sales & Buyers', compute:'Computation Tool', reports:'Reports & Analytics', profile:'My Profile' };
   document.getElementById('pageTitle').textContent = TITLES[id];
   if(id==='overview') renderOverview();
-  else if(id==='team'){ teamDrillStack=[]; renderTeamChart(); }
+  else if(id==='team') renderAgentTeamView();
   else if(id==='properties') enterPropDevelopers();
   else if(id==='commission') renderCommissionPersonal();
   else if(id==='sales') loadMyClients();
@@ -484,6 +483,11 @@ async function fetchMyTeamData(){
 }
 async function loadMyTeam(){
   const data = await fetchMyTeamData();
+  if(role==='agent'){
+    const peerCount = (data.peers||[]).length;
+    document.getElementById('teamSummary').textContent = `${peerCount + 1} people on your team`;
+    return data;
+  }
   const smCount = (data.salesManagers||[]).length;
   const tlCount = (data.teamLeaders||[]).length;
   const agCount = (data.agents||[]).length;
@@ -494,104 +498,48 @@ async function loadMyTeam(){
   return data;
 }
 
-// ── MY TEAM: org chart drill-down (self as root, drill into subordinates) ──
-let teamDrillStack = []; // {role, id, name} — empty means show self as root
-
-function orgNode(opts){
+// ── TEAM: who this agent reports to, and their teammates under that same manager ──
+function personCard(p, roleLabel){
   return `
-    <div class="card org-node p-3 ${opts.clickable?'cursor-pointer':''}" ${opts.onclick?`onclick="${opts.onclick}"`:''}>
+    <div class="card p-3">
       <div class="flex items-center gap-2 mb-1.5">
-        <div class="w-8 h-8 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-bold text-sm shrink-0">${opts.name[0]}</div>
+        <div class="w-9 h-9 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm shrink-0">${(p.name||'?')[0].toUpperCase()}</div>
         <div class="min-w-0">
-          <p class="font-semibold text-xs truncate">${opts.name}</p>
-          <p class="text-[10px] text-gray-500 truncate">${opts.email||''}</p>
+          <p class="font-semibold text-sm truncate">${p.name}</p>
+          <p class="text-xs text-gray-500 truncate">${p.email||''}</p>
         </div>
       </div>
-      <span class="badge badge-blue text-[10px] inline-block">${opts.roleLabel}</span>
-      ${opts.subLabel ? `<p class="text-[10px] text-gray-500 border-t border-gray-200 pt-1.5 mt-1.5 text-center">${opts.subLabel}</p>` : ''}
+      <span class="badge badge-blue text-xs">${roleLabel}</span>
     </div>`;
 }
-function animateOrgIn(){
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    document.querySelectorAll('.org-root, .org-branch').forEach(el => el.classList.add('org-in'));
-  }));
-}
-
-async function renderTeamChart(){
-  const chart = document.getElementById('teamChart');
-  const backBtn = document.getElementById('teamBackBtn');
-
-  if(!teamDrillStack.length){
-    backBtn.classList.add('hidden');
-    const rootRole = role; // unit_manager | sales_manager | team_leader
-    const rootData = await fetchMyTeamData();
-    const rootLabel = ROLE_LABELS[rootRole];
-    const smCount = (rootData.salesManagers||[]).length;
-    const tlCount = (rootData.teamLeaders||[]).length;
-    const agCount = (rootData.agents||[]).length;
-    const subParts = [];
-    if(rootRole==='unit_manager') subParts.push(`${smCount} Sales Mgrs`, `${tlCount} Team Leads`, `${agCount} Agents`);
-    else if(rootRole==='sales_manager') subParts.push(`${tlCount} Team Leads`, `${agCount} Agents`);
-    else subParts.push(`${agCount} Agents`);
-
-    const rootOpts = { name, email: localStorage.getItem('email'), roleLabel: rootLabel, subLabel: subParts.join(' · ') };
-    const directSM = (rootData.salesManagers||[]).map(sm => ({ name: sm.name, email: sm.email, roleLabel:'Sales Manager', clickable:true, onclick:`teamDrillInto('sales_manager','${sm.id}','${sm.name.replace(/'/g,"\\'")}')` }));
-    const directTLOnly = rootRole==='unit_manager'
-      ? (rootData.teamLeaders||[]).filter(tl=>!tl.sales_manager_id).map(tl => ({ name: tl.name, email: tl.email, roleLabel:'Team Leader', clickable:true, onclick:`teamDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` }))
-      : rootRole==='sales_manager'
-      ? (rootData.teamLeaders||[]).map(tl => ({ name: tl.name, email: tl.email, roleLabel:'Team Leader', clickable:true, onclick:`teamDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` }))
-      : [];
-    const directAgentsOnly = rootRole==='team_leader'
-      ? (rootData.agents||[]).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:false }))
-      : (rootData.agents||[]).filter(a => (rootRole==='unit_manager' && !a.team_leader_id && !a.sales_manager_id) || (rootRole==='sales_manager' && !a.team_leader_id)).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:false }));
-
-    const children = [...directSM, ...directTLOnly, ...directAgentsOnly];
-    chart.innerHTML = `
-      <div class="org-wrap">
-        <div class="org-root">${orgNode(rootOpts)}</div>
-        ${children.length ? `
-          <div class="org-vline"></div>
-          <div class="org-children-row">${children.map(c=>`<div class="org-branch">${orgNode(c)}</div>`).join('')}</div>
-        ` : `<p class="text-center text-gray-500 text-xs py-6">Nobody under you yet.</p>`}
-      </div>`;
-    animateOrgIn();
-    return;
-  }
-
-  backBtn.classList.remove('hidden');
-  const current = teamDrillStack[teamDrillStack.length-1];
+async function renderAgentTeamView(){
+  const wrap = document.getElementById('teamReportsTo');
+  const peersGrid = document.getElementById('teamPeersGrid');
+  const peersSubtitle = document.getElementById('teamPeersSubtitle');
+  wrap.innerHTML = `<p class="text-xs text-gray-400">Loading…</p>`;
+  peersGrid.innerHTML = '';
+  peersSubtitle.textContent = '';
   try {
-    const res = await fetch(`/api/my-team/of/${current.role}/${current.id}`, { headers: { 'Authorization': 'Bearer ' + token } });
+    const res = await fetch('/api/my-team', { headers: { 'Authorization': 'Bearer ' + token } });
     const data = await res.json();
-    const rootOpts = { name: current.name, roleLabel: ROLE_LABELS[current.role] || current.role, subLabel: '' };
-    let children = [];
-    if(current.role==='sales_manager'){
-      children = [
-        ...(data.teamLeaders||[]).map(tl => ({ name: tl.name, email: tl.email, roleLabel:'Team Leader', clickable:true, onclick:`teamDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` })),
-        ...(data.agents||[]).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:false })),
-      ];
-    } else if(current.role==='team_leader'){
-      children = (data.agents||[]).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:false }));
-    }
-    chart.innerHTML = `
-      <div class="org-wrap">
-        <div class="org-root">${orgNode(rootOpts)}</div>
-        ${children.length ? `
-          <div class="org-vline"></div>
-          <div class="org-children-row">${children.map(c=>`<div class="org-branch">${orgNode(c)}</div>`).join('')}</div>
-        ` : `<p class="text-center text-gray-500 text-xs py-6">Nobody under this person yet.</p>`}
-      </div>`;
-    animateOrgIn();
-  } catch(err) { console.error('Error loading subordinate team:', err); }
+    const { teamLeader, salesManager, unitManager } = data.reportsTo || {};
+    const chain = [];
+    if(teamLeader) chain.push(personCard(teamLeader, 'Team Leader'));
+    if(salesManager) chain.push(personCard(salesManager, 'Sales Manager'));
+    if(unitManager) chain.push(personCard(unitManager, 'Unit Manager'));
+    wrap.innerHTML = chain.join('') || `<p class="text-xs text-gray-500">You're not currently assigned to report to anyone.</p>`;
+
+    const peers = data.peers || [];
+    const immediateManager = teamLeader ? teamLeader.name : (salesManager ? salesManager.name : (unitManager ? unitManager.name : null));
+    peersSubtitle.textContent = immediateManager
+      ? `Other agents who report to ${immediateManager}, same as you.`
+      : `Agents you share a manager with.`;
+    peersGrid.innerHTML = peers.map(p => personCard(p, 'Agent')).join('') || `<p class="col-span-full text-xs text-gray-500 py-4">No other agents on your team yet.</p>`;
+  } catch(err) {
+    console.error('Error loading team:', err);
+    wrap.innerHTML = `<p class="text-xs text-red-500">Failed to load your team.</p>`;
+  }
 }
-window.teamDrillInto = (role2, id, personName) => {
-  teamDrillStack.push({ role: role2, id, name: personName });
-  renderTeamChart();
-};
-window.teamGoBack = () => {
-  teamDrillStack.pop();
-  renderTeamChart();
-};
 
 // ── PERSONAL CLIENTS/BUYERS (shared data used by Overview, Sales, Commission) ──
 let myUnitsCache = [], myBuyersWithUnit = [];
@@ -623,9 +571,7 @@ async function renderOverview(){
     const totalValue = buyers.reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
     const availableUnits = myUnitsCache.filter(u=>(u.units_left??1)>0).length;
 
-    const teamSize = role==='unit_manager' ? (teamData.salesManagers.length + teamData.teamLeaders.length + teamData.agents.length)
-      : role==='sales_manager' ? (teamData.teamLeaders.length + teamData.agents.length)
-      : teamData.agents.length;
+    const teamSize = (teamData.peers ? teamData.peers.length + 1 : 0);
 
     document.getElementById('ovCards').innerHTML = [
       ['Team Size', teamSize, ''],
