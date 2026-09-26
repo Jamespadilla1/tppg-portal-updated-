@@ -344,8 +344,20 @@
       <div><label class="text-xs text-gray-500 mb-1 block">Email</label><input id="bEmail" type="email" class="field"></div>
       <div><label class="text-xs text-gray-500 mb-1 block">Phone</label><input id="bPhone" type="text" class="field"></div>
       <div><label class="text-xs text-gray-500 mb-1 block">Address</label><input id="bAddr" type="text" class="field"></div>
-      <div><label class="text-xs text-gray-500 mb-1 block">Unit Purchased</label><input id="bManualUnit" type="text" class="field" placeholder="e.g. Olive"></div>
-      <div><label class="text-xs text-gray-500 mb-1 block">Project</label><input id="bManualProp" type="text" class="field" placeholder="e.g. Parc Regency"></div>
+      <div class="flex gap-2">
+        <button type="button" id="bModeManualBtn" onclick="setBuyerUnitMode('manual')" class="flex-1 text-xs py-1.5 rounded-lg border border-orange-400 bg-orange-50 text-orange-600 font-medium">Manual Entry</button>
+        <button type="button" id="bModeListedBtn" onclick="setBuyerUnitMode('listed')" class="flex-1 text-xs py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:text-gray-700">Select Listed Unit</button>
+      </div>
+      <div id="bManualFields" class="space-y-3">
+        <div><label class="text-xs text-gray-500 mb-1 block">Unit Purchased</label><input id="bManualUnit" type="text" class="field" placeholder="e.g. Olive"></div>
+        <div><label class="text-xs text-gray-500 mb-1 block">Project</label><input id="bManualProp" type="text" class="field" placeholder="e.g. Parc Regency"></div>
+      </div>
+      <div id="bListedFields" class="hidden space-y-3">
+        <div><label class="text-xs text-gray-500 mb-1 block">Developer</label><select id="bDeveloper" class="field" onchange="onBDeveloperChange()"><option value="">— Select Developer —</option></select></div>
+        <div><label class="text-xs text-gray-500 mb-1 block">Project</label><select id="bProperty" class="field" onchange="onBPropertyChange()"><option value="">— Select Project —</option></select></div>
+        <div><label class="text-xs text-gray-500 mb-1 block">Unit</label><select id="bUnit" class="field" onchange="onBUnitChange()"><option value="">— Select Unit —</option></select></div>
+        <p id="bUnitStockNote" class="text-xs text-gray-500"></p>
+      </div>
       <div><label class="text-xs text-gray-500 mb-1 block">Reservation Date</label><input id="bReservationDate" type="date" class="field"></div>
       <div><label class="text-xs text-gray-500 mb-1 block">Total Contract Price (₱)</label><input id="bManualTCP" type="text" inputmode="numeric" class="field" placeholder="3,500,000" oninput="formatMoneyInput(this)"></div>
       <div><label class="text-xs text-gray-500 mb-1 block">Net Selling Price (if available) (₱)</label><input id="bNetSellingPrice" type="text" inputmode="numeric" class="field" placeholder="3,300,000" oninput="formatMoneyInput(this)"></div>
@@ -1171,11 +1183,72 @@ window.onPaymentTermsChange = () => {
   if(!isMonthly) document.getElementById('bDpMonths').value = '';
 };
 
+// ── Optional: link Add Client to a real listed unit instead of typing it manually ──
+let buyerUnitMode = 'manual';
+let bDevsCache = [], bPropsCache = [], bAllUnitsCache = [];
+window.setBuyerUnitMode = async (mode) => {
+  buyerUnitMode = mode;
+  document.getElementById('bManualFields').classList.toggle('hidden', mode!=='manual');
+  document.getElementById('bListedFields').classList.toggle('hidden', mode!=='listed');
+  const manualBtn = document.getElementById('bModeManualBtn'), listedBtn = document.getElementById('bModeListedBtn');
+  [manualBtn, listedBtn].forEach(b=>{ b.classList.remove('border-orange-400','bg-orange-50','text-orange-600'); b.classList.add('border-gray-200','text-gray-500'); });
+  const activeBtn = mode==='manual' ? manualBtn : listedBtn;
+  activeBtn.classList.add('border-orange-400','bg-orange-50','text-orange-600'); activeBtn.classList.remove('border-gray-200','text-gray-500');
+  if(mode==='manual'){
+    document.getElementById('bDeveloper').value=''; document.getElementById('bProperty').value=''; document.getElementById('bUnit').value='';
+    document.getElementById('bUnitStockNote').textContent='';
+    document.getElementById('bManualTCP').readOnly = false;
+  } else {
+    document.getElementById('bManualUnit').value=''; document.getElementById('bManualProp').value='';
+    if(!bDevsCache.length){
+      const [devsRes, propsRes, unitsRes] = await Promise.all([
+        fetch('/api/developers', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch('/api/properties', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch('/api/units', { headers: { 'Authorization': 'Bearer ' + token } }),
+      ]);
+      bDevsCache = await devsRes.json();
+      bPropsCache = await propsRes.json();
+      bAllUnitsCache = await unitsRes.json();
+      document.getElementById('bDeveloper').innerHTML = `<option value="">— Select Developer —</option>` + bDevsCache.map(d=>`<option value="${d.id}">${d.name}</option>`).join('');
+    }
+  }
+};
+window.onBDeveloperChange = () => {
+  const devId = document.getElementById('bDeveloper').value;
+  const props = devId ? bPropsCache.filter(p=>p.developer_id===devId) : [];
+  document.getElementById('bProperty').innerHTML = `<option value="">— Select Project —</option>` + props.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('bUnit').innerHTML = `<option value="">— Select Unit —</option>`;
+  document.getElementById('bUnitStockNote').textContent = '';
+  document.getElementById('bManualTCP').value = '';
+};
+window.onBPropertyChange = () => {
+  const propId = document.getElementById('bProperty').value;
+  const units = propId ? bAllUnitsCache.filter(u=>u.property_id===propId && (u.units_left??1)>0) : [];
+  document.getElementById('bUnit').innerHTML = `<option value="">— Select Unit —</option>` + units.map(u=>`<option value="${u.id}">${u.unit_name} (${peso(u.tcp)})</option>`).join('') || `<option value="">— No units in stock —</option>`;
+  document.getElementById('bUnitStockNote').textContent = '';
+  document.getElementById('bManualTCP').value = '';
+};
+window.onBUnitChange = () => {
+  const unitId = document.getElementById('bUnit').value;
+  const unit = bAllUnitsCache.find(u=>u.id===unitId);
+  if(unit){
+    document.getElementById('bManualTCP').value = Number(unit.tcp).toLocaleString('en-US');
+    document.getElementById('bManualTCP').readOnly = true;
+    const left = unit.units_left ?? 1;
+    document.getElementById('bUnitStockNote').textContent = `${left} unit${left===1?'':'s'} left before this sale.`;
+  } else {
+    document.getElementById('bManualTCP').value = '';
+    document.getElementById('bManualTCP').readOnly = false;
+    document.getElementById('bUnitStockNote').textContent = '';
+  }
+};
+
 window.saveBuyer = async () => {
   const name2 = document.getElementById('bName').value.trim();
   if(!name2){ document.getElementById('bErr').classList.remove('hidden'); return; }
   document.getElementById('bErr').classList.add('hidden');
   const paymentOption = document.getElementById('bPaymentOption').value.trim();
+  const unitId = buyerUnitMode==='listed' ? document.getElementById('bUnit').value : '';
   try {
     const res = await fetch('/api/buyers', {
       method: 'POST',
@@ -1185,8 +1258,9 @@ window.saveBuyer = async () => {
         email: document.getElementById('bEmail').value.trim(),
         phone: document.getElementById('bPhone').value.trim(),
         address: document.getElementById('bAddr').value.trim(),
-        manual_unit_name: document.getElementById('bManualUnit').value.trim(),
-        manual_property_name: document.getElementById('bManualProp').value.trim(),
+        unit_id: unitId || null,
+        manual_unit_name: buyerUnitMode==='manual' ? document.getElementById('bManualUnit').value.trim() : '',
+        manual_property_name: buyerUnitMode==='manual' ? document.getElementById('bManualProp').value.trim() : '',
         reservation_date: document.getElementById('bReservationDate').value || null,
         manual_tcp: parseMoney(document.getElementById('bManualTCP').value),
         net_selling_price: parseMoney(document.getElementById('bNetSellingPrice').value),
@@ -1195,10 +1269,16 @@ window.saveBuyer = async () => {
         booking_requirements_complete: document.getElementById('bBookingComplete').value || null,
       })
     });
-    if(!res.ok) throw new Error('Save failed');
+    if(!res.ok){
+      const errBody = await res.json().catch(()=>({}));
+      alert(errBody.message || 'Failed to save client.');
+      return;
+    }
     closeModal('addBuyerModal');
     ['bName','bEmail','bPhone','bAddr','bManualProp','bManualUnit','bManualTCP','bReservationDate','bNetSellingPrice','bPaymentOption','bDpMonths','bBookingComplete'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('bDpMonthsWrap').classList.add('hidden');
+    setBuyerUnitMode('manual');
+    bDevsCache = []; // force a fresh stock-count refetch next time listed mode is opened
     loadMyClients();
     showToast('Client added successfully!', name2);
   } catch(err) {

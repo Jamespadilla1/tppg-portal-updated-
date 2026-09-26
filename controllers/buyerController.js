@@ -1,6 +1,24 @@
 const supabase = require('../config/db');
 const { fetchTeamFor } = require('./teamViewController');
 
+// Decrement/restore a real unit's "Units Available" count when a sale is linked/unlinked/reversed.
+// Returns { error } on failure so callers can log it without blocking the buyer operation itself —
+// the buyer record is the primary thing being saved; a stock-count hiccup shouldn't lose the sale.
+async function decrementUnitStock(unitId) {
+  const { data: unit, error: fetchErr } = await supabase.from('units').select('units_left').eq('id', unitId).single();
+  if (fetchErr || !unit) return { error: fetchErr || new Error('Unit not found') };
+  const left = unit.units_left ?? 1;
+  const { error } = await supabase.from('units').update({ units_left: Math.max(0, left - 1), updated_at: new Date() }).eq('id', unitId);
+  return { error };
+}
+async function restoreUnitStock(unitId) {
+  const { data: unit, error: fetchErr } = await supabase.from('units').select('units_left').eq('id', unitId).single();
+  if (fetchErr || !unit) return { error: fetchErr || new Error('Unit not found') };
+  const left = unit.units_left ?? 0;
+  const { error } = await supabase.from('units').update({ units_left: left + 1, updated_at: new Date() }).eq('id', unitId);
+  return { error };
+}
+
 // GET /api/buyers — admin sees all; other roles see only buyers they personally input
 const getBuyers = async (req, res) => {
   try {
@@ -96,7 +114,8 @@ const lookupPersonName = async (role, id) => {
 };
 
 // POST /api/buyers — any logged-in role (agent, team_leader, sales_manager, unit_manager, admin) can add a buyer
-// Linking a unit automatically marks that unit as Sold
+// Linking a real listed unit is optional (the person's choice) — when linked, it decrements that
+// unit's "Units Available" count by 1. Refused if the unit is already sold out.
 const createBuyer = async (req, res) => {
   try {
     const { name, email, phone, address, unit_id, manual_property_name, manual_unit_name, manual_tcp, reservation_date, net_selling_price, payment_option, dp_months, booking_requirements_complete } = req.body;
@@ -108,8 +127,10 @@ const createBuyer = async (req, res) => {
     // actually agreed to pay, instead of silently updating to the new price.
     let lockedTcp = unit_id ? null : (manual_tcp || null);
     if (unit_id) {
-      const { data: unitRow } = await supabase.from('units').select('tcp').eq('id', unit_id).single();
-      if (unitRow) lockedTcp = unitRow.tcp;
+      const { data: unitRow } = await supabase.from('units').select('tcp, units_left').eq('id', unit_id).single();
+      if (!unitRow) return res.status(404).json({ message: 'Selected unit not found.' });
+      if ((unitRow.units_left ?? 1) <= 0) return res.status(400).json({ message: 'This unit is sold out — no units left to link a sale to.' });
+      lockedTcp = unitRow.tcp;
     }
 
     const { data: buyer, error } = await supabase
@@ -135,11 +156,8 @@ const createBuyer = async (req, res) => {
     if (error) throw error;
 
     if (unit_id) {
-      const { error: unitErr } = await supabase
-        .from('units')
-        .update({ status: 'Sold', updated_at: new Date() })
-        .eq('id', unit_id);
-      if (unitErr) console.error('Failed to mark unit as Sold:', unitErr);
+      const { error: decErr } = await decrementUnitStock(unit_id);
+      if (decErr) console.error('Failed to decrement unit stock:', decErr);
     }
 
     res.status(201).json(buyer);
@@ -150,7 +168,7 @@ const createBuyer = async (req, res) => {
 };
 
 // PUT /api/buyers/:id — only the original creator or admin can edit
-// If the linked unit changes, the old unit reverts to Available and the new one is marked Sold
+// If the linked unit changes, the old unit's stock is restored and the new one is decremented
 const updateBuyer = async (req, res) => {
   try {
     const { data: existing } = await supabase.from('buyers').select('input_by_id, unit_id').eq('id', req.params.id).single();
@@ -161,10 +179,18 @@ const updateBuyer = async (req, res) => {
 
     const { name, email, phone, address, unit_id, manual_property_name, manual_unit_name, manual_tcp } = req.body;
 
+    const oldUnitId = existing.unit_id;
+    const newUnitId = unit_id || null;
+
     // Same price-locking rule as createBuyer: if this sale is (re)linked to a real unit,
     // snapshot that unit's CURRENT price now rather than leaving it to drift with future edits.
     let lockedTcp = unit_id ? null : (manual_tcp || null);
-    if (unit_id) {
+    if (unit_id && unit_id !== oldUnitId) {
+      const { data: unitRow } = await supabase.from('units').select('tcp, units_left').eq('id', unit_id).single();
+      if (!unitRow) return res.status(404).json({ message: 'Selected unit not found.' });
+      if ((unitRow.units_left ?? 1) <= 0) return res.status(400).json({ message: 'This unit is sold out — no units left to link a sale to.' });
+      lockedTcp = unitRow.tcp;
+    } else if (unit_id) {
       const { data: unitRow } = await supabase.from('units').select('tcp').eq('id', unit_id).single();
       if (unitRow) lockedTcp = unitRow.tcp;
     }
@@ -185,16 +211,14 @@ const updateBuyer = async (req, res) => {
 
     if (error) throw error;
 
-    const oldUnitId = existing.unit_id;
-    const newUnitId = unit_id || null;
     if (oldUnitId !== newUnitId) {
       if (oldUnitId) {
-        const { error: revertErr } = await supabase.from('units').update({ status: 'Available', updated_at: new Date() }).eq('id', oldUnitId);
-        if (revertErr) console.error('Failed to revert old unit to Available:', revertErr);
+        const { error: restoreErr } = await restoreUnitStock(oldUnitId);
+        if (restoreErr) console.error('Failed to restore old unit stock:', restoreErr);
       }
       if (newUnitId) {
-        const { error: soldErr } = await supabase.from('units').update({ status: 'Sold', updated_at: new Date() }).eq('id', newUnitId);
-        if (soldErr) console.error('Failed to mark unit as Sold:', soldErr);
+        const { error: decErr } = await decrementUnitStock(newUnitId);
+        if (decErr) console.error('Failed to decrement new unit stock:', decErr);
       }
     }
 
@@ -232,10 +256,12 @@ const setBuyerOverrides = async (req, res) => {
   }
 };
 
-// DELETE /api/buyers/:id — Admin can archive any client; other roles can only archive their OWN
+// DELETE /api/buyers/:id — Admin can archive any client; other roles can only archive their OWN.
+// If this sale was linked to a real unit, that unit's stock is restored (the slot is free again
+// while this sale is archived) — and re-decremented if the client is later restored.
 const deleteBuyer = async (req, res) => {
   try {
-    const { data: existing } = await supabase.from('buyers').select('input_by_id, input_by_role').eq('id', req.params.id).single();
+    const { data: existing } = await supabase.from('buyers').select('input_by_id, input_by_role, unit_id').eq('id', req.params.id).single();
     if (!existing) return res.status(404).json({ message: 'Not found.' });
     if (req.user.role !== 'admin' && (existing.input_by_id !== req.user.id || existing.input_by_role !== req.user.role)) {
       return res.status(403).json({ message: 'You can only archive clients you added.' });
@@ -243,6 +269,11 @@ const deleteBuyer = async (req, res) => {
 
     const { error } = await supabase.from('buyers').update({ archived: true, updated_at: new Date() }).eq('id', req.params.id);
     if (error) throw error;
+
+    if (existing.unit_id) {
+      const { error: restoreErr } = await restoreUnitStock(existing.unit_id);
+      if (restoreErr) console.error('Failed to restore unit stock on archive:', restoreErr);
+    }
 
     res.json({ message: 'Client archived.' });
   } catch (err) {
@@ -254,13 +285,19 @@ const deleteBuyer = async (req, res) => {
 // PATCH /api/buyers/:id/restore — same ownership rule as archiving
 const restoreBuyer = async (req, res) => {
   try {
-    const { data: existing } = await supabase.from('buyers').select('input_by_id, input_by_role').eq('id', req.params.id).single();
+    const { data: existing } = await supabase.from('buyers').select('input_by_id, input_by_role, unit_id').eq('id', req.params.id).single();
     if (!existing) return res.status(404).json({ message: 'Not found.' });
     if (req.user.role !== 'admin' && (existing.input_by_id !== req.user.id || existing.input_by_role !== req.user.role)) {
       return res.status(403).json({ message: 'You can only restore clients you added.' });
     }
     const { error } = await supabase.from('buyers').update({ archived: false, updated_at: new Date() }).eq('id', req.params.id);
     if (error) throw error;
+
+    if (existing.unit_id) {
+      const { error: decErr } = await decrementUnitStock(existing.unit_id);
+      if (decErr) console.error('Failed to decrement unit stock on restore:', decErr);
+    }
+
     res.json({ message: 'Client restored.' });
   } catch (err) {
     console.error(err);
@@ -285,7 +322,7 @@ const permanentlyDeleteBuyer = async (req, res) => {
 // commission and reports — typically used when a buyer stops paying their downpayment.
 const cancelBuyer = async (req, res) => {
   try {
-    const { data: existing } = await supabase.from('buyers').select('input_by_id, input_by_role, cancelled').eq('id', req.params.id).single();
+    const { data: existing } = await supabase.from('buyers').select('input_by_id, input_by_role, cancelled, unit_id').eq('id', req.params.id).single();
     if (!existing) return res.status(404).json({ message: 'Not found.' });
     if (existing.cancelled) return res.status(400).json({ message: 'This sale is already cancelled.' });
     if (req.user.role !== 'admin' && (existing.input_by_id !== req.user.id || existing.input_by_role !== req.user.role)) {
@@ -293,6 +330,12 @@ const cancelBuyer = async (req, res) => {
     }
     const { error } = await supabase.from('buyers').update({ cancelled: true, updated_at: new Date() }).eq('id', req.params.id);
     if (error) throw error;
+
+    if (existing.unit_id) {
+      const { error: restoreErr } = await restoreUnitStock(existing.unit_id);
+      if (restoreErr) console.error('Failed to restore unit stock on cancel:', restoreErr);
+    }
+
     res.json({ message: 'Sale cancelled.' });
   } catch (err) {
     console.error(err);
