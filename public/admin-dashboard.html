@@ -4384,19 +4384,28 @@ window.saveMonthlyRelease = async () => {
     if(mrMode === 'schedule'){
       const monthly_amount = parseMoney(document.getElementById('mrMonthlyAmount').value);
       const tranche_months = parseInt(document.getElementById('mrMonths').value, 10) || 0;
-      const release_date = document.getElementById('mrStartDate').value;
-      if(!monthly_amount || !tranche_months || !release_date){
+      const startDateStr = document.getElementById('mrStartDate').value;
+      if(!monthly_amount || !tranche_months || !startDateStr){
         document.getElementById('mrErr').textContent = 'Monthly amount, number of months, and start date are all required.';
         document.getElementById('mrErr').classList.remove('hidden');
         return;
       }
-      const amount = monthly_amount * tranche_months;
-      const res = await fetch('/api/commission-receivables', {
+      // Auto-generate the full schedule: one dated row per month, each for the monthly amount —
+      // instead of a single lump-sum entry, so every individual release actually shows up on its
+      // own date (useful for tracking which months have actually come in vs. are still pending).
+      const startDate = new Date(startDateStr + 'T00:00:00');
+      const scheduleRows = [];
+      for(let i=0; i<tranche_months; i++){
+        const d = new Date(startDate);
+        d.setMonth(d.getMonth() + i);
+        scheduleRows.push({ date: d.toISOString().slice(0,10), amount: monthly_amount });
+      }
+      const results = await Promise.all(scheduleRows.map(r => fetch('/api/commission-receivables', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ buyer_id, amount, release_date, release_type: 'Monthly Tranche', monthly_amount, tranche_months }),
-      });
-      if(!res.ok) throw new Error('Save failed');
+        body: JSON.stringify({ buyer_id, amount: r.amount, release_date: r.date, release_type: 'Monthly Down Payment' }),
+      })));
+      if(results.some(r=>!r.ok)) throw new Error('Save failed');
     } else {
       const rows = [...document.querySelectorAll('#mrRowsList > div')].map(div => ({
         date: div.querySelector('.mr-row-date').value,
