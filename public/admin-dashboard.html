@@ -3665,7 +3665,7 @@ function openPersonInfo(role, id){
   }
   document.getElementById('piReportsTo').textContent = reportsTo;
 
-  const personalBuyers = (sbBuyersCache||[]).filter(b=>b.input_by_role===role && b.input_by_id===id);
+  const personalBuyers = (sbBuyersCache||[]).filter(b=>b.input_by_role===role && b.input_by_id===id && !b.cancelled);
   document.getElementById('piSalesCount').textContent = personalBuyers.length;
   const totalVal = personalBuyers.reduce((s,b)=>{
     if(b.net_selling_price) return s + Number(b.net_selling_price);
@@ -3680,7 +3680,11 @@ function openPersonInfo(role, id){
 
 function personalSalesValue(role, id){
   return sbBuyersCache.filter(b=>b.input_by_role===role && b.input_by_id===id && !b.cancelled)
-    .reduce((s,b)=>{ if(b.manual_tcp) return s + Number(b.manual_tcp); const u = sbUnitsCache.find(x=>x.id===b.unit_id); return s + (u ? Number(u.tcp)||0 : 0); }, 0);
+    .reduce((s,b)=>{
+      if(b.net_selling_price) return s + Number(b.net_selling_price);
+      if(b.manual_tcp) return s + Number(b.manual_tcp);
+      const u = sbUnitsCache.find(x=>x.id===b.unit_id); return s + (u ? Number(u.tcp)||0 : 0);
+    }, 0);
 }
 function personalClientCount(role, id){
   return sbBuyersCache.filter(b=>b.input_by_role===role && b.input_by_id===id && !b.cancelled).length;
@@ -3868,8 +3872,13 @@ async function renderBuyers(){
       if(b.unit) return Number(b.unit.tcp) || 0;
       return 0;
     }
-    const totalValue = withUnit.reduce((s,b)=>s + saleTCP(b), 0);
-    const best = withUnit.length ? withUnit.reduce((a,b)=> (saleTCP(b) > saleTCP(a)) ? b : a) : null;
+    function countedSaleValue(b){
+      if(b.cancelled) return 0;
+      if(b.net_selling_price) return Number(b.net_selling_price) || 0;
+      return saleTCP(b);
+    }
+    const totalValue = withUnit.reduce((s,b)=>s + countedSaleValue(b), 0);
+    const best = withUnit.length ? withUnit.reduce((a,b)=> (countedSaleValue(b) > countedSaleValue(a)) ? b : a) : null;
 
     document.getElementById('sbClientCount').textContent = withUnit.length;
     document.getElementById('sbTotalValue').textContent  = peso(totalValue);

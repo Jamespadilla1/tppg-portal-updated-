@@ -582,7 +582,7 @@ async function renderOverview(){
   try {
     const teamData = await loadMyTeam();
     const { buyers } = await fetchMyClientsData();
-    const totalValue = buyers.filter(b=>!b.cancelled).reduce((s,b)=>s + (b.unit ? Number(b.unit.tcp)||0 : 0), 0);
+    const totalValue = buyers.reduce((s,b)=>s + saleTCP(b), 0); // same rule as the Commission tab: Net Selling Price first, cancelled excluded
     const availableUnits = myUnitsCache.filter(u=>(u.units_left??1)>0).length;
 
     const teamSize = (teamData.peers ? teamData.peers.length + 1 : 0);
@@ -1145,27 +1145,29 @@ window.toggleShowArchived = function(){
   document.getElementById('clientsTitle').textContent = showingArchivedClients ? 'Archived Clients' : 'My Sales & Buyers';
   loadMyClients();
 };
-async function archiveClient(id){
+window.archiveClient = async function(id){
   if(!confirm('Archive this client? You can restore it later from "Show Archived".')) return;
   try {
-    await fetch(`/api/buyers/${id}`, { method:'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+    const res = await fetch(`/api/buyers/${id}`, { method:'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+    if(!res.ok){ const err = await res.json().catch(()=>({})); alert(err.message || 'Failed to archive client.'); return; }
     loadMyClients();
   } catch(err) { console.error('Error archiving client:', err); alert('Failed to archive client.'); }
-}
-async function restoreClient(id){
+};
+window.restoreClient = async function(id){
   try {
-    await fetch(`/api/buyers/${id}/restore`, { method:'PATCH', headers: { 'Authorization': 'Bearer ' + token } });
+    const res = await fetch(`/api/buyers/${id}/restore`, { method:'PATCH', headers: { 'Authorization': 'Bearer ' + token } });
+    if(!res.ok){ const err = await res.json().catch(()=>({})); alert(err.message || 'Failed to restore client.'); return; }
     loadMyClients();
   } catch(err) { console.error('Error restoring client:', err); alert('Failed to restore client.'); }
-}
-async function cancelClient(id){
+};
+window.cancelClient = async function(id){
   if(!confirm('Cancel this sale? This is FINAL and cannot be undone — it stays visible but is excluded from commission and reports.')) return;
   try {
     const res = await fetch(`/api/buyers/${id}/cancel`, { method:'PATCH', headers: { 'Authorization': 'Bearer ' + token } });
-    if(!res.ok){ const err = await res.json(); alert(err.message || 'Failed to cancel sale.'); return; }
+    if(!res.ok){ const err = await res.json().catch(()=>({})); alert(err.message || 'Failed to cancel sale.'); return; }
     loadMyClients();
   } catch(err) { console.error('Error cancelling sale:', err); alert('Failed to cancel sale.'); }
-}
+};
 async function loadMyClients(){
   try {
     const [buyersRes, unitsRes, propsRes, devsRes] = await Promise.all([
