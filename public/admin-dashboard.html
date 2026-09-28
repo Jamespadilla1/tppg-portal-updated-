@@ -4393,12 +4393,16 @@ window.saveMonthlyRelease = async () => {
       // Auto-generate the full schedule: one dated row per month, each for the monthly amount —
       // instead of a single lump-sum entry, so every individual release actually shows up on its
       // own date (useful for tracking which months have actually come in vs. are still pending).
-      const startDate = new Date(startDateStr + 'T00:00:00');
+      const [startY, startM, startD] = startDateStr.split('-').map(Number);
       const scheduleRows = [];
       for(let i=0; i<tranche_months; i++){
-        const d = new Date(startDate);
-        d.setMonth(d.getMonth() + i);
-        scheduleRows.push({ date: d.toISOString().slice(0,10), amount: monthly_amount });
+        const monthIndex = (startM - 1) + i;
+        const year = startY + Math.floor(monthIndex / 12);
+        const month = monthIndex % 12;
+        const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+        const day = Math.min(startD, lastDayOfMonth); // e.g. a Jan 31 start becomes Feb 28/29, not Mar 3
+        const dateStr = `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        scheduleRows.push({ date: dateStr, amount: monthly_amount });
       }
       const results = await Promise.all(scheduleRows.map(r => fetch('/api/commission-receivables', {
         method: 'POST',
