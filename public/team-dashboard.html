@@ -55,6 +55,12 @@
   .rel-chev{display:inline-block;transition:transform .15s}
   details[open] .rel-chev{transform:rotate(180deg)}
   .badge-blue{background:rgba(59,130,246,.1);color:#2563eb}
+  .badge-purple{background:rgba(168,85,247,.1);color:#9333ea}
+  .badge-orange{background:rgba(249,115,22,.12);color:#ea580c}
+  .promo-bell{position:relative;background:transparent;border:1px solid #e5e7eb;border-radius:10px;padding:6px 9px;color:#6b7280;cursor:pointer;display:inline-flex;align-items:center}
+  .promo-bell:hover{background:rgba(0,0,0,.045);color:#111827}
+  .promo-bell .cnt{position:absolute;top:-7px;right:-7px;background:#f97316;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+  .promo-nav-count{margin-left:auto;background:#f97316;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
   .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(17,24,39,.4);z-index:50;align-items:center;justify-content:center;padding:1rem}
   .modal-backdrop.open{display:flex}
   .modal-box{background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;width:100%;max-width:480px;padding:28px;position:relative;max-height:92vh;overflow-y:auto;color:#111827}
@@ -85,6 +91,7 @@
     <div class="nav-link" onclick="showSection('sales',this)"><span class="dot"></span> Sales &amp; Buyers</div>
     <div class="nav-link" onclick="showSection('compute',this)"><span class="dot"></span> Computation Tool</div>
     <div class="nav-link" onclick="showSection('reports',this)"><span class="dot"></span> Reports &amp; Analytics</div>
+    <div id="navPromos" class="nav-link" onclick="showSection('promos',this)"><span class="dot"></span> Promotions <span id="promoNavCount" class="promo-nav-count hidden">0</span></div>
     <div class="nav-link" onclick="showSection('profile',this)"><span class="dot"></span> My Profile</div>
   </nav>
   <div class="mx-3 mb-3 px-3 py-2 rounded-lg bg-yellow-500/8 border border-yellow-500/20 text-yellow-400 text-xs">👁 View-only access</div>
@@ -104,7 +111,13 @@
 <div id="main" class="ml-60 min-h-screen flex flex-col">
   <header class="sticky top-0 z-30 bg-gray-950/90 backdrop-blur border-b border-white/8 px-8 py-4 flex items-center justify-between">
     <h1 class="font-bold text-lg" id="pageTitle">Dashboard</h1>
-    <p class="text-xs text-gray-500" id="teamSummary"></p>
+    <div class="flex items-center gap-4">
+      <p class="text-xs text-gray-500" id="teamSummary"></p>
+      <button id="promoBell" class="promo-bell" onclick="showSection('promos', document.getElementById('navPromos'))" aria-label="Promotions and updates" title="Promotions and updates">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        <span id="promoBellCount" class="cnt hidden">0</span>
+      </button>
+    </div>
   </header>
 
   <main class="flex-1 p-6 space-y-6">
@@ -309,6 +322,12 @@
       </div>
     </div>
 
+    <!-- PROMOTIONS -->
+    <div id="sec-promos" class="section space-y-4">
+      <p class="text-xs text-gray-500 max-w-2xl">Current offers and incentives from the company. New ones show a number on the bell until you've looked at them.</p>
+      <div id="promoList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </div>
+
     <div id="sec-profile" class="section">
       <div class="max-w-md card p-6 space-y-4">
         <div class="flex items-center gap-4">
@@ -501,14 +520,87 @@ async function renderReportsToBadge(){
   } catch(err) { console.error('Error loading reporting chain:', err); }
 }
 renderReportsToBadge();
+loadPromoBadge();
+setInterval(loadPromoBadge, 5 * 60 * 1000);
 
 // ── SECTION SWITCHING ──
+// ── PROMOTIONS (what Admin has published for the team) ──
+let promoList = [];
+const PROMO_DAY = 86400000, PROMO_HOUR = 3600000, PROMO_MIN = 60000;
+const promoSeenKey = () => 'promosSeenAt_' + (localStorage.getItem('personId') || 'me');
+
+function promoEsc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function promoTimeLeft(ms){
+  if(ms <= 0) return 'Ended';
+  const d = Math.floor(ms / PROMO_DAY), h = Math.floor((ms % PROMO_DAY) / PROMO_HOUR), m = Math.floor((ms % PROMO_HOUR) / PROMO_MIN);
+  if(d >= 1) return d + 'd ' + h + 'h left';
+  if(h >= 1) return h + 'h ' + m + 'm left';
+  return Math.max(m, 1) + 'm left';
+}
+function promoFmtDate(iso){ return new Date(iso).toLocaleDateString('en-PH', { month:'short', day:'numeric', year:'numeric' }); }
+// "Unread" = published after the last time this person opened the Promotions page (kept per person, in this browser)
+function promoUnread(list){
+  const seen = localStorage.getItem(promoSeenKey());
+  return list.filter(p => !seen || new Date(p.created_at).getTime() > new Date(seen).getTime());
+}
+function setPromoBadges(n){
+  ['promoBellCount', 'promoNavCount'].forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = n > 9 ? '9+' : String(n);
+    el.classList.toggle('hidden', n === 0);
+  });
+}
+async function fetchPromotions(){
+  const res = await fetch('/api/promotions/mine', { headers: { 'Authorization': 'Bearer ' + token } });
+  if(!res.ok) throw new Error('Failed to load promotions');
+  return res.json();
+}
+async function loadPromoBadge(){
+  try {
+    promoList = await fetchPromotions();
+    setPromoBadges(promoUnread(promoList).length);
+  } catch(err){ console.error('Error loading promotions:', err); }
+}
+async function renderPromotions(){
+  const box = document.getElementById('promoList');
+  box.innerHTML = `<p class="text-xs text-gray-400">Loading…</p>`;
+  try {
+    promoList = await fetchPromotions();
+  } catch(err){
+    console.error('Error loading promotions:', err);
+    box.innerHTML = `<p class="text-xs text-red-500">Failed to load promotions.</p>`;
+    return;
+  }
+  const unreadIds = new Set(promoUnread(promoList).map(p => p.id));
+  box.innerHTML = promoList.map(p => {
+    const soon = p.ends_at && (new Date(p.ends_at).getTime() - Date.now()) < 3 * PROMO_DAY;
+    const audience = p.audience === 'public' ? '<span class="badge badge-green">Public</span>' : '<span class="badge badge-purple">🔒 Team only</span>';
+    const ends = p.ends_at
+      ? `<span class="${soon ? 'text-orange-600 font-semibold' : ''}">⏱ ${promoTimeLeft(new Date(p.ends_at).getTime() - Date.now())}</span> · ends ${promoFmtDate(p.ends_at)}`
+      : 'No end date';
+    return `
+      <div class="card p-5">
+        <div class="flex items-center gap-2 flex-wrap mb-2">
+          ${unreadIds.has(p.id) ? '<span class="badge badge-orange">New</span>' : ''}
+          ${audience}
+          <span class="badge badge-blue">${p.scope}: ${promoEsc(p.target_name)}</span>
+        </div>
+        <h3 class="font-semibold">${promoEsc(p.title)}</h3>
+        <p class="text-sm text-gray-500 mt-1">${promoEsc(p.message)}</p>
+        <p class="text-xs text-gray-500 mt-3">${ends}</p>
+      </div>`;
+  }).join('') || `<div class="card p-8 text-center text-gray-400 text-sm md:col-span-2">No promotions right now. New offers will show up here.</div>`;
+  // They've now seen the list, so the bell clears
+  localStorage.setItem(promoSeenKey(), new Date().toISOString());
+  setPromoBadges(0);
+}
+
 window.showSection = (id, linkEl) => {
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById('sec-'+id).classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
   linkEl.classList.add('active');
-  const TITLES = { overview:'Dashboard', team:'My Team', properties:'Properties', commission:'Commission', sales:'Sales & Buyers', compute:'Computation Tool', reports:'Reports & Analytics', profile:'My Profile' };
+  const TITLES = { overview:'Dashboard', team:'My Team', properties:'Properties', commission:'Commission', sales:'Sales & Buyers', compute:'Computation Tool', reports:'Reports & Analytics', profile:'My Profile', promos:'Promotions' };
   document.getElementById('pageTitle').textContent = TITLES[id];
   if(id==='overview') renderOverview();
   else if(id==='team'){ teamDrillStack=[]; renderTeamChart(); }
@@ -517,6 +609,7 @@ window.showSection = (id, linkEl) => {
   else if(id==='sales') loadMyClients();
   else if(id==='reports') renderTeamReports();
   else if(id==='profile') renderProfile();
+  else if(id==='promos') renderPromotions();
 };
 
 window.openModal  = (id) => document.getElementById(id).classList.add('open');

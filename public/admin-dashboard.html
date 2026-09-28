@@ -50,6 +50,14 @@
 .bg-blue{background:rgba(59,130,246,.1);color:#2563eb}
 .bg-orange{background:rgba(249,115,22,.1);color:#ea580c}
 .bg-purple{background:rgba(168,85,247,.1);color:#9333ea}
+.pm-switch{position:relative;display:inline-block;width:36px;height:20px;vertical-align:middle;margin-right:6px}
+.pm-switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.pm-switch span{position:absolute;inset:0;background:#d1d5db;border-radius:999px;transition:background .15s;pointer-events:none}
+.pm-switch span::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
+.pm-switch input:checked+span{background:#16a34a}
+.pm-switch input:checked+span::after{transform:translateX(16px)}
+.pm-switch input:disabled{cursor:not-allowed}
+.pm-switch input:focus-visible+span{outline:2px solid #f97316;outline-offset:2px}
 
 .section{display:none}.section.active{display:block}
 
@@ -108,6 +116,9 @@ tr:hover td{background:rgba(0,0,0,.02)}
     <div class="nav-link" onclick="go('reports',this)"><span class="dot"></span>Reports & Analytics</div>
     <div class="nav-link" onclick="go('logs',this)"><span class="dot"></span>Portal Usage Logs</div>
     <div class="nav-link" onclick="go('settings',this)"><span class="dot"></span>Settings</div>
+
+    <div class="nav-section-label">Marketing</div>
+    <div class="nav-link" onclick="go('promotions',this)"><span class="dot"></span>Promotions</div>
   </nav>
 
   <div class="px-4 py-3 border-t border-white/8">
@@ -603,6 +614,23 @@ tr:hover td{background:rgba(0,0,0,.02)}
     </div>
 
     <!-- ══ SETTINGS ══ -->
+    <!-- ══ PROMOTIONS ══ -->
+    <div id="sec-promotions" class="section space-y-4">
+      <div class="flex items-start justify-between gap-3 flex-wrap">
+        <p class="text-xs text-gray-500 max-w-xl"><b>Public</b> promotions appear on the landing page and in every team member's dashboard. <b>Team only</b> promotions appear only inside the dashboards of agents, team leaders, sales managers and unit managers. Promotions with an end date disappear by themselves.</p>
+        <button onclick="openPromoModal()" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ New Promotion</button>
+      </div>
+      <div class="flex gap-2 flex-wrap" id="promoChips"></div>
+      <div class="card overflow-hidden">
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
+            <th class="text-left px-5 py-2">Promotion</th><th class="text-left px-5 py-2">Applies to</th><th class="text-left px-5 py-2">Audience</th><th class="text-left px-5 py-2">Ends</th><th class="text-left px-5 py-2">Status</th><th class="text-left px-5 py-2">Actions</th>
+          </tr></thead>
+          <tbody id="promoBody" class="divide-y divide-white/6"></tbody>
+        </table></div>
+      </div>
+    </div>
+
     <div id="sec-settings" class="section space-y-4">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -878,6 +906,36 @@ tr:hover td{background:rgba(0,0,0,.02)}
       </div>
       <p id="eAgErr" class="text-red-400 text-xs hidden">Name, email, and a specific reporting manager are all required.</p>
       <button onclick="updateAgentDirect()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Update Agent</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW PROMOTION -->
+<div id="promoModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('promoModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-1">New Promotion</h3>
+    <p class="text-xs text-gray-500 mb-4">People see it as soon as you save. Expired promotions disappear by themselves.</p>
+    <div class="space-y-3">
+      <div><label class="text-xs text-gray-400 mb-1 block">Title *</label><input id="pmTitle" type="text" maxlength="70" class="field" placeholder="e.g. 10% off the Tower A batch"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Message *</label><textarea id="pmMessage" maxlength="200" class="field" placeholder="A short line people will read."></textarea></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="text-xs text-gray-400 mb-1 block">Applies to</label><select id="pmScope" class="field" onchange="fillPromoTargets()"><option value="Developer">Developer</option><option value="Property">Property</option></select></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Which one *</label><select id="pmTarget" class="field"></select></div>
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 mb-1 block">Who can see it</label>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="border border-white/10 rounded-lg p-2.5 text-xs cursor-pointer flex gap-2"><input type="radio" name="pmAud" value="public" checked><span><b>Public</b><br><span class="text-gray-500">Landing page + all team dashboards</span></span></label>
+          <label class="border border-white/10 rounded-lg p-2.5 text-xs cursor-pointer flex gap-2"><input type="radio" name="pmAud" value="team"><span><b>Team only</b><br><span class="text-gray-500">Team dashboards only (e.g. incentives)</span></span></label>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 flex items-center gap-2 mb-1"><input type="checkbox" id="pmLimited" checked onchange="togglePromoEnds()"> Limited time only (ends automatically)</label>
+        <input id="pmEnds" type="date" class="field">
+      </div>
+      <p id="pmErr" class="text-red-400 text-xs hidden"></p>
+      <button onclick="savePromo()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Promotion</button>
     </div>
   </div>
 </div>
@@ -1301,7 +1359,7 @@ function go(id, linkEl) {
   // Header buttons
 
   // Render
-  const r = {overview:renderOverview,agents:renderAgents,properties:enterProperties,teams:renderTeamsView,buyers:renderBuyers,commission:renderCommission,reports:renderReports,logs:renderLogs,settings:renderSettings};
+  const r = {overview:renderOverview,agents:renderAgents,properties:enterProperties,teams:renderTeamsView,buyers:renderBuyers,commission:renderCommission,reports:renderReports,logs:renderLogs,settings:renderSettings,promotions:renderPromotions};
   if(r[id]) r[id]();
 }
 
@@ -4983,6 +5041,177 @@ function logout(){
   addLog('Admin logged out');
   localStorage.removeItem('role');
   window.location.href='index.html';
+}
+
+// ══════════════════════════════════════
+// PROMOTIONS
+// ══════════════════════════════════════
+let promoCache = [], promoDevs = [], promoProps = [];
+const PROMO_DAY = 86400000, PROMO_HOUR = 3600000, PROMO_MIN = 60000;
+
+function promoEsc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function promoStatus(p){
+  if(p.ends_at && new Date(p.ends_at).getTime() <= Date.now()) return 'expired';
+  return p.active ? 'live' : 'off';
+}
+function promoTimeLeft(ms){
+  if(ms <= 0) return 'Ended';
+  const d = Math.floor(ms / PROMO_DAY), h = Math.floor((ms % PROMO_DAY) / PROMO_HOUR), m = Math.floor((ms % PROMO_HOUR) / PROMO_MIN);
+  if(d >= 1) return d + 'd ' + h + 'h left';
+  if(h >= 1) return h + 'h ' + m + 'm left';
+  return Math.max(m, 1) + 'm left';
+}
+function promoFmtDate(iso){ return new Date(iso).toLocaleDateString('en-PH', { month:'short', day:'numeric', year:'numeric' }); }
+async function promoLog(message){
+  const token = localStorage.getItem('token');
+  try {
+    await fetch('/api/logs', { method:'POST', headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body: JSON.stringify({ message, actor:'Admin', role:'admin' }) });
+  } catch(err){ console.error('Error writing log:', err); }
+}
+
+async function renderPromotions(){
+  const token = localStorage.getItem('token');
+  const body = document.getElementById('promoBody');
+  try {
+    const res = await fetch('/api/promotions', { headers: { 'Authorization': 'Bearer ' + token } });
+    if(!res.ok) throw new Error('Failed to load promotions');
+    promoCache = await res.json();
+  } catch(err){
+    console.error('Error loading promotions:', err);
+    body.innerHTML = `<tr><td colspan="6" class="px-5 py-5 text-center text-red-400 text-xs">Failed to load promotions.</td></tr>`;
+    return;
+  }
+  const order = { live:0, off:1, expired:2 };
+  const rows = promoCache.slice().sort((a,b) => order[promoStatus(a)] - order[promoStatus(b)] || (a.ends_at ? new Date(a.ends_at).getTime() : Infinity) - (b.ends_at ? new Date(b.ends_at).getTime() : Infinity));
+  const counts = { live:0, off:0, expired:0 };
+  rows.forEach(p => counts[promoStatus(p)]++);
+  document.getElementById('promoChips').innerHTML =
+    `<span class="badge bg-green">${counts.live} live</span><span class="badge bg-yellow">${counts.off} switched off</span><span class="badge bg-red">${counts.expired} expired</span>`;
+
+  body.innerHTML = rows.map(p => {
+    const st = promoStatus(p);
+    const soon = p.ends_at && st === 'live' && (new Date(p.ends_at).getTime() - Date.now()) < 3 * PROMO_DAY;
+    const ends = !p.ends_at ? '<span class="text-gray-500">No end date</span>'
+      : st === 'expired' ? `<span class="text-gray-500">Ended ${promoFmtDate(p.ends_at)}</span>`
+      : `<div class="${soon ? 'text-orange-500 font-semibold' : ''}">${promoTimeLeft(new Date(p.ends_at).getTime() - Date.now())}</div><div class="text-gray-500 text-xs">${promoFmtDate(p.ends_at)}</div>`;
+    const target = p.target_name ? `${p.scope}: <b>${promoEsc(p.target_name)}</b>` : `<span class="text-red-400">${p.scope} no longer exists</span>`;
+    const audience = p.audience === 'public' ? '<span class="badge bg-green">Public</span>' : '<span class="badge bg-purple">🔒 Team only</span>';
+    const stBadge = st === 'live' ? '<span class="badge bg-green">Live</span>' : st === 'off' ? '<span class="badge bg-yellow">Off</span>' : '<span class="badge bg-red">Expired</span>';
+    return `
+      <tr class="${st !== 'live' ? 'opacity-60' : ''}">
+        <td class="px-5 py-3 text-xs"><div class="font-semibold">${promoEsc(p.title)}</div><div class="text-gray-500 max-w-xs">${promoEsc(p.message)}</div></td>
+        <td class="px-5 py-3 text-xs">${target}</td>
+        <td class="px-5 py-3 text-xs">${audience}</td>
+        <td class="px-5 py-3 text-xs">${ends}</td>
+        <td class="px-5 py-3 text-xs"><label class="pm-switch"><input type="checkbox" aria-label="Switch this promotion on or off" ${p.active ? 'checked' : ''} ${st === 'expired' ? 'disabled' : ''} onchange="togglePromo('${p.id}', this.checked)"><span></span></label>${stBadge}</td>
+        <td class="px-5 py-3 text-xs"><button onclick="removePromo('${p.id}')" class="text-red-400 hover:text-red-300">Remove</button></td>
+      </tr>`;
+  }).join('') || `<tr><td colspan="6" class="px-5 py-8 text-center text-gray-500 text-xs">No promotions yet — click "+ New Promotion" to create the first one.</td></tr>`;
+}
+
+function fillPromoTargets(){
+  const scope = document.getElementById('pmScope').value;
+  const list = scope === 'Developer' ? promoDevs : promoProps;
+  document.getElementById('pmTarget').innerHTML = list.length
+    ? list.map(x => `<option value="${promoEsc(x.id)}">${promoEsc(x.name)}</option>`).join('')
+    : `<option value="">— none yet —</option>`;
+}
+function togglePromoEnds(){ document.getElementById('pmEnds').disabled = !document.getElementById('pmLimited').checked; }
+function promoYmd(ts){ const d = new Date(ts); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+
+async function openPromoModal(){
+  const token = localStorage.getItem('token');
+  const headers = { 'Authorization': 'Bearer ' + token };
+  try {
+    const [dRes, pRes] = await Promise.all([fetch('/api/developers', { headers }), fetch('/api/properties', { headers })]);
+    promoDevs = await dRes.json();
+    promoProps = await pRes.json();
+  } catch(err){
+    console.error('Error loading developers/properties:', err);
+    alert('Could not load the developer and property lists.');
+    return;
+  }
+  document.getElementById('pmTitle').value = '';
+  document.getElementById('pmMessage').value = '';
+  document.getElementById('pmScope').value = 'Developer';
+  fillPromoTargets();
+  document.querySelector('input[name="pmAud"][value="public"]').checked = true;
+  document.getElementById('pmLimited').checked = true;
+  const ends = document.getElementById('pmEnds');
+  ends.min = promoYmd(Date.now());
+  ends.value = promoYmd(Date.now() + 7 * PROMO_DAY);
+  togglePromoEnds();
+  document.getElementById('pmErr').classList.add('hidden');
+  openModal('promoModal');
+}
+
+async function savePromo(){
+  const token = localStorage.getItem('token');
+  const fail = msg => { const e = document.getElementById('pmErr'); e.textContent = msg; e.classList.remove('hidden'); };
+  const title = document.getElementById('pmTitle').value.trim();
+  const message = document.getElementById('pmMessage').value.trim();
+  const scope = document.getElementById('pmScope').value;
+  const target_id = document.getElementById('pmTarget').value;
+  const audience = document.querySelector('input[name="pmAud"]:checked').value;
+  if(!title || !message) return fail('Please add a title and a message.');
+  if(!target_id) return fail('Choose the developer or property this applies to.');
+  let ends_at = null;
+  if(document.getElementById('pmLimited').checked){
+    const v = document.getElementById('pmEnds').value;
+    if(!v) return fail('Pick an end date, or untick "Limited time only".');
+    const [y, m, d] = v.split('-').map(Number);
+    const end = new Date(y, m - 1, d, 23, 59, 59); // end of that day, in your local time
+    if(end.getTime() <= Date.now()) return fail('The end date has to be in the future.');
+    ends_at = end.toISOString();
+  }
+  document.getElementById('pmErr').classList.add('hidden');
+  try {
+    const res = await fetch('/api/promotions', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, message, scope, target_id, audience, ends_at })
+    });
+    if(!res.ok){ const b = await res.json().catch(() => ({})); return fail(b.message || 'Failed to save the promotion.'); }
+    closeModal('promoModal');
+    promoLog(`Promotion "${title}" created (${audience === 'public' ? 'public' : 'team only'})`);
+    renderPromotions();
+  } catch(err){
+    console.error('Error saving promotion:', err);
+    fail('Failed to save the promotion.');
+  }
+}
+
+async function togglePromo(id, active){
+  const token = localStorage.getItem('token');
+  const p = promoCache.find(x => x.id === id);
+  try {
+    const res = await fetch(`/api/promotions/${id}/active`, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active })
+    });
+    if(!res.ok) throw new Error('Failed');
+    promoLog(`Promotion "${p ? p.title : ''}" switched ${active ? 'on' : 'off'}`);
+  } catch(err){
+    console.error('Error switching promotion:', err);
+    alert('Failed to update the promotion.');
+  }
+  renderPromotions();
+}
+
+async function removePromo(id){
+  const p = promoCache.find(x => x.id === id);
+  if(!confirm('Remove this promotion? People will stop seeing it immediately.')) return;
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch(`/api/promotions/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+    if(!res.ok) throw new Error('Failed');
+    promoLog(`Promotion "${p ? p.title : ''}" removed`);
+  } catch(err){
+    console.error('Error removing promotion:', err);
+    alert('Failed to remove the promotion.');
+  }
+  renderPromotions();
 }
 
 // ── INIT ──
