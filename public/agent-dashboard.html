@@ -972,9 +972,65 @@ window.viewUnitDetail = function(id){
       <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Downpayment Terms</p><p class="font-bold">${u.downpayment ? terms + ' months' : '—'}</p></div>
     </div>
     <p class="text-gray-500 text-xs mb-1">Description</p>
-    <p class="text-gray-700 text-sm">${u.description||'No description provided.'}</p>
+    <p class="text-gray-700 text-sm mb-4">${u.description||'No description provided.'}</p>
+    <button onclick="printUnitSheet('${u.id}')" class="w-full bg-gray-900 hover:bg-gray-800 text-white py-2.5 rounded-lg font-semibold text-sm transition-colors">🖨 Print for Client</button>
   `;
   openModal('unitDetailModal');
+}
+
+// Printable one-pager for a unit — a clean spec sheet an agent can hand to a client.
+function printUnitSheet(id){
+  const u = propAllUnits.find(x => x.id === id);
+  if(!u) return;
+  const left = u.units_left ?? 1;
+  const terms = u.downpayment_terms_months || 24;
+  const monthlyDP = u.downpayment ? Number(u.downpayment) / terms : null;
+  const rows = [
+    ['Project', propCurrentPropName || '—'],
+    ['Bedrooms', bedroomLabel(u.bedrooms) + (u.bedrooms !== 0 ? ' BR' : '')],
+    ['Square Meters', u.square_meters ? u.square_meters + ' sqm' : '—'],
+    ['Furnishing', u.furnishing || 'Bare Unit'],
+    ['Downpayment Terms', u.downpayment ? terms + ' months' : '—'],
+    ['Monthly Downpayment', monthlyDP ? peso(monthlyDP) : '—'],
+  ];
+  const win = window.open('', '_blank');
+  if(!win){ alert('Please allow pop-ups to print this unit.'); return; }
+  win.document.write(`
+    <!DOCTYPE html><html><head><title>${u.unit_name} — ${propCurrentPropName||''}</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { font-family: 'DM Sans', Arial, sans-serif; color: #111; padding: 40px; max-width: 720px; margin: 0 auto; }
+      .eyebrow { color: #ea580c; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin: 0 0 4px; }
+      h1 { margin: 0 0 4px; font-size: 26px; }
+      .sub { color: #6b7280; margin: 0 0 20px; font-size: 14px; }
+      img { width: 100%; max-height: 320px; object-fit: cover; border-radius: 10px; margin-bottom: 20px; }
+      .price-box { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; }
+      .price-box .tcp { font-size: 24px; font-weight: 700; color: #ea580c; }
+      .price-row { display: flex; justify-content: space-between; font-size: 13px; color: #4b5563; margin-top: 6px; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+      td { padding: 9px 0; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+      td:first-child { color: #6b7280; width: 40%; }
+      td:last-child { font-weight: 600; }
+      .desc { font-size: 13px; color: #374151; line-height: 1.6; white-space: pre-wrap; }
+      .foot { margin-top: 30px; font-size: 11px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 12px; }
+      @media print { body { padding: 20px; } }
+    </style></head><body>
+    <p class="eyebrow">The Premier Property Group</p>
+    <h1>${u.unit_name}</h1>
+    <p class="sub">${propCurrentPropName || ''} · ${left <= 0 ? 'Sold Out' : left + ' unit' + (left===1?'':'s') + ' available'}</p>
+    ${u.image_url ? `<img src="${u.image_url}">` : ''}
+    <div class="price-box">
+      <div class="tcp">${peso(u.tcp)}</div>
+      <div class="price-row"><span>Reservation Fee</span><span>${u.reservation_fee ? peso(u.reservation_fee) : '—'}</span></div>
+      <div class="price-row"><span>Full Downpayment</span><span>${u.downpayment ? peso(u.downpayment) : '—'}</span></div>
+    </div>
+    <table>${rows.map(([k,v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</table>
+    ${u.description ? `<p class="desc">${u.description.replace(/</g,'&lt;')}</p>` : ''}
+    <p class="foot">Printed ${new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'})} · Prices and availability subject to change.</p>
+    <script>window.onload = () => window.print();<\/script>
+    </body></html>
+  `);
+  win.document.close();
 }
 
 // Global property search across all developers (from Level 1)
