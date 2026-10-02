@@ -119,6 +119,34 @@ const lookupPersonName = async (role, id) => {
 const createBuyer = async (req, res) => {
   try {
     const { name, email, phone, address, unit_id, manual_property_name, manual_unit_name, manual_tcp, reservation_date, net_selling_price, payment_option, dp_months, booking_requirements_complete } = req.body;
+
+    // ── Required fields: a real name, a way to reach them, and what they actually bought ──
+    if (!name || !String(name).trim()) return res.status(400).json({ message: 'Client name is required.' });
+    if (!email && !phone) return res.status(400).json({ message: 'An email or phone number is required, so the client can be reached.' });
+    const hasPurchase = unit_id || (manual_property_name && manual_unit_name);
+    if (!hasPurchase) return res.status(400).json({ message: 'Specify which unit was purchased — either pick a listed unit, or fill in both Project and Unit Purchased.' });
+
+    // ── Accidental-duplicate guard: catches the same person submitting the exact same sale twice
+    // within a few minutes (e.g. a slow connection + an impatient second click). This is NOT about
+    // blocking a client's second, later purchase — Re-add already supports that deliberately, and
+    // a sale made days or weeks apart is always a different event, never flagged here. ──
+    const fiveMinAgo = new Date(Date.now() - 5 * 60000).toISOString();
+    let dupeQuery = supabase
+      .from('buyers')
+      .select('id')
+      .eq('input_by_id', req.user.id)
+      .eq('input_by_role', req.user.role)
+      .ilike('name', String(name).trim())
+      .eq('archived', false)
+      .eq('cancelled', false)
+      .gte('created_at', fiveMinAgo);
+    dupeQuery = unit_id ? dupeQuery.eq('unit_id', unit_id) : dupeQuery.eq('manual_property_name', manual_property_name || '').eq('manual_unit_name', manual_unit_name || '');
+    const { data: possibleDupes, error: dupeErr } = await dupeQuery;
+    if (dupeErr) console.error('Duplicate check failed (continuing anyway):', dupeErr);
+    if (possibleDupes && possibleDupes.length) {
+      return res.status(409).json({ message: `This looks like a duplicate — you already added a client named "${name}" for this same unit in the last few minutes. If this is really a different sale, please wait a moment and try again.` });
+    }
+
     const input_by_name = await lookupPersonName(req.user.role, req.user.id);
 
     // If this sale is linked to a real listed unit, snapshot that unit's CURRENT price at the
