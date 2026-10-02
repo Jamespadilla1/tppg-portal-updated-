@@ -1266,7 +1266,7 @@ window.searchPropsGlobal = async function(context){
     if(!recs.length) return `<p class="text-xs text-gray-500">No properties match your search.</p>`;
     const target = (budgetMin && budgetMaxRaw!=='') ? (budgetMin + budgetMax) / 2 : (budgetMin ? budgetMin : budgetMax);
     return `
-      <p class="text-xs text-gray-500 mb-3">No exact matches for that ${budgetLabel} — here are the closest options, in any location:</p>
+      <p class="text-xs text-red-400 mb-3">No exact matches for that ${budgetLabel} — here are the closest options, in any location:</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         ${recs.map(({u, prop, value}) => {
           const dev = propAllDevs.find(d=>d.id===prop.developer_id);
