@@ -1674,6 +1674,25 @@ async function searchPropertiesGlobal(context){
       }) || null;
     }
 
+    // No exact matches — if the person gave a budget, suggest the closest-priced units anywhere,
+    // regardless of location/type/selling status, since that's the one thing they told us matters most.
+    function budgetValueOf(u){
+      if(budgetType==='dp'){ const terms = u.downpayment_terms_months || 24; return u.downpayment ? Number(u.downpayment)/terms : 0; }
+      if(budgetType==='fulldp') return Number(u.downpayment) || 0;
+      return Number(u.tcp) || 0;
+    }
+    function priceRecommendations(){
+      if(!anyBudget) return [];
+      const target = (budgetMinRaw!=='' && budgetMaxRaw!=='') ? (budgetMin + budgetMax) / 2 : (budgetMinRaw!=='' ? budgetMin : budgetMax);
+      return allUnits
+        .map(u => ({ u, prop: allProps.find(p=>p.id===u.property_id), value: budgetValueOf(u) }))
+        .filter(x => x.prop && x.value > 0 && (x.u.units_left??1) > 0)
+        .map(x => ({ ...x, diff: Math.abs(x.value - target) }))
+        .sort((a,b) => a.diff - b.diff)
+        .slice(0, 5);
+    }
+    const budgetLabel = budgetType==='dp' ? 'Monthly DP' : (budgetType==='fulldp' ? 'Full DP' : 'TCP');
+
     resultsEl.innerHTML = filtered.length ? `
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         ${filtered.map(p => {
@@ -1692,7 +1711,27 @@ async function searchPropertiesGlobal(context){
           </div>`;
         }).join('')}
       </div>
-    ` : `<p class="text-xs text-gray-500">No properties match your search.</p>`;
+    ` : (() => {
+      const recs = priceRecommendations();
+      if(!recs.length) return `<p class="text-xs text-gray-500">No properties match your search.</p>`;
+      return `
+        <p class="text-xs text-gray-500 mb-3">No exact matches for that ${budgetLabel} — here are the closest options, in any location:</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          ${recs.map(({u, prop, value}) => {
+            const dev = allDevs.find(d=>d.id===prop.developer_id);
+            const devName = dev ? dev.name.replace(/'/g,"\\'") : '';
+            const pName = prop.name.replace(/'/g,"\\'");
+            const isExact = Math.abs(value - ((budgetMinRaw!=='' && budgetMaxRaw!=='') ? (budgetMin+budgetMax)/2 : (budgetMinRaw!=='' ? budgetMin : budgetMax))) < 1;
+            return `
+            <div onclick="jumpToProperty('${prop.id}','${pName}','${prop.property_type}','${prop.developer_id||''}','${devName}','${u.id}')" class="card p-3 cursor-pointer hover:border-orange-500/40 transition-colors">
+              <p class="font-semibold text-white text-sm">${prop.name}</p>
+              <p class="text-xs text-gray-500">${prop.location||'—'} · ${prop.property_type}</p>
+              <p class="text-xs text-gray-500">${u.unit_name} — Developer: ${dev ? dev.name : '—'}</p>
+              <p class="text-xs ${isExact?'text-green-400':'text-orange-400'} font-semibold mt-1">${budgetLabel}: ${peso(value)}${isExact ? ' (exact match)' : ''}</p>
+            </div>`;
+          }).join('')}
+        </div>`;
+    })();
   } catch(err) {
     console.error('Error searching properties:', err);
   }
