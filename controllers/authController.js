@@ -7,6 +7,16 @@ const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
+// Fire-and-forget: record when this person last logged in, for inactivity tracking.
+// Never blocks or fails the login itself — a logging hiccup shouldn't lock anyone out.
+const TABLE_FOR_ROLE = { agent: 'agents', unit_manager: 'unit_managers', sales_manager: 'sales_managers', team_leader: 'team_leaders' };
+function recordLastLogin(role, id) {
+  const table = TABLE_FOR_ROLE[role];
+  if (!table) return;
+  supabase.from(table).update({ last_login: new Date().toISOString() }).eq('id', id)
+    .then(({ error }) => { if (error) console.error('Failed to record last login:', error); });
+}
+
 // POST /api/auth/login
 const login = async (req, res) => {
   const { loginId, email, password, role } = req.body;
@@ -50,6 +60,7 @@ const login = async (req, res) => {
       if (agent.status === 'rejected')   return res.status(403).json({ message: 'Your application was rejected. Contact the admin.' });
       if (agent.status === 'suspended')  return res.status(403).json({ message: 'Your account has been suspended.' });
 
+      recordLastLogin('agent', agent.id);
       return res.json({
         token:   generateToken(agent.id, 'agent'),
         role:    'agent',
@@ -82,6 +93,7 @@ const login = async (req, res) => {
       if (!match) return res.status(400).json({ message: 'Incorrect password.' });
       if (person.status === 'suspended') return res.status(403).json({ message: 'Your account has been suspended.' });
 
+      recordLastLogin(role, person.id);
       return res.json({
         token:    generateToken(person.id, role),
         role,

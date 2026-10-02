@@ -119,6 +119,9 @@ tr:hover td{background:rgba(0,0,0,.02)}
 
     <div class="nav-section-label">Marketing</div>
     <div class="nav-link" onclick="go('promotions',this)"><span class="dot"></span>Promotions</div>
+
+    <div class="nav-section-label">Oversight</div>
+    <div class="nav-link" onclick="go('inactivity',this)"><span class="dot"></span>Inactive Users</div>
   </nav>
 
   <div class="px-4 py-3 border-t border-white/8">
@@ -632,6 +635,33 @@ tr:hover td{background:rgba(0,0,0,.02)}
           </tr></thead>
           <tbody id="promoBody" class="divide-y divide-white/6"></tbody>
         </table></div>
+      </div>
+    </div>
+
+    <!-- ══ INACTIVE USERS ══ -->
+    <div id="sec-inactivity" class="section space-y-4">
+      <div class="flex items-start justify-between gap-3 flex-wrap">
+        <p class="text-xs text-gray-500 max-w-xl">A team member is flagged inactive when they <b>haven't logged in AND haven't recorded a sale</b> within the threshold below. Meeting just one of those is enough to stay active.</p>
+        <div class="flex items-center gap-2">
+          <label class="text-xs text-gray-400">Inactive after</label>
+          <input id="inactivityDays" type="number" min="1" class="field w-20 text-xs py-1.5">
+          <span class="text-xs text-gray-400">days</span>
+          <button onclick="saveInactivityThreshold()" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">Save</button>
+        </div>
+      </div>
+      <div class="flex gap-2 flex-wrap" id="inactivityChips"></div>
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-white/8 flex items-center justify-between gap-3 flex-wrap">
+          <h3 class="font-semibold text-sm">All Team Members</h3>
+          <input type="text" id="inactivitySearch" placeholder="Search name…" oninput="filterInactivityRows()" class="field w-56 text-xs py-1.5">
+        </div>
+        <div class="overflow-x-auto"><table class="w-full text-sm">
+          <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
+            <th class="text-left px-5 py-2">Name</th><th class="text-left px-5 py-2">Role</th><th class="text-left px-5 py-2">Last Login</th><th class="text-left px-5 py-2">Last Sale</th><th class="text-left px-5 py-2">Status</th><th class="text-left px-5 py-2">Actions</th>
+          </tr></thead>
+          <tbody id="inactivityBody" class="divide-y divide-white/6 text-gray-300"></tbody>
+        </table></div>
+        <p id="inactivitySearchEmpty" class="hidden text-center text-gray-500 text-xs py-5">No matching names.</p>
       </div>
     </div>
 
@@ -1363,7 +1393,7 @@ function go(id, linkEl) {
   // Header buttons
 
   // Render
-  const r = {overview:renderOverview,agents:renderAgents,properties:enterProperties,teams:renderTeamsView,buyers:renderBuyers,commission:renderCommission,reports:renderReports,logs:renderLogs,settings:renderSettings,promotions:renderPromotions};
+  const r = {overview:renderOverview,agents:renderAgents,properties:enterProperties,teams:renderTeamsView,buyers:renderBuyers,commission:renderCommission,reports:renderReports,logs:renderLogs,settings:renderSettings,promotions:renderPromotions,inactivity:renderInactivity};
   if(r[id]) r[id]();
 }
 
@@ -4274,6 +4304,111 @@ function filterCommRows(){
     if(match) visible++;
   });
   document.getElementById('commSearchEmpty').classList.toggle('hidden', !(q && rows.length && visible === 0));
+}
+
+// ══════════════════════════════════════
+// INACTIVE USERS
+// ══════════════════════════════════════
+let inactivityCache = [];
+const INACTIVITY_UPDATE_ENDPOINT = {
+  agent: id => ({ url: `/api/agents/${id}/status`, method: 'PATCH' }),
+  team_leader: id => ({ url: `/api/team-leaders/${id}`, method: 'PUT' }),
+  sales_manager: id => ({ url: `/api/sales-managers/${id}`, method: 'PUT' }),
+  unit_manager: id => ({ url: `/api/unit-managers/${id}`, method: 'PUT' }),
+};
+function inactivityFmtDate(iso){
+  if(!iso) return 'Never';
+  return new Date(iso).toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' });
+}
+async function renderInactivity(){
+  const token = localStorage.getItem('token');
+  const body = document.getElementById('inactivityBody');
+  try {
+    const [settingsRes, reportRes] = await Promise.all([
+      fetch('/api/inactivity/settings', { headers: { 'Authorization': 'Bearer ' + token } }),
+      fetch('/api/inactivity', { headers: { 'Authorization': 'Bearer ' + token } }),
+    ]);
+    if(!settingsRes.ok || !reportRes.ok) throw new Error('Failed to load');
+    const settings = await settingsRes.json();
+    const report = await reportRes.json();
+    document.getElementById('inactivityDays').value = settings.inactivity_days;
+    inactivityCache = report.people;
+  } catch(err){
+    console.error('Error loading inactivity report:', err);
+    body.innerHTML = `<tr><td colspan="6" class="px-5 py-5 text-center text-red-400 text-xs">Failed to load inactivity data.</td></tr>`;
+    return;
+  }
+
+  const rows = inactivityCache.slice().sort((a,b) => (b.inactive - a.inactive) || a.name.localeCompare(b.name));
+  const inactiveCount = rows.filter(p => p.inactive).length;
+  const suspendedCount = rows.filter(p => p.status === 'suspended').length;
+  document.getElementById('inactivityChips').innerHTML =
+    `<span class="badge bg-red">${inactiveCount} inactive</span><span class="badge bg-yellow">${suspendedCount} already suspended</span><span class="badge bg-green">${rows.length - inactiveCount - suspendedCount} active</span>`;
+
+  body.innerHTML = rows.map(p => `
+    <tr data-name="${p.name.toLowerCase().replace(/"/g,'&quot;')}" class="${p.status==='suspended' ? 'opacity-60' : ''}">
+      <td class="px-5 py-3 text-xs font-medium text-white">${p.name}${p.inactive ? ` <span class="badge bg-red">Inactive</span>` : ''}</td>
+      <td class="px-5 py-3 text-xs">${p.role_label}</td>
+      <td class="px-5 py-3 text-xs">${inactivityFmtDate(p.last_login)}</td>
+      <td class="px-5 py-3 text-xs">${inactivityFmtDate(p.last_sale)}</td>
+      <td class="px-5 py-3 text-xs">${p.status==='suspended' ? '<span class="badge bg-yellow">Suspended</span>' : '<span class="badge bg-green">Active</span>'}</td>
+      <td class="px-5 py-3 text-xs">${p.status==='suspended' ? '—' : `<button onclick="suspendInactiveUser('${p.role}','${p.id}','${p.name.replace(/'/g,"\\'")}')" class="text-purple-400 hover:text-purple-300">Suspend</button>`}</td>
+    </tr>
+  `).join('') || `<tr><td colspan="6" class="px-5 py-8 text-center text-gray-500 text-xs">No team members yet.</td></tr>`;
+  filterInactivityRows();
+}
+
+function filterInactivityRows(){
+  const q = (document.getElementById('inactivitySearch').value || '').trim().toLowerCase();
+  const rows = [...document.querySelectorAll('#inactivityBody tr[data-name]')];
+  let visible = 0;
+  rows.forEach(r => {
+    const match = !q || r.dataset.name.includes(q);
+    r.classList.toggle('hidden', !match);
+    if(match) visible++;
+  });
+  document.getElementById('inactivitySearchEmpty').classList.toggle('hidden', !(q && rows.length && visible === 0));
+}
+
+async function saveInactivityThreshold(){
+  const token = localStorage.getItem('token');
+  const days = parseInt(document.getElementById('inactivityDays').value, 10);
+  if(!Number.isFinite(days) || days < 1){ alert('Enter a number of days of at least 1.'); return; }
+  try {
+    const res = await fetch('/api/inactivity/settings', {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ inactivity_days: days })
+    });
+    if(!res.ok) throw new Error('Failed');
+    renderInactivity();
+  } catch(err){
+    console.error('Error saving threshold:', err);
+    alert('Failed to save the threshold.');
+  }
+}
+
+async function suspendInactiveUser(role, id, name){
+  if(!confirm(`Suspend ${name}? They won't be able to log in until reinstated.`)) return;
+  const token = localStorage.getItem('token');
+  const { url, method } = INACTIVITY_UPDATE_ENDPOINT[role](id);
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'suspended' })
+    });
+    if(!res.ok) throw new Error('Failed');
+    await fetch('/api/logs', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `${name} suspended for inactivity`, actor: 'Admin', role: 'admin' })
+    });
+    renderInactivity();
+  } catch(err){
+    console.error('Error suspending user:', err);
+    alert('Failed to suspend this person.');
+  }
 }
 
 async function renderCommission(){

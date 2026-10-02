@@ -31,6 +31,7 @@ app.use('/api/commission-receivables', require('./routes/receivables'));
 app.use('/api/sellers',    require('./routes/sellers'));
 app.use('/api/buyers',     require('./routes/buyers'));
 app.use('/api/promotions', require('./routes/promotions'));
+app.use('/api/inactivity', require('./routes/inactivity'));
 app.use('/api/logs',       require('./routes/logs'));
 
 // ── START SERVER ──
