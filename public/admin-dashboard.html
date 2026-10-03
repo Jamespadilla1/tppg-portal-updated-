@@ -699,6 +699,19 @@ tr:hover td{background:rgba(0,0,0,.02)}
           <p id="salesTargetMsg" class="text-xs text-green-400 hidden">Sales target updated.</p>
         </div>
 
+        <!-- Release notifications -->
+        <div class="card p-6 space-y-4">
+          <h3 class="font-semibold">Release Notifications</h3>
+          <p class="text-xs text-gray-500 -mt-2">Agents, team leaders, sales managers and unit managers get a heads-up on their Updates page (and the bell) this many days before a commission release, incentive or override is due.</p>
+          <div>
+            <label class="text-xs text-gray-400 mb-1 block">Notify this many days before a release</label>
+            <input id="setReleaseNoticeDays" type="number" min="1" max="60" step="1" class="field" placeholder="e.g. 3">
+          </div>
+          <button onclick="saveReleaseNoticeDays()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg text-sm font-semibold transition-colors">Save</button>
+          <p id="releaseNoticeMsg" class="text-xs text-green-400 hidden">Saved.</p>
+          <p id="releaseNoticeErr" class="text-xs text-red-400 hidden"></p>
+        </div>
+
         <!-- Password -->
         <div class="card p-6 space-y-4">
           <h3 class="font-semibold">Change Password</h3>
@@ -5235,6 +5248,35 @@ async function renderSettings(){
   document.getElementById('setSalesTargetYear').textContent = new Date().getFullYear();
   const target = await fetchAnnualSalesTarget();
   document.getElementById('setSalesTarget').value = target ? target.toLocaleString('en-PH') : '';
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch('/api/inactivity/release-notice-days', { headers: { 'Authorization': 'Bearer ' + token } });
+    if(res.ok){ document.getElementById('setReleaseNoticeDays').value = (await res.json()).release_notice_days; }
+  } catch(err){ console.error('Error loading release notice setting:', err); }
+}
+
+async function saveReleaseNoticeDays(){
+  const token = localStorage.getItem('token');
+  const msg = document.getElementById('releaseNoticeMsg'), errEl = document.getElementById('releaseNoticeErr');
+  msg.classList.add('hidden'); errEl.classList.add('hidden');
+  const days = Number(document.getElementById('setReleaseNoticeDays').value);
+  if(!Number.isInteger(days) || days < 1 || days > 60){
+    errEl.textContent = 'Enter a whole number of days between 1 and 60.'; errEl.classList.remove('hidden'); return;
+  }
+  try {
+    const res = await fetch('/api/inactivity/release-notice-days', {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ release_notice_days: days })
+    });
+    if(!res.ok){ const b = await res.json().catch(() => ({})); errEl.textContent = b.message || 'Failed to save.'; errEl.classList.remove('hidden'); return; }
+    msg.classList.remove('hidden');
+    setTimeout(() => msg.classList.add('hidden'), 2500);
+    try { await fetch('/api/logs', { method:'POST', headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body: JSON.stringify({ message:`Release notifications set to ${days} day(s) before release`, actor:'Admin', role:'admin' }) }); } catch(e) {}
+  } catch(err){
+    console.error('Error saving release notice setting:', err);
+    errEl.textContent = 'Failed to save.'; errEl.classList.remove('hidden');
+  }
 }
 
 async function saveSalesTarget(){

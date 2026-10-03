@@ -91,7 +91,7 @@
     <div class="nav-link" onclick="showSection('sales',this)"><span class="dot"></span> Sales &amp; Buyers</div>
     <div class="nav-link" onclick="showSection('compute',this)"><span class="dot"></span> Computation Tool</div>
     <div class="nav-link" onclick="showSection('reports',this)"><span class="dot"></span> Reports &amp; Analytics</div>
-    <div id="navPromos" class="nav-link" onclick="showSection('promos',this)"><span class="dot"></span> Promotions <span id="promoNavCount" class="promo-nav-count hidden">0</span></div>
+    <div id="navPromos" class="nav-link" onclick="showSection('promos',this)"><span class="dot"></span> Updates <span id="promoNavCount" class="promo-nav-count hidden">0</span></div>
     <div class="nav-link" onclick="showSection('profile',this)"><span class="dot"></span> My Profile</div>
   </nav>
   <div class="mx-3 mb-3 px-3 py-2 rounded-lg bg-yellow-500/8 border border-yellow-500/20 text-yellow-400 text-xs">👁 View-only access</div>
@@ -323,9 +323,17 @@
     </div>
 
     <!-- PROMOTIONS -->
-    <div id="sec-promos" class="section space-y-4">
-      <p class="text-xs text-gray-500 max-w-2xl">Current offers and incentives from the company. New ones show a number on the bell until you've looked at them.</p>
-      <div id="promoList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    <div id="sec-promos" class="section space-y-6">
+      <div>
+        <h3 class="font-semibold text-sm">Upcoming releases</h3>
+        <p id="releaseNoticeSub" class="text-xs text-gray-500 mt-0.5 mb-3"></p>
+        <div id="releaseNoticeList" class="space-y-2"></div>
+      </div>
+      <div>
+        <h3 class="font-semibold text-sm">Promotions</h3>
+        <p class="text-xs text-gray-500 mt-0.5 mb-3">Current offers and incentives from the company. New items show a number on the bell until you've looked at them.</p>
+        <div id="promoList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
     </div>
 
     <div id="sec-profile" class="section">
@@ -524,10 +532,14 @@ loadPromoBadge();
 setInterval(loadPromoBadge, 5 * 60 * 1000);
 
 // ── SECTION SWITCHING ──
-// ── PROMOTIONS (what Admin has published for the team) ──
+// ── UPDATES: upcoming releases + promotions ──
 let promoList = [];
+let releaseNotices = [];
+let releaseNoticeDays = 3;
+let releaseNoticesFailed = false;
 const PROMO_DAY = 86400000, PROMO_HOUR = 3600000, PROMO_MIN = 60000;
 const promoSeenKey = () => 'promosSeenAt_' + (localStorage.getItem('personId') || 'me');
+const releaseSeenKey = () => 'releaseSeen_' + (localStorage.getItem('personId') || 'me');
 
 function promoEsc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function promoTimeLeft(ms){
@@ -538,7 +550,7 @@ function promoTimeLeft(ms){
   return Math.max(m, 1) + 'm left';
 }
 function promoFmtDate(iso){ return new Date(iso).toLocaleDateString('en-PH', { month:'short', day:'numeric', year:'numeric' }); }
-// "Unread" = published after the last time this person opened the Promotions page (kept per person, in this browser)
+// "Unread" = published after the last time this person opened the Updates page (kept per person, in this browser)
 function promoUnread(list){
   const seen = localStorage.getItem(promoSeenKey());
   return list.filter(p => !seen || new Date(p.created_at).getTime() > new Date(seen).getTime());
@@ -555,44 +567,159 @@ async function fetchPromotions(){
   if(!res.ok) throw new Error('Failed to load promotions');
   return res.json();
 }
-async function loadPromoBadge(){
-  try {
-    promoList = await fetchPromotions();
-    setPromoBadges(promoUnread(promoList).length);
-  } catch(err){ console.error('Error loading promotions:', err); }
+
+// Dates arrive as plain 'YYYY-MM-DD' (or a timestamp starting that way). Read just those parts so the
+// day can never shift because of the viewer's time zone.
+function releaseDatePart(value){ const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value || ''); return m ? m[0] : null; }
+function daysUntilDate(value){
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value || '');
+  if(!m) return null;
+  const target = new Date(+m[1], +m[2] - 1, +m[3]);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((target - today) / PROMO_DAY);
 }
-async function renderPromotions(){
-  const box = document.getElementById('promoList');
-  box.innerHTML = `<p class="text-xs text-gray-400">Loading…</p>`;
-  try {
-    promoList = await fetchPromotions();
-  } catch(err){
-    console.error('Error loading promotions:', err);
-    box.innerHTML = `<p class="text-xs text-red-500">Failed to load promotions.</p>`;
-    return;
+function releaseFmtDate(value){
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value || '');
+  if(!m) return '—';
+  const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${mon[+m[2]-1]} ${+m[3]}, ${m[1]}`;
+}
+
+// Everything that is due to be released to THIS person within the next N days (N is set by Admin):
+//  - commission releases Admin recorded for their own sales
+//  - incentives Admin set on their own sales
+//  - overrides on their team's sales (team leaders, sales managers and unit managers only)
+// A cancelled or archived sale never produces a notice.
+async function computeReleaseNotices(){
+  const headers = { 'Authorization': 'Bearer ' + token };
+  const [daysRes, buyersRes, recRes, teamRes] = await Promise.all([
+    fetch('/api/inactivity/release-notice-days', { headers }),
+    fetch('/api/buyers', { headers }),
+    fetch('/api/commission-receivables/mine', { headers }),
+    role === 'agent' ? Promise.resolve(null) : fetch('/api/buyers/team', { headers }),
+  ]);
+  if(!buyersRes.ok || !recRes.ok || (teamRes && !teamRes.ok)) throw new Error('Failed to load release data');
+  if(daysRes.ok){ const d = await daysRes.json(); releaseNoticeDays = Number(d.release_notice_days) || 3; }
+  const myBuyers = await buyersRes.json();
+  const receivables = await recRes.json();
+  const teamBuyers = teamRes ? await teamRes.json() : [];
+
+  const within = d => d !== null && d >= 0 && d <= releaseNoticeDays;
+  const out = [];
+  const liveBuyer = new Map(myBuyers.filter(b => !b.cancelled).map(b => [b.id, b]));
+
+  receivables.forEach(r => {
+    const b = liveBuyer.get(r.buyer_id);
+    if(!b) return;
+    const d = daysUntilDate(r.release_date);
+    if(within(d)) out.push({ key: `commission:${r.id}:${releaseDatePart(r.release_date)}`, kind:'commission', amount:r.amount, client:b.name, detail:r.release_type || '', date:releaseDatePart(r.release_date), daysLeft:d });
+  });
+  myBuyers.forEach(b => {
+    if(b.cancelled || !b.incentive_amount) return;
+    const d = daysUntilDate(b.incentive_date);
+    if(within(d)) out.push({ key: `incentive:${b.id}:${releaseDatePart(b.incentive_date)}`, kind:'incentive', amount:b.incentive_amount, client:b.name, detail:b.incentive_reason || '', date:releaseDatePart(b.incentive_date), daysLeft:d });
+  });
+  const overrideField = { team_leader:'override_team_leader', sales_manager:'override_sales_manager', unit_manager:'override_unit_manager' }[role];
+  const meId = (typeof myUserId !== 'undefined') ? myUserId : null;
+  if(overrideField){
+    teamBuyers.forEach(b => {
+      if(b.cancelled || !b[overrideField] || (meId && b.input_by_id === meId)) return;
+      const d = daysUntilDate(b.incentive_date);
+      if(within(d)) out.push({ key: `override:${b.id}:${releaseDatePart(b.incentive_date)}`, kind:'override', amount:b[overrideField], client:b.name, detail:'Override from your team\'s sale', date:releaseDatePart(b.incentive_date), daysLeft:d });
+    });
   }
-  const unreadIds = new Set(promoUnread(promoList).map(p => p.id));
-  box.innerHTML = promoList.map(p => {
-    const soon = p.ends_at && (new Date(p.ends_at).getTime() - Date.now()) < 3 * PROMO_DAY;
-    const audience = p.audience === 'public' ? '<span class="badge badge-green">Public</span>' : '<span class="badge badge-purple">🔒 Team only</span>';
-    const ends = p.ends_at
-      ? `<span class="${soon ? 'text-orange-600 font-semibold' : ''}">⏱ ${promoTimeLeft(new Date(p.ends_at).getTime() - Date.now())}</span> · ends ${promoFmtDate(p.ends_at)}`
-      : 'No end date';
-    return `
-      <div class="card p-5">
-        <div class="flex items-center gap-2 flex-wrap mb-2">
-          ${unreadIds.has(p.id) ? '<span class="badge badge-orange">New</span>' : ''}
-          ${audience}
-          <span class="badge badge-blue">${p.scope}: ${promoEsc(p.target_name)}</span>
+  out.sort((a, b) => a.daysLeft - b.daysLeft || a.kind.localeCompare(b.kind));
+  return out;
+}
+
+// Which notices has this person already looked at? (remembered per person, in this browser)
+function readSeenNotices(){ try { return new Set(JSON.parse(localStorage.getItem(releaseSeenKey()) || '[]')); } catch(e){ return new Set(); } }
+function unreadNotices(list){ const seen = readSeenNotices(); return list.filter(n => !seen.has(n.key)); }
+function markNoticesSeen(list){ localStorage.setItem(releaseSeenKey(), JSON.stringify(list.map(n => n.key))); }
+
+async function loadPromoBadge(){
+  const [promos, notices] = await Promise.allSettled([fetchPromotions(), computeReleaseNotices()]);
+  if(promos.status === 'fulfilled') promoList = promos.value; else console.error('Error loading promotions:', promos.reason);
+  if(notices.status === 'fulfilled'){ releaseNotices = notices.value; releaseNoticesFailed = false; }
+  else { releaseNoticesFailed = true; console.error('Error loading release notices:', notices.reason); }
+  setPromoBadges(promoUnread(promoList).length + unreadNotices(releaseNotices).length);
+}
+
+const RELEASE_KIND = {
+  commission: { label: 'Commission release', cls: 'badge-green' },
+  incentive:  { label: 'Incentive',          cls: 'badge-purple' },
+  override:   { label: 'Override',           cls: 'badge-blue' },
+};
+function releaseWhen(n){ return n.daysLeft === 0 ? 'Today' : n.daysLeft === 1 ? 'Tomorrow' : `In ${n.daysLeft} days`; }
+
+async function renderPromotions(){
+  const noticeBox = document.getElementById('releaseNoticeList');
+  const promoBox = document.getElementById('promoList');
+  noticeBox.innerHTML = `<p class="text-xs text-gray-400">Loading…</p>`;
+  promoBox.innerHTML = `<p class="text-xs text-gray-400">Loading…</p>`;
+
+  const [promos, notices] = await Promise.allSettled([fetchPromotions(), computeReleaseNotices()]);
+
+  // ── upcoming releases ──
+  if(notices.status === 'fulfilled'){
+    releaseNotices = notices.value; releaseNoticesFailed = false;
+    document.getElementById('releaseNoticeSub').textContent = `Commission releases, incentives and overrides due in the next ${releaseNoticeDays} day${releaseNoticeDays === 1 ? '' : 's'}.`;
+    const unread = new Set(unreadNotices(releaseNotices).map(n => n.key));
+    noticeBox.innerHTML = releaseNotices.map(n => {
+      const k = RELEASE_KIND[n.kind];
+      return `
+      <div class="card p-4 flex items-center justify-between gap-4 flex-wrap">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 flex-wrap mb-1">
+            ${unread.has(n.key) ? '<span class="badge badge-orange">New</span>' : ''}
+            <span class="badge ${k.cls}">${k.label}</span>
+          </div>
+          <p class="font-semibold text-sm">${peso(n.amount)} <span class="text-gray-500 font-normal">· ${promoEsc(n.client)}</span></p>
+          ${n.detail ? `<p class="text-xs text-gray-500">${promoEsc(n.detail)}</p>` : ''}
         </div>
-        <h3 class="font-semibold">${promoEsc(p.title)}</h3>
-        <p class="text-sm text-gray-500 mt-1">${promoEsc(p.message)}</p>
-        <p class="text-xs text-gray-500 mt-3">${ends}</p>
+        <div class="text-right shrink-0">
+          <p class="text-sm font-semibold ${n.daysLeft <= 1 ? 'text-orange-600' : ''}">${releaseWhen(n)}</p>
+          <p class="text-xs text-gray-500">${releaseFmtDate(n.date)}</p>
+        </div>
       </div>`;
-  }).join('') || `<div class="card p-8 text-center text-gray-400 text-sm md:col-span-2">No promotions right now. New offers will show up here.</div>`;
-  // They've now seen the list, so the bell clears
-  localStorage.setItem(promoSeenKey(), new Date().toISOString());
-  setPromoBadges(0);
+    }).join('') || `<div class="card p-5 text-center text-gray-400 text-sm">Nothing is scheduled to be released in the next ${releaseNoticeDays} day${releaseNoticeDays === 1 ? '' : 's'}.</div>`;
+    markNoticesSeen(releaseNotices);
+  } else {
+    releaseNoticesFailed = true;
+    console.error('Error loading release notices:', notices.reason);
+    document.getElementById('releaseNoticeSub').textContent = '';
+    noticeBox.innerHTML = `<p class="text-xs text-red-500">Couldn't load your upcoming releases right now. Please try again in a moment.</p>`;
+  }
+
+  // ── promotions ──
+  if(promos.status === 'fulfilled'){
+    promoList = promos.value;
+    const unreadIds = new Set(promoUnread(promoList).map(p => p.id));
+    promoBox.innerHTML = promoList.map(p => {
+      const soon = p.ends_at && (new Date(p.ends_at).getTime() - Date.now()) < 3 * PROMO_DAY;
+      const audience = p.audience === 'public' ? '<span class="badge badge-green">Public</span>' : '<span class="badge badge-purple">🔒 Team only</span>';
+      const ends = p.ends_at
+        ? `<span class="${soon ? 'text-orange-600 font-semibold' : ''}">⏱ ${promoTimeLeft(new Date(p.ends_at).getTime() - Date.now())}</span> · ends ${promoFmtDate(p.ends_at)}`
+        : 'No end date';
+      return `
+        <div class="card p-5">
+          <div class="flex items-center gap-2 flex-wrap mb-2">
+            ${unreadIds.has(p.id) ? '<span class="badge badge-orange">New</span>' : ''}
+            ${audience}
+            <span class="badge badge-blue">${p.scope}: ${promoEsc(p.target_name)}</span>
+          </div>
+          <h3 class="font-semibold">${promoEsc(p.title)}</h3>
+          <p class="text-sm text-gray-500 mt-1">${promoEsc(p.message)}</p>
+          <p class="text-xs text-gray-500 mt-3">${ends}</p>
+        </div>`;
+    }).join('') || `<div class="card p-8 text-center text-gray-400 text-sm md:col-span-2">No promotions right now. New offers will show up here.</div>`;
+    localStorage.setItem(promoSeenKey(), new Date().toISOString());
+  } else {
+    console.error('Error loading promotions:', promos.reason);
+    promoBox.innerHTML = `<p class="text-xs text-red-500">Failed to load promotions.</p>`;
+  }
+  setPromoBadges(promoUnread(promoList).length + unreadNotices(releaseNotices).length);
 }
 
 window.showSection = (id, linkEl) => {
@@ -600,7 +727,7 @@ window.showSection = (id, linkEl) => {
   document.getElementById('sec-'+id).classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
   linkEl.classList.add('active');
-  const TITLES = { overview:'Dashboard', team:'My Team', properties:'Properties', commission:'Commission', sales:'Sales & Buyers', compute:'Computation Tool', reports:'Reports & Analytics', profile:'My Profile', promos:'Promotions' };
+  const TITLES = { overview:'Dashboard', team:'My Team', properties:'Properties', commission:'Commission', sales:'Sales & Buyers', compute:'Computation Tool', reports:'Reports & Analytics', profile:'My Profile', promos:'Updates' };
   document.getElementById('pageTitle').textContent = TITLES[id];
   if(id==='overview') renderOverview();
   else if(id==='team'){ teamDrillStack=[]; renderTeamChart(); }
@@ -1107,7 +1234,7 @@ window.viewUnitDetail = function(id){
 }
 
 // Printable one-pager for a unit — a clean spec sheet an agent can hand to a client.
-function printUnitSheet(id){
+window.printUnitSheet = function(id){
   const u = propAllUnits.find(x => x.id === id);
   if(!u) return;
   const left = u.units_left ?? 1;
@@ -1159,7 +1286,7 @@ function printUnitSheet(id){
     </body></html>
   `);
   win.document.close();
-}
+};
 
 // Global property search across all developers (from Level 1)
 window.updateBudgetLabels = function(context){

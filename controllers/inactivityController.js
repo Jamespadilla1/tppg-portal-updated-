@@ -92,4 +92,36 @@ const getInactivityReport = async (req, res) => {
   }
 };
 
-module.exports = { getSettings, setSettings, getInactivityReport };
+// ── Release notifications: how many days before a scheduled release people get a heads-up ──
+const DEFAULT_RELEASE_NOTICE_DAYS = 3;
+
+// GET /api/inactivity/release-notice-days — any logged-in user (every dashboard needs the number)
+const getReleaseNoticeDays = async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('app_settings').select('release_notice_days').eq('id', 1).single();
+    if (error) console.error('Could not read release_notice_days (using the default):', error.message);
+    const days = data && Number.isFinite(data.release_notice_days) ? data.release_notice_days : DEFAULT_RELEASE_NOTICE_DAYS;
+    res.json({ release_notice_days: days });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+// PATCH /api/inactivity/release-notice-days — admin
+const setReleaseNoticeDays = async (req, res) => {
+  try {
+    const days = Number(req.body.release_notice_days);
+    if (!Number.isInteger(days) || days < 1 || days > 60) {
+      return res.status(400).json({ message: 'Enter a whole number of days between 1 and 60.' });
+    }
+    const { error } = await supabase.from('app_settings').update({ release_notice_days: days }).eq('id', 1);
+    if (error) throw error;
+    res.json({ release_notice_days: days });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getSettings, setSettings, getInactivityReport, getReleaseNoticeDays, setReleaseNoticeDays };
