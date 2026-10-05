@@ -85,6 +85,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="calendar.js"></script>
 </head>
 <body class="bg-gray-950 text-white min-h-screen">
 
@@ -122,6 +123,9 @@ tr:hover td{background:rgba(0,0,0,.02)}
 
     <div class="nav-section-label">Oversight</div>
     <div class="nav-link" onclick="go('inactivity',this)"><span class="dot"></span>Inactive Users</div>
+
+    <div class="nav-section-label">Schedule</div>
+    <div class="nav-link" onclick="go('calendar',this)"><span class="dot"></span>Calendar <span id="calNavCount" class="tcal-count hidden">0</span></div>
   </nav>
 
   <div class="px-4 py-3 border-t border-white/8">
@@ -663,6 +667,11 @@ tr:hover td{background:rgba(0,0,0,.02)}
         </table></div>
         <p id="inactivitySearchEmpty" class="hidden text-center text-gray-500 text-xs py-5">No matching names.</p>
       </div>
+    </div>
+
+    <!-- ══ CALENDAR (built by public/calendar.js) ══ -->
+    <div id="sec-calendar" class="section">
+      <div id="calendarRoot"></div>
     </div>
 
     <div id="sec-settings" class="section space-y-4">
@@ -1406,7 +1415,8 @@ function go(id, linkEl) {
   // Header buttons
 
   // Render
-  const r = {overview:renderOverview,agents:renderAgents,properties:enterProperties,teams:renderTeamsView,buyers:renderBuyers,commission:renderCommission,reports:renderReports,logs:renderLogs,settings:renderSettings,promotions:renderPromotions,inactivity:renderInactivity};
+  const r = {overview:renderOverview,agents:renderAgents,properties:enterProperties,teams:renderTeamsView,buyers:renderBuyers,commission:renderCommission,reports:renderReports,logs:renderLogs,settings:renderSettings,promotions:renderPromotions,inactivity:renderInactivity,
+    calendar:()=>{ document.getElementById('pageTitle').textContent='Calendar'; if(window.TPPGCalendar) TPPGCalendar.render(); }};
   if(r[id]) r[id]();
 }
 

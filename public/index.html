@@ -48,8 +48,8 @@
       <a href="#contact" class="hover:text-white transition">Contact</a>
     </div>
     <div class="flex items-center gap-3">
-      <button onclick="openLogin()" class="text-sm text-gray-300 hover:text-white transition px-4 py-2">[Login]</button>
-      <button onclick="openLogin()" class="text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-lg transition">[CTA]</button>
+      <button onclick="openLogin(); showLogin()" class="text-sm text-gray-300 hover:text-white transition px-4 py-2">Log in</button>
+      <button onclick="openLogin(); showRegister()" class="text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-lg transition">Join as an Agent</button>
     </div>
   </div>
 </nav>
@@ -75,11 +75,6 @@
       <div class="hero-cta-row flex flex-wrap gap-4 justify-center mb-14">
         <a href="#listings" class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-7 py-3.5 rounded-lg transition">Browse Listings</a>
         <button onclick="openLogin()" class="border border-white/15 hover:border-white/30 text-white font-medium px-7 py-3.5 rounded-lg transition">Agent Login →</button>
-      </div>
-      <div class="hero-stats-row flex gap-12 justify-center border-t border-white/10 pt-8 max-w-lg mx-auto">
-        <div><div class="text-2xl font-bold">5</div><div class="text-xs text-gray-500 mt-1">Role-Based Dashboards</div></div>
-        <div><div class="text-2xl font-bold">3-Tier</div><div class="text-xs text-gray-500 mt-1">Listing Structure</div></div>
-        <div><div class="text-2xl font-bold">Live</div><div class="text-xs text-gray-500 mt-1">Inventory Status</div></div>
       </div>
     </div>
 
@@ -543,10 +538,8 @@
 <section id="listings" class="max-w-7xl mx-auto px-6 py-24">
   <div class="flex items-end justify-between mb-10 flex-wrap gap-4">
     <div>
-      <p class="num-tag mb-3">Live Inventory</p>
       <h2 class="text-3xl font-bold">Browse by developer, property, and unit</h2>
     </div>
-    <p class="text-gray-400 text-sm max-w-sm">Search by type, selling status, location, or budget — every unit is pulled straight from the portal.</p>
   </div>
   <div class="grid md:grid-cols-3 gap-5">
     <div class="card p-0 overflow-hidden text-gray-900">

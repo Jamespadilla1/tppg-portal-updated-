@@ -75,6 +75,7 @@
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="calendar.js"></script>
 </head>
 <body class="bg-gray-950 text-white min-h-screen">
 
@@ -92,6 +93,7 @@
     <div class="nav-link" onclick="showSection('compute',this)"><span class="dot"></span> Computation Tool</div>
     <div class="nav-link" onclick="showSection('reports',this)"><span class="dot"></span> Reports &amp; Analytics</div>
     <div id="navPromos" class="nav-link" onclick="showSection('promos',this)"><span class="dot"></span> Updates <span id="promoNavCount" class="promo-nav-count hidden">0</span></div>
+    <div id="navCalendar" class="nav-link" onclick="showSection('calendar',this)"><span class="dot"></span> Calendar <span id="calNavCount" class="promo-nav-count hidden">0</span></div>
     <div class="nav-link" onclick="showSection('profile',this)"><span class="dot"></span> My Profile</div>
   </nav>
   <div class="mx-3 mb-3 px-3 py-2 rounded-lg bg-yellow-500/8 border border-yellow-500/20 text-yellow-400 text-xs">👁 View-only access</div>
@@ -336,10 +338,20 @@
         <div id="releaseNoticeList" class="space-y-2"></div>
       </div>
       <div>
+        <h3 class="font-semibold text-sm">Calendar</h3>
+        <p class="text-xs text-gray-500 mt-0.5 mb-3">Your events today and tomorrow, and changes to events you're required to attend.</p>
+        <div id="calendarNoticeList" class="space-y-2"></div>
+      </div>
+      <div>
         <h3 class="font-semibold text-sm">Promotions</h3>
         <p class="text-xs text-gray-500 mt-0.5 mb-3">Current offers and incentives from the company. New items show a number on the bell until you've looked at them.</p>
         <div id="promoList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
       </div>
+    </div>
+
+    <!-- CALENDAR (built by public/calendar.js) -->
+    <div id="sec-calendar" class="section">
+      <div id="calendarRoot"></div>
     </div>
 
     <div id="sec-profile" class="section">
@@ -481,13 +493,18 @@ function promoUnread(list){
   const seen = localStorage.getItem(promoSeenKey());
   return list.filter(p => !seen || new Date(p.created_at).getTime() > new Date(seen).getTime());
 }
+// The bell also counts unread calendar reminders (see public/calendar.js); "Updates" in the nav counts only promos + releases.
+let promoBadgeBase = 0;
 function setPromoBadges(n){
-  ['promoBellCount', 'promoNavCount'].forEach(id => {
+  promoBadgeBase = n;
+  const counts = { promoBellCount: n + ((window.TPPGCalendar && TPPGCalendar.unread) || 0), promoNavCount: n };
+  Object.entries(counts).forEach(([id, c]) => {
     const el = document.getElementById(id);
-    el.textContent = n > 9 ? '9+' : String(n);
-    el.classList.toggle('hidden', n === 0);
+    el.textContent = c > 9 ? '9+' : String(c);
+    el.classList.toggle('hidden', c === 0);
   });
 }
+window.refreshBellCount = () => setPromoBadges(promoBadgeBase);
 async function fetchPromotions(){
   const res = await fetch('/api/promotions/mine', { headers: { 'Authorization': 'Bearer ' + token } });
   if(!res.ok) throw new Error('Failed to load promotions');
@@ -580,6 +597,7 @@ const RELEASE_KIND = {
 function releaseWhen(n){ return n.daysLeft === 0 ? 'Today' : n.daysLeft === 1 ? 'Tomorrow' : `In ${n.daysLeft} days`; }
 
 async function renderPromotions(){
+  if(window.TPPGCalendar) TPPGCalendar.renderNotices('calendarNoticeList');
   const noticeBox = document.getElementById('releaseNoticeList');
   const promoBox = document.getElementById('promoList');
   noticeBox.innerHTML = `<p class="text-xs text-gray-400">Loading…</p>`;
@@ -653,7 +671,7 @@ window.showSection = (id, linkEl) => {
   document.getElementById('sec-'+id).classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
   linkEl.classList.add('active');
-  const TITLES = { overview:'Dashboard', team:'Team', properties:'Properties', commission:'Commission', sales:'Sales & Buyers', compute:'Computation Tool', reports:'Reports & Analytics', profile:'My Profile', promos:'Updates' };
+  const TITLES = { overview:'Dashboard', team:'Team', properties:'Properties', commission:'Commission', sales:'Sales & Buyers', compute:'Computation Tool', reports:'Reports & Analytics', profile:'My Profile', promos:'Updates', calendar:'Calendar' };
   document.getElementById('pageTitle').textContent = TITLES[id];
   if(id==='overview') renderOverview();
   else if(id==='team') renderAgentTeamView();
@@ -663,6 +681,7 @@ window.showSection = (id, linkEl) => {
   else if(id==='reports') renderTeamReports();
   else if(id==='profile') renderProfile();
   else if(id==='promos') renderPromotions();
+  else if(id==='calendar') window.TPPGCalendar && TPPGCalendar.render();
 };
 
 window.openModal  = (id) => document.getElementById(id).classList.add('open');
