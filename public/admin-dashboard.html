@@ -390,7 +390,15 @@ tr:hover td{background:rgba(0,0,0,.02)}
 
       <!-- BUYER DASHBOARD: flat all-clients list -->
       <div id="sbBuyersTab" class="hidden card overflow-hidden">
-        <div class="px-5 py-3 border-b border-white/8"><h3 class="font-semibold text-sm">All Clients</h3></div>
+        <div class="px-5 py-3 border-b border-white/8 flex flex-wrap items-center justify-between gap-2">
+          <h3 class="font-semibold text-sm">All Clients</h3>
+          <select id="buyerRoleFilter" onchange="renderBuyers()" class="field w-52 text-xs">
+            <option value="agent">Agent</option>
+            <option value="team_leader">Team Leader</option>
+            <option value="sales_manager">Sales Manager</option>
+            <option value="unit_manager">Unit Manager</option>
+          </select>
+        </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
             <th class="text-left px-5 py-2">Client Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Developer</th><th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Type</th><th class="text-left px-5 py-2">Unit</th><th class="text-left px-5 py-2">Bedrooms</th><th class="text-left px-5 py-2">Furnishing</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Added By</th><th class="text-left px-5 py-2">Reports To</th><th class="text-left px-5 py-2">Actions</th>
@@ -4168,7 +4176,8 @@ async function renderBuyers(){
     }
 
     // Raw client list (Buyer Dashboard tab)
-    document.getElementById('buyersBody').innerHTML = withUnit.map(b => {
+    const buyerRoleSel = document.getElementById('buyerRoleFilter').value;
+    document.getElementById('buyersBody').innerHTML = withUnit.filter(b => b.input_by_role === buyerRoleSel).map(b => {
       const person = b.input_by_role ? resolvePerson(b.input_by_role, b.input_by_id) : null;
       const addedBy = person
         ? `<button onclick="openPersonInfo('${b.input_by_role}','${b.input_by_id}')" class="text-blue-400 hover:text-blue-300 hover:underline">${person.name} (${ROLE_LABEL[b.input_by_role]})</button>`
@@ -4193,7 +4202,7 @@ async function renderBuyers(){
           <button onclick="deleteBuyerAdmin('${b.id}')" class="text-xs text-red-400 hover:text-red-300">Archive</button>
         </td>
       </tr>`;
-    }).join('') || `<tr><td colspan="13" class="px-5 py-5 text-center text-gray-500 text-xs">No clients yet.</td></tr>`;
+    }).join('') || `<tr><td colspan="13" class="px-5 py-5 text-center text-gray-500 text-xs">No clients for this role yet.</td></tr>`;
 
     // Sales Dashboard tab (card drill-down)
     sbDrillStack = [];
