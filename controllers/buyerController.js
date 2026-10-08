@@ -376,13 +376,14 @@ const cancelBuyer = async (req, res) => {
 const verifyBuyer = async (req, res) => {
   try {
     const verified = req.body.verified !== false;
-    const { data: existing } = await supabase.from('buyers').select('id, cancelled').eq('id', req.params.id).single();
-    if (!existing) return res.status(404).json({ message: 'Not found.' });
+    const { data: existing, error: findErr } = await supabase.from('buyers').select('*').eq('id', req.params.id).maybeSingle();
+    if (findErr) { console.error('verifyBuyer lookup failed:', findErr); return res.status(500).json({ message: 'Lookup failed: ' + findErr.message }); }
+    if (!existing) return res.status(404).json({ message: 'Sale record not found (id: ' + req.params.id + ').' });
     if (existing.cancelled) return res.status(400).json({ message: 'A cancelled sale cannot be verified.' });
     const note = verified && req.body.note ? String(req.body.note).trim().slice(0, 500) : null;
     const patch = verified ? { verified: true, verified_at: new Date(), verified_by: req.user.id, verify_note: note || null } : { verified: false, verified_at: null, verified_by: null, verify_note: null };
     const { error } = await supabase.from('buyers').update(patch).eq('id', req.params.id);
-    if (error) throw error;
+    if (error) { console.error('verifyBuyer update failed:', error); return res.status(500).json({ message: 'Update failed: ' + error.message + ' (did you run sales_verification.sql?)' }); }
     res.json({ message: verified ? 'Sale verified.' : 'Verification removed.' });
   } catch (err) {
     console.error(err);
