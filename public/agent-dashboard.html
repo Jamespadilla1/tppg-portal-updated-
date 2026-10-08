@@ -92,11 +92,7 @@
     <div class="nav-link" onclick="showSection('sales',this)"><span class="dot"></span> Sales &amp; Buyers</div>
     <div class="nav-link" onclick="showSection('compute',this)"><span class="dot"></span> Computation Tool</div>
     <div class="nav-link" onclick="showSection('reports',this)"><span class="dot"></span> Reports &amp; Analytics</div>
-<<<<<<< HEAD
-=======
-    <div id="navPromos" class="nav-link" onclick="showSection('promos',this)"><span class="dot"></span> Updates <span id="promoNavCount" class="promo-nav-count hidden">0</span></div>
     <div id="navCalendar" class="nav-link" onclick="showSection('calendar',this)"><span class="dot"></span> Calendar <span id="calNavCount" class="promo-nav-count hidden">0</span></div>
->>>>>>> 6925b062c5b81754b92681ea260c41b0b39e2dcf
     <div class="nav-link" onclick="showSection('profile',this)"><span class="dot"></span> My Profile</div>
   </nav>
   <div class="mx-3 mb-3 px-3 py-2 rounded-lg bg-yellow-500/8 border border-yellow-500/20 text-yellow-400 text-xs">👁 View-only access</div>
@@ -125,6 +121,7 @@
       </button>
       <div id="notifPanel" class="hidden absolute right-0 mt-2 w-80 max-w-[90vw] bg-white border border-gray-200 rounded-xl shadow-xl z-50">
         <div class="px-4 py-2.5 border-b border-gray-200 font-semibold text-sm">Notifications</div>
+        <div id="calendarNoticeList" class="px-3 pt-3 space-y-2 empty:hidden"></div>
         <div id="notifPanelBody" class="max-h-96 overflow-y-auto"></div>
       </div>
       </div>
@@ -340,26 +337,6 @@
     </div>
 
     <!-- PROMOTIONS -->
-<<<<<<< HEAD
-=======
-    <div id="sec-promos" class="section space-y-6">
-      <div>
-        <h3 class="font-semibold text-sm">Upcoming releases</h3>
-        <p id="releaseNoticeSub" class="text-xs text-gray-500 mt-0.5 mb-3"></p>
-        <div id="releaseNoticeList" class="space-y-2"></div>
-      </div>
-      <div>
-        <h3 class="font-semibold text-sm">Calendar</h3>
-        <p class="text-xs text-gray-500 mt-0.5 mb-3">Your events today and tomorrow, and changes to events you're required to attend.</p>
-        <div id="calendarNoticeList" class="space-y-2"></div>
-      </div>
-      <div>
-        <h3 class="font-semibold text-sm">Promotions</h3>
-        <p class="text-xs text-gray-500 mt-0.5 mb-3">Current offers and incentives from the company. New items show a number on the bell until you've looked at them.</p>
-        <div id="promoList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-      </div>
-    </div>
->>>>>>> 6925b062c5b81754b92681ea260c41b0b39e2dcf
 
     <!-- CALENDAR (built by public/calendar.js) -->
     <div id="sec-calendar" class="section">
@@ -524,16 +501,12 @@ function promoUnread(list){
   const seen = localStorage.getItem(promoSeenKey());
   return list.filter(p => !seen || new Date(p.created_at).getTime() > new Date(seen).getTime());
 }
-// The bell also counts unread calendar reminders (see public/calendar.js); "Updates" in the nav counts only promos + releases.
+// The bell also counts unread calendar reminders (see public/calendar.js).
 let promoBadgeBase = 0;
 function setPromoBadges(n){
-<<<<<<< HEAD
-  ['promoBellCount'].forEach(id => {
-=======
   promoBadgeBase = n;
-  const counts = { promoBellCount: n + ((window.TPPGCalendar && TPPGCalendar.unread) || 0), promoNavCount: n };
+  const counts = { promoBellCount: n + ((window.TPPGCalendar && TPPGCalendar.unread) || 0) };
   Object.entries(counts).forEach(([id, c]) => {
->>>>>>> 6925b062c5b81754b92681ea260c41b0b39e2dcf
     const el = document.getElementById(id);
     el.textContent = c > 9 ? '9+' : String(c);
     el.classList.toggle('hidden', c === 0);
@@ -595,17 +568,9 @@ async function loadPromoBadge(){
 
 // The bell opens a small dropdown (there is no separate Updates page anymore)
 async function renderPromotions(){
-<<<<<<< HEAD
+  if(window.TPPGCalendar) TPPGCalendar.renderNotices('calendarNoticeList');
   const box = document.getElementById('notifPanelBody');
   box.innerHTML = `<p class="text-xs text-gray-400 p-4">Loading…</p>`;
-=======
-  if(window.TPPGCalendar) TPPGCalendar.renderNotices('calendarNoticeList');
-  const noticeBox = document.getElementById('releaseNoticeList');
-  const promoBox = document.getElementById('promoList');
-  noticeBox.innerHTML = `<p class="text-xs text-gray-400">Loading…</p>`;
-  promoBox.innerHTML = `<p class="text-xs text-gray-400">Loading…</p>`;
-
->>>>>>> 6925b062c5b81754b92681ea260c41b0b39e2dcf
   const [promos, notices] = await Promise.allSettled([fetchPromotions(), computeReleaseNotices()]);
   let html = '';
   if(promos.status === 'fulfilled') promoList = promos.value;
@@ -661,11 +626,7 @@ window.showSection = (id, linkEl) => {
   else if(id==='sales') loadMyClients();
   else if(id==='reports') renderTeamReports();
   else if(id==='profile') renderProfile();
-<<<<<<< HEAD
-=======
-  else if(id==='promos') renderPromotions();
   else if(id==='calendar') window.TPPGCalendar && TPPGCalendar.render();
->>>>>>> 6925b062c5b81754b92681ea260c41b0b39e2dcf
 };
 
 window.openModal  = (id) => document.getElementById(id).classList.add('open');
