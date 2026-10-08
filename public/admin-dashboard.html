@@ -448,6 +448,8 @@ tr:hover td{background:rgba(0,0,0,.02)}
           <div class="space-y-3">
             <div><label class="text-xs text-gray-400 mb-1 block">Date</label><input id="qrDate" type="date" class="field"></div>
             <div><label class="text-xs text-gray-400 mb-1 block">Amount Receivable (₱)</label><input id="qrAmount" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
+            <div><label class="text-xs text-gray-400 mb-1 block">Percent <span class="text-gray-600">(optional)</span></label><input id="qrPercent" type="text" class="field" placeholder="e.g. 5%"></div>
+            <div><label class="text-xs text-gray-400 mb-1 block">Note <span class="text-gray-600">(optional)</span></label><textarea id="qrNote" rows="2" class="field" placeholder="Add a note for this release"></textarea></div>
             <p id="qrErr" class="text-red-400 text-xs hidden"></p>
             <button onclick="saveQuickRelease()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Release</button>
           </div>
@@ -460,9 +462,22 @@ tr:hover td{background:rgba(0,0,0,.02)}
           <h3 class="font-semibold text-sm">Incentives & Override</h3>
           <p class="text-xs text-gray-500 mt-0.5">Click a sale under Commission Records above to set an incentive for the agent and an override for whoever they report to. Incentive is visible only to that agent; override is visible only to the recipient.</p>
         </div>
+        <div class="px-5 py-3 border-b border-white/8 flex flex-wrap items-center gap-2">
+          <select id="incRoleFilter" onchange="renderReceivables()" class="field w-52">
+            <option value="agent">Agent</option>
+            <option value="team_leader">Team Leader</option>
+            <option value="sales_manager">Sales Manager</option>
+            <option value="unit_manager">Unit Manager</option>
+          </select>
+          <div class="flex gap-1.5 ml-auto">
+            <button id="incTabActive" onclick="setIncView(false)" class="px-3 py-1.5 rounded-lg text-xs border border-orange-500/50 bg-orange-500/10 text-orange-400">Current</button>
+            <button id="incTabArchive" onclick="setIncView(true)" class="px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Archived <span id="incArchiveCount"></span></button>
+          </div>
+        </div>
+        <p id="incArchiveNote" class="hidden px-5 py-2 text-xs text-gray-500 border-b border-white/8">Archived records. Sales of sellers who were promoted (or removed) land here automatically; you can also archive any row yourself and restore it later.</p>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
-            <th class="text-left px-5 py-2">Seller</th><th class="text-left px-5 py-2">Client</th><th class="text-left px-5 py-2">Incentive</th><th class="text-left px-5 py-2">Override Recipient</th><th class="text-left px-5 py-2">Override Amount</th><th class="text-left px-5 py-2">Date</th>
+            <th class="text-left px-5 py-2">Seller</th><th class="text-left px-5 py-2">Client</th><th class="text-left px-5 py-2">Incentive</th><th class="text-left px-5 py-2">Override Recipient</th><th class="text-left px-5 py-2">Override Amount</th><th class="text-left px-5 py-2">Date</th><th class="text-left px-5 py-2">Actions</th>
           </tr></thead>
           <tbody id="receivablesBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
@@ -508,6 +523,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
           <div><label class="text-xs text-gray-400 mb-1 block">Monthly Amount (₱)</label><input id="mrMonthlyAmount" type="text" inputmode="numeric" class="field" placeholder="15,000" oninput="formatMoneyInput(this)"></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Number of Months</label><input id="mrMonths" type="number" min="1" class="field" placeholder="12"></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Start Date</label><input id="mrStartDate" type="date" class="field"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Percent <span class="text-gray-600">(optional, applied to every month)</span></label><input id="mrPercent" type="text" class="field" placeholder="e.g. 5%"></div>
         </div>
 
         <div id="mrRowsFields" class="hidden space-y-2">
@@ -519,6 +535,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
           <button type="button" onclick="addMonthlyRow()" class="text-xs text-orange-400 hover:text-orange-300 transition-colors">+ Add Row</button>
         </div>
 
+        <div class="mt-3"><label class="text-xs text-gray-400 mb-1 block">Note <span class="text-gray-600">(optional)</span></label><textarea id="mrNote" rows="2" class="field" placeholder="Add a note for these releases"></textarea></div>
         <p id="mrErr" class="text-red-400 text-xs hidden mt-3"></p>
         <button onclick="saveMonthlyRelease()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors mt-3">Save</button>
       </div>
@@ -1216,6 +1233,23 @@ tr:hover td{background:rgba(0,0,0,.02)}
 <!-- ADD BUYER -->
 <!-- VIEW AGENT MODAL -->
 <!-- APPROVE & ASSIGN AGENT -->
+<!-- VERIFY SALE POPUP -->
+<div id="verifyModal" class="modal-backdrop">
+  <div class="modal-box max-w-sm">
+    <button onclick="closeModal('verifyModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h3 class="font-bold text-base mb-1">Verify this sale?</h3>
+    <p class="text-xs text-gray-400 mb-3" id="verifyModalClient"></p>
+    <input type="hidden" id="verifyBuyerId">
+    <label class="text-xs text-gray-400 mb-1 block">Note for the seller (optional)</label>
+    <textarea id="verifyNote" rows="3" maxlength="500" class="field" placeholder="e.g. Reservation fee confirmed. Please submit the remaining documents."></textarea>
+    <p class="text-[11px] text-gray-500 mt-2">The seller gets a “Sale approved” notification with this note.</p>
+    <div class="flex gap-2 justify-end mt-4">
+      <button onclick="closeModal('verifyModal')" class="px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white">Cancel</button>
+      <button onclick="confirmVerify()" class="px-3 py-1.5 rounded-lg text-xs bg-green-600 hover:bg-green-500 text-white font-semibold">✓ Verify sale</button>
+    </div>
+  </div>
+</div>
+
 <!-- PERSON INFO POPUP (click a seller's name in Sales & Buyers / Commission) -->
 <div id="personInfoModal" class="modal-backdrop">
   <div class="modal-box max-w-sm">
@@ -4004,26 +4038,26 @@ function sbRenderDrill(){
     const directSM = smCache.filter(sm=>sm.unit_manager_id===current.id);
     const directTL = tlCache.filter(tl=>tl.unit_manager_id===current.id);
     const directAgents = teamAgentsCache.filter(a=>a.unit_manager_id===current.id && !a.team_leader_id && !a.sales_manager_id);
-    rootOpts = { name: um.name, roleId: um.um_id, roleLabel: 'Unit Manager', personal: personalSalesValue('unit_manager', um.id), team: teamSalesOfUM(um.id) };
+    rootOpts = { name: um.name, roleId: um.um_id, roleLabel: 'Unit Manager', personal: personalSalesValue('unit_manager', um.id), team: teamSalesOfUM(um.id), clickable: true, onclick: `openPersonInfo('unit_manager','${um.id}')` };
     children = [
       ...directSM.map(sm => ({ opts: { name: sm.name, roleId: sm.sm_id, roleLabel: 'Sales Manager', personal: personalSalesValue('sales_manager', sm.id), team: teamSalesOfSM(sm.id), clickable: true, onclick: `sbDrillInto('sales_manager','${sm.id}','${sm.name.replace(/'/g,"\\'")}')` } })),
       ...directTL.map(tl => ({ opts: { name: tl.name, roleId: tl.tl_id, roleLabel: 'Team Leader', personal: personalSalesValue('team_leader', tl.id), team: teamSalesOfTL(tl.id), clickable: true, onclick: `sbDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` } })),
-      ...directAgents.map(a => ({ opts: { name: a.name, roleId: a.agent_id, roleLabel: 'Agent', personal: personalSalesValue('agent', a.id), team: personalSalesValue('agent', a.id), clickable: false } })),
+      ...directAgents.map(a => ({ opts: { name: a.name, roleId: a.agent_id, roleLabel: 'Agent', personal: personalSalesValue('agent', a.id), team: personalSalesValue('agent', a.id), clickable: true, onclick: `openPersonInfo('agent','${a.id}')` } })),
     ];
   } else if(current.type === 'sales_manager'){
     const sm = smCache.find(s=>s.id===current.id);
     const directTL = tlCache.filter(tl=>tl.sales_manager_id===current.id);
     const directAgents = teamAgentsCache.filter(a=>a.sales_manager_id===current.id);
-    rootOpts = { name: sm.name, roleId: sm.sm_id, roleLabel: 'Sales Manager', personal: personalSalesValue('sales_manager', sm.id), team: teamSalesOfSM(sm.id) };
+    rootOpts = { name: sm.name, roleId: sm.sm_id, roleLabel: 'Sales Manager', personal: personalSalesValue('sales_manager', sm.id), team: teamSalesOfSM(sm.id), clickable: true, onclick: `openPersonInfo('sales_manager','${sm.id}')` };
     children = [
       ...directTL.map(tl => ({ opts: { name: tl.name, roleId: tl.tl_id, roleLabel: 'Team Leader', personal: personalSalesValue('team_leader', tl.id), team: teamSalesOfTL(tl.id), clickable: true, onclick: `sbDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` } })),
-      ...directAgents.map(a => ({ opts: { name: a.name, roleId: a.agent_id, roleLabel: 'Agent', personal: personalSalesValue('agent', a.id), team: personalSalesValue('agent', a.id), clickable: false } })),
+      ...directAgents.map(a => ({ opts: { name: a.name, roleId: a.agent_id, roleLabel: 'Agent', personal: personalSalesValue('agent', a.id), team: personalSalesValue('agent', a.id), clickable: true, onclick: `openPersonInfo('agent','${a.id}')` } })),
     ];
   } else if(current.type === 'team_leader'){
     const tl = tlCache.find(t=>t.id===current.id);
     const directAgents = teamAgentsCache.filter(a=>a.team_leader_id===current.id);
-    rootOpts = { name: tl.name, roleId: tl.tl_id, roleLabel: 'Team Leader', personal: personalSalesValue('team_leader', tl.id), team: teamSalesOfTL(tl.id) };
-    children = directAgents.map(a => ({ opts: { name: a.name, roleId: a.agent_id, roleLabel: 'Agent', personal: personalSalesValue('agent', a.id), team: personalSalesValue('agent', a.id), clickable: false } }));
+    rootOpts = { name: tl.name, roleId: tl.tl_id, roleLabel: 'Team Leader', personal: personalSalesValue('team_leader', tl.id), team: teamSalesOfTL(tl.id), clickable: true, onclick: `openPersonInfo('team_leader','${tl.id}')` };
+    children = directAgents.map(a => ({ opts: { name: a.name, roleId: a.agent_id, roleLabel: 'Agent', personal: personalSalesValue('agent', a.id), team: personalSalesValue('agent', a.id), clickable: true, onclick: `openPersonInfo('agent','${a.id}')` } }));
   }
 
   grid.innerHTML = `
@@ -4131,8 +4165,8 @@ async function renderBuyers(){
         : (b.input_by_name ? `${b.input_by_name} (former ${ROLE_LABEL[b.input_by_role]||'—'})` : '—');
       const reportsTo = b.input_by_role ? resolveReportsTo(b.input_by_role, b.input_by_id) : '—';
       return `
-      <tr class="${b.cancelled ? 'opacity-50' : ''}">
-        <td class="px-5 py-3 font-medium text-white text-xs">${b.name}${b.cancelled ? ` <span class="badge bg-red">Cancelled</span>` : ''}</td>
+      <tr class="${b.cancelled ? 'opacity-50' : ''}" style="${b.verified && !b.cancelled ? 'background:rgba(34,197,94,.10);box-shadow:inset 3px 0 0 #22c55e' : ''}">
+        <td class="px-5 py-3 font-medium text-white text-xs">${b.name}${b.cancelled ? ` <span class="badge bg-red">Cancelled</span>` : ''}${b.verified && !b.cancelled ? ` <span class="badge bg-green">✓ Verified</span>` : ''}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${b.email||'—'}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${b.phone||'—'}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${b.developer ? b.developer.name : '—'}</td>
@@ -4145,6 +4179,7 @@ async function renderBuyers(){
         <td class="px-5 py-3 text-gray-400 text-xs">${addedBy}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${reportsTo}</td>
         <td class="px-5 py-3 flex gap-2">
+          ${b.cancelled ? '' : (b.verified ? `<button onclick="verifyBuyerAdmin('${b.id}',false)" class="text-xs text-gray-400 hover:text-white">Unverify</button>` : `<button onclick="openVerifyModal('${b.id}','${(b.name||'').replace(/'/g,"\\'")}')" class="text-xs text-green-400 hover:text-green-300 font-semibold">Verify</button>`)}
           ${b.cancelled ? '' : `<button onclick="cancelBuyerAdmin('${b.id}')" class="text-xs text-yellow-400 hover:text-yellow-300">Cancel</button>`}
           <button onclick="deleteBuyerAdmin('${b.id}')" class="text-xs text-red-400 hover:text-red-300">Archive</button>
         </td>
@@ -4159,6 +4194,26 @@ async function renderBuyers(){
     console.error('Error loading sales & buyers:', err);
   }
 }
+window.openVerifyModal = function(id, name){
+  document.getElementById('verifyBuyerId').value = id;
+  document.getElementById('verifyModalClient').textContent = 'Client: ' + name;
+  document.getElementById('verifyNote').value = '';
+  openModal('verifyModal');
+};
+window.confirmVerify = async function(){
+  const id = document.getElementById('verifyBuyerId').value;
+  const note = document.getElementById('verifyNote').value.trim();
+  closeModal('verifyModal');
+  await verifyBuyerAdmin(id, true, note);
+};
+window.verifyBuyerAdmin = async function(id, verified, note){
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch(`/api/buyers/${id}/verify`, { method:'PATCH', headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body: JSON.stringify({ verified, note }) });
+    if(!res.ok){ const err = await res.json(); alert(err.message || 'Failed to update verification.'); return; }
+    renderBuyers();
+  } catch(err) { console.error(err); alert('Failed to update verification.'); }
+};
 async function cancelBuyerAdmin(id){
   if(!confirm('Cancel this sale? This is FINAL and cannot be undone — the sale stays visible but is excluded from commission and reports.')) return;
   const token = localStorage.getItem('token');
@@ -4249,7 +4304,7 @@ window.openCommClientRecords = async (role, id, name) => {
           <div class="space-y-1 max-h-28 overflow-y-auto">
             ${releases.map(r=>`
               <div class="flex justify-between text-xs">
-                <span class="text-gray-400">${new Date(r.release_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})} <span class="text-gray-600">· ${r.release_type}</span></span>
+                <span class="text-gray-400">${new Date(r.release_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})} <span class="text-gray-600">· ${r.release_type}${r.percent ? ' · '+promoEsc(r.percent) : ''}</span>${r.notes ? `<span class="block text-gray-500 italic">“${promoEsc(r.notes)}”</span>` : ''}</span>
                 <span class="text-green-400 font-medium">${peso(r.amount)}</span>
               </div>
             `).join('')}
@@ -4272,6 +4327,8 @@ window.openQuickRelease = (buyerId, clientName, paymentTerm) => {
   document.getElementById('qrSubtitle').textContent = `Payment Terms: ${paymentTerm}`;
   document.getElementById('qrDate').value = '';
   document.getElementById('qrAmount').value = '';
+  document.getElementById('qrPercent').value = '';
+  document.getElementById('qrNote').value = '';
   document.getElementById('qrErr').classList.add('hidden');
   openModal('quickReleaseModal');
 };
@@ -4291,7 +4348,7 @@ window.saveQuickRelease = async () => {
     const res = await fetch('/api/commission-receivables', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ buyer_id, amount, release_date, release_type }),
+      body: JSON.stringify({ buyer_id, amount, release_date, release_type, percent: document.getElementById('qrPercent').value.trim(), notes: document.getElementById('qrNote').value.trim() }),
     });
     if(!res.ok) throw new Error('Save failed');
     closeModal('quickReleaseModal');
@@ -4532,7 +4589,24 @@ function sellerLabelForBuyer(b){
   return `${nameHtml} (${roleTag})${context}`;
 }
 
-async function renderReceivables(){
+let incShowArchive = false;
+window.setIncentiveArchive = async function(id, archived){
+  if(archived && !confirm('Archive this incentive/override record? You can restore it later.')) return;
+  try {
+    const res = await fetch(`/api/buyers/${id}/incentive-archive`, { method:'PATCH', headers:{ 'Authorization':'Bearer '+localStorage.getItem('token'), 'Content-Type':'application/json' }, body: JSON.stringify({ archived }) });
+    if(!res.ok) throw new Error();
+    renderReceivables();
+  } catch(e){ alert('Failed to update. Please try again.'); }
+};
+window.setIncView = function(archive){
+  incShowArchive = archive;
+  const on='px-3 py-1.5 rounded-lg text-xs border border-orange-500/50 bg-orange-500/10 text-orange-400', off='px-3 py-1.5 rounded-lg text-xs border border-white/10 text-gray-400 hover:text-white';
+  document.getElementById('incTabActive').className = archive ? off : on;
+  document.getElementById('incTabArchive').className = archive ? on : off;
+  document.getElementById('incArchiveNote').classList.toggle('hidden', !archive);
+  renderReceivables();
+};
+window.renderReceivables = async function renderReceivables(){
   const token = localStorage.getItem('token');
   const headers = { 'Authorization': 'Bearer ' + token };
   try {
@@ -4546,7 +4620,11 @@ async function renderReceivables(){
     receivablesPropsCache = await propsRes.json();
     await fetchTeamStructureData(); // loads umCache, smCache, tlCache, teamAgentsCache
 
-    const rows = [...receivablesBuyersCache].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    const roleSel = document.getElementById('incRoleFilter').value;
+    const isFormer = b => b.incentive_archived || (!!b.input_by_role && !resolveSellerPerson(b.input_by_role, b.input_by_id));
+    const byRole = receivablesBuyersCache.filter(b => !roleSel || b.input_by_role === roleSel);
+    document.getElementById('incArchiveCount').textContent = `(${byRole.filter(isFormer).length})`;
+    const rows = byRole.filter(b => isFormer(b) === incShowArchive).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
 
     document.getElementById('receivablesBody').innerHTML = rows.map(b => {
       const sellerLabel = sellerLabelForBuyer(b);
@@ -4561,12 +4639,13 @@ async function renderReceivables(){
         <td class="px-5 py-3 text-xs">${recipient ? `${recipient.person.name} (${COMM_ROLE_LABEL[recipient.tier]})` : '—'}</td>
         <td class="px-5 py-3 text-xs text-green-400 font-semibold">${overrideAmount ? peso(overrideAmount) : '—'}</td>
         <td class="px-5 py-3 text-xs text-gray-400">${b.incentive_date ? new Date(b.incentive_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'}) : '—'}</td>
+        <td class="px-5 py-3 text-xs" onclick="event.stopPropagation()">${b.incentive_archived ? `<button onclick="setIncentiveArchive('${b.id}',false)" class="text-green-400 hover:text-green-300">Restore</button>` : (isFormer(b) ? '<span class="text-gray-600">Auto-archived</span>' : `<button onclick="setIncentiveArchive('${b.id}',true)" class="text-red-400 hover:text-red-300">Archive</button>`)}</td>
       </tr>`;
-    }).join('') || `<tr><td colspan="6" class="px-5 py-5 text-center text-gray-500 text-xs">No sales recorded yet.</td></tr>`;
+    }).join('') || `<tr><td colspan="7" class="px-5 py-5 text-center text-gray-500 text-xs">${incShowArchive ? 'Nothing archived yet.' : 'No sales recorded yet.'}</td></tr>`;
   } catch(err) {
     console.error('Error loading receivables:', err);
   }
-}
+};
 
 // Determine who a given seller (agent/TL/SM) reports to, for auto-assigning the override.
 // Checks the immediate superior first (team_leader_id), then sales_manager_id, then unit_manager_id.
@@ -4662,6 +4741,8 @@ window.openMonthlyRelease = (buyerId, clientName) => {
   document.getElementById('mrStartDate').value = '';
   document.getElementById('mrRowsList').innerHTML = '';
   document.getElementById('mrBulkCount').value = '';
+  document.getElementById('mrPercent').value = '';
+  document.getElementById('mrNote').value = '';
   mrRowCount = 0;
   addMonthlyRow();
   setMonthlyReleaseMode('schedule');
@@ -4692,6 +4773,7 @@ window.addMonthlyRow = () => {
   div.innerHTML = `
     <div class="flex-1"><label class="text-xs text-gray-400 mb-1 block">Date</label><input type="date" class="field mr-row-date"></div>
     <div class="flex-1"><label class="text-xs text-gray-400 mb-1 block">Amount (₱)</label><input type="text" inputmode="numeric" class="field mr-row-amount" placeholder="0" oninput="formatMoneyInput(this)"></div>
+    <div style="width:5.5rem"><label class="text-xs text-gray-400 mb-1 block">Percent</label><input type="text" class="field mr-row-percent" placeholder="%"></div>
     <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-red-400 hover:text-red-300 text-xs pb-2.5">&times;</button>
   `;
   document.getElementById('mrRowsList').appendChild(div);
@@ -4732,18 +4814,19 @@ window.saveMonthlyRelease = async () => {
         const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
         const day = Math.min(startD, lastDayOfMonth); // e.g. a Jan 31 start becomes Feb 28/29, not Mar 3
         const dateStr = `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-        scheduleRows.push({ date: dateStr, amount: monthly_amount });
+        scheduleRows.push({ date: dateStr, amount: monthly_amount, percent: document.getElementById('mrPercent').value.trim() });
       }
       const results = await Promise.all(scheduleRows.map(r => fetch('/api/commission-receivables', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ buyer_id, amount: r.amount, release_date: r.date, release_type: 'Monthly Down Payment' }),
+        body: JSON.stringify({ buyer_id, amount: r.amount, release_date: r.date, release_type: 'Monthly Down Payment', percent: r.percent, notes: document.getElementById('mrNote').value.trim() }),
       })));
       if(results.some(r=>!r.ok)) throw new Error('Save failed');
     } else {
       const rows = [...document.querySelectorAll('#mrRowsList > div')].map(div => ({
         date: div.querySelector('.mr-row-date').value,
         amount: parseMoney(div.querySelector('.mr-row-amount').value),
+        percent: div.querySelector('.mr-row-percent').value.trim(),
       })).filter(r => r.date && r.amount);
       if(!rows.length){
         document.getElementById('mrErr').textContent = 'Add at least one row with a date and amount.';
@@ -4753,7 +4836,7 @@ window.saveMonthlyRelease = async () => {
       const results = await Promise.all(rows.map(r => fetch('/api/commission-receivables', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ buyer_id, amount: r.amount, release_date: r.date, release_type: 'Monthly Down Payment' }),
+        body: JSON.stringify({ buyer_id, amount: r.amount, release_date: r.date, release_type: 'Monthly Down Payment', percent: r.percent, notes: document.getElementById('mrNote').value.trim() }),
       })));
       if(results.some(r=>!r.ok)) throw new Error('Save failed');
     }

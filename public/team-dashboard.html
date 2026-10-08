@@ -91,7 +91,6 @@
     <div class="nav-link" onclick="showSection('sales',this)"><span class="dot"></span> Sales &amp; Buyers</div>
     <div class="nav-link" onclick="showSection('compute',this)"><span class="dot"></span> Computation Tool</div>
     <div class="nav-link" onclick="showSection('reports',this)"><span class="dot"></span> Reports &amp; Analytics</div>
-    <div id="navPromos" class="nav-link" onclick="showSection('promos',this)"><span class="dot"></span> Updates <span id="promoNavCount" class="promo-nav-count hidden">0</span></div>
     <div class="nav-link" onclick="showSection('profile',this)"><span class="dot"></span> My Profile</div>
   </nav>
   <div class="mx-3 mb-3 px-3 py-2 rounded-lg bg-yellow-500/8 border border-yellow-500/20 text-yellow-400 text-xs">👁 View-only access</div>
@@ -113,10 +112,16 @@
     <h1 class="font-bold text-lg" id="pageTitle">Dashboard</h1>
     <div class="flex items-center gap-4">
       <p class="text-xs text-gray-500" id="teamSummary"></p>
-      <button id="promoBell" class="promo-bell" onclick="showSection('promos', document.getElementById('navPromos'))" aria-label="Promotions and updates" title="Promotions and updates">
+      <div id="notifWrap" class="relative">
+      <button id="promoBell" class="promo-bell" onclick="toggleNotifPanel(event)" aria-label="Promotions and updates" title="Promotions and updates">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
         <span id="promoBellCount" class="cnt hidden">0</span>
       </button>
+      <div id="notifPanel" class="hidden absolute right-0 mt-2 w-80 max-w-[90vw] bg-white border border-gray-200 rounded-xl shadow-xl z-50">
+        <div class="px-4 py-2.5 border-b border-gray-200 font-semibold text-sm">Notifications</div>
+        <div id="notifPanelBody" class="max-h-96 overflow-y-auto"></div>
+      </div>
+      </div>
     </div>
   </header>
 
@@ -323,18 +328,6 @@
     </div>
 
     <!-- PROMOTIONS -->
-    <div id="sec-promos" class="section space-y-6">
-      <div>
-        <h3 class="font-semibold text-sm">Upcoming releases</h3>
-        <p id="releaseNoticeSub" class="text-xs text-gray-500 mt-0.5 mb-3"></p>
-        <div id="releaseNoticeList" class="space-y-2"></div>
-      </div>
-      <div>
-        <h3 class="font-semibold text-sm">Promotions</h3>
-        <p class="text-xs text-gray-500 mt-0.5 mb-3">Current offers and incentives from the company. New items show a number on the bell until you've looked at them.</p>
-        <div id="promoList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-      </div>
-    </div>
 
     <div id="sec-profile" class="section">
       <div class="max-w-md card p-6 space-y-4">
@@ -556,7 +549,7 @@ function promoUnread(list){
   return list.filter(p => !seen || new Date(p.created_at).getTime() > new Date(seen).getTime());
 }
 function setPromoBadges(n){
-  ['promoBellCount', 'promoNavCount'].forEach(id => {
+  ['promoBellCount'].forEach(id => {
     const el = document.getElementById(id);
     el.textContent = n > 9 ? '9+' : String(n);
     el.classList.toggle('hidden', n === 0);
@@ -592,45 +585,14 @@ function releaseFmtDate(value){
 //  - overrides on their team's sales (team leaders, sales managers and unit managers only)
 // A cancelled or archived sale never produces a notice.
 async function computeReleaseNotices(){
-  const headers = { 'Authorization': 'Bearer ' + token };
-  const [daysRes, buyersRes, recRes, teamRes] = await Promise.all([
-    fetch('/api/inactivity/release-notice-days', { headers }),
-    fetch('/api/buyers', { headers }),
-    fetch('/api/commission-receivables/mine', { headers }),
-    role === 'agent' ? Promise.resolve(null) : fetch('/api/buyers/team', { headers }),
-  ]);
-  if(!buyersRes.ok || !recRes.ok || (teamRes && !teamRes.ok)) throw new Error('Failed to load release data');
-  if(daysRes.ok){ const d = await daysRes.json(); releaseNoticeDays = Number(d.release_notice_days) || 3; }
-  const myBuyers = await buyersRes.json();
-  const receivables = await recRes.json();
-  const teamBuyers = teamRes ? await teamRes.json() : [];
-
-  const within = d => d !== null && d >= 0 && d <= releaseNoticeDays;
-  const out = [];
-  const liveBuyer = new Map(myBuyers.filter(b => !b.cancelled).map(b => [b.id, b]));
-
-  receivables.forEach(r => {
-    const b = liveBuyer.get(r.buyer_id);
-    if(!b) return;
-    const d = daysUntilDate(r.release_date);
-    if(within(d)) out.push({ key: `commission:${r.id}:${releaseDatePart(r.release_date)}`, kind:'commission', amount:r.amount, client:b.name, detail:r.release_type || '', date:releaseDatePart(r.release_date), daysLeft:d });
-  });
-  myBuyers.forEach(b => {
-    if(b.cancelled || !b.incentive_amount) return;
-    const d = daysUntilDate(b.incentive_date);
-    if(within(d)) out.push({ key: `incentive:${b.id}:${releaseDatePart(b.incentive_date)}`, kind:'incentive', amount:b.incentive_amount, client:b.name, detail:b.incentive_reason || '', date:releaseDatePart(b.incentive_date), daysLeft:d });
-  });
-  const overrideField = { team_leader:'override_team_leader', sales_manager:'override_sales_manager', unit_manager:'override_unit_manager' }[role];
-  const meId = (typeof myUserId !== 'undefined') ? myUserId : null;
-  if(overrideField){
-    teamBuyers.forEach(b => {
-      if(b.cancelled || !b[overrideField] || (meId && b.input_by_id === meId)) return;
-      const d = daysUntilDate(b.incentive_date);
-      if(within(d)) out.push({ key: `override:${b.id}:${releaseDatePart(b.incentive_date)}`, kind:'override', amount:b[overrideField], client:b.name, detail:'Override from your team\'s sale', date:releaseDatePart(b.incentive_date), daysLeft:d });
-    });
-  }
-  out.sort((a, b) => a.daysLeft - b.daysLeft || a.kind.localeCompare(b.kind));
-  return out;
+  // Bell notices: only "sale approved" (verified by Admin) in the last 14 days. No commission/incentive notices.
+  const res = await fetch('/api/buyers', { headers: { 'Authorization': 'Bearer ' + token } });
+  if(!res.ok) throw new Error('Failed to load notices');
+  const myBuyers = await res.json();
+  return myBuyers
+    .filter(b => !b.cancelled && b.verified && b.verified_at && Date.now() - new Date(b.verified_at).getTime() <= 14*86400000)
+    .map(b => ({ key: `verified:${b.id}:${b.verified_at}`, client: b.name, note: b.verify_note || '', date: b.verified_at }))
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
 }
 
 // Which notices has this person already looked at? (remembered per person, in this browser)
@@ -642,85 +604,54 @@ async function loadPromoBadge(){
   const [promos, notices] = await Promise.allSettled([fetchPromotions(), computeReleaseNotices()]);
   if(promos.status === 'fulfilled') promoList = promos.value; else console.error('Error loading promotions:', promos.reason);
   if(notices.status === 'fulfilled'){ releaseNotices = notices.value; releaseNoticesFailed = false; }
-  else { releaseNoticesFailed = true; console.error('Error loading release notices:', notices.reason); }
+  else { releaseNoticesFailed = true; console.error('Error loading notices:', notices.reason); }
   setPromoBadges(promoUnread(promoList).length + unreadNotices(releaseNotices).length);
 }
 
-const RELEASE_KIND = {
-  commission: { label: 'Commission release', cls: 'badge-green' },
-  incentive:  { label: 'Incentive',          cls: 'badge-purple' },
-  override:   { label: 'Override',           cls: 'badge-blue' },
-};
-function releaseWhen(n){ return n.daysLeft === 0 ? 'Today' : n.daysLeft === 1 ? 'Tomorrow' : `In ${n.daysLeft} days`; }
-
+// The bell opens a small dropdown (there is no separate Updates page anymore)
 async function renderPromotions(){
-  const noticeBox = document.getElementById('releaseNoticeList');
-  const promoBox = document.getElementById('promoList');
-  noticeBox.innerHTML = `<p class="text-xs text-gray-400">Loading…</p>`;
-  promoBox.innerHTML = `<p class="text-xs text-gray-400">Loading…</p>`;
-
+  const box = document.getElementById('notifPanelBody');
+  box.innerHTML = `<p class="text-xs text-gray-400 p-4">Loading…</p>`;
   const [promos, notices] = await Promise.allSettled([fetchPromotions(), computeReleaseNotices()]);
+  let html = '';
+  if(promos.status === 'fulfilled') promoList = promos.value;
+  if(notices.status === 'fulfilled'){ releaseNotices = notices.value; releaseNoticesFailed = false; } else { releaseNoticesFailed = true; }
+  const unreadN = new Set(unreadNotices(releaseNotices).map(n => n.key));
+  const unreadP = new Set(promoUnread(promoList).map(p => p.id));
 
-  // ── upcoming releases ──
-  if(notices.status === 'fulfilled'){
-    releaseNotices = notices.value; releaseNoticesFailed = false;
-    document.getElementById('releaseNoticeSub').textContent = `Commission releases, incentives and overrides due in the next ${releaseNoticeDays} day${releaseNoticeDays === 1 ? '' : 's'}.`;
-    const unread = new Set(unreadNotices(releaseNotices).map(n => n.key));
-    noticeBox.innerHTML = releaseNotices.map(n => {
-      const k = RELEASE_KIND[n.kind];
-      return `
-      <div class="card p-4 flex items-center justify-between gap-4 flex-wrap">
-        <div class="min-w-0">
-          <div class="flex items-center gap-2 flex-wrap mb-1">
-            ${unread.has(n.key) ? '<span class="badge badge-orange">New</span>' : ''}
-            <span class="badge ${k.cls}">${k.label}</span>
-          </div>
-          <p class="font-semibold text-sm">${peso(n.amount)} <span class="text-gray-500 font-normal">· ${promoEsc(n.client)}</span></p>
-          ${n.detail ? `<p class="text-xs text-gray-500">${promoEsc(n.detail)}</p>` : ''}
-        </div>
-        <div class="text-right shrink-0">
-          <p class="text-sm font-semibold ${n.daysLeft <= 1 ? 'text-orange-600' : ''}">${releaseWhen(n)}</p>
-          <p class="text-xs text-gray-500">${releaseFmtDate(n.date)}</p>
-        </div>
-      </div>`;
-    }).join('') || `<div class="card p-5 text-center text-gray-400 text-sm">Nothing is scheduled to be released in the next ${releaseNoticeDays} day${releaseNoticeDays === 1 ? '' : 's'}.</div>`;
-    markNoticesSeen(releaseNotices);
-  } else {
-    releaseNoticesFailed = true;
-    console.error('Error loading release notices:', notices.reason);
-    document.getElementById('releaseNoticeSub').textContent = '';
-    noticeBox.innerHTML = `<p class="text-xs text-red-500">Couldn't load your upcoming releases right now. Please try again in a moment.</p>`;
-  }
-
-  // ── promotions ──
+  releaseNotices.forEach(n => {
+    html += `<div class="px-4 py-3 border-b border-gray-100">
+      <div class="flex items-center gap-2 mb-0.5">${unreadN.has(n.key) ? '<span class="badge badge-orange">New</span>' : ''}<span class="badge badge-green">✓ Sale approved</span><span class="text-[11px] text-gray-400 ml-auto">${promoFmtDate(n.date)}</span></div>
+      <p class="text-sm font-semibold">${promoEsc(n.client)}</p>
+      <p class="text-xs text-gray-500">Your sale went through — verified by Admin.</p>
+      ${n.note ? `<p class="text-xs mt-1 p-2 rounded bg-gray-50 border border-gray-200"><span class="text-gray-500">Note from Admin:</span> ${promoEsc(n.note)}</p>` : ''}
+    </div>`;
+  });
   if(promos.status === 'fulfilled'){
-    promoList = promos.value;
-    const unreadIds = new Set(promoUnread(promoList).map(p => p.id));
-    promoBox.innerHTML = promoList.map(p => {
-      const soon = p.ends_at && (new Date(p.ends_at).getTime() - Date.now()) < 3 * PROMO_DAY;
-      const audience = p.audience === 'public' ? '<span class="badge badge-green">Public</span>' : '<span class="badge badge-purple">🔒 Team only</span>';
-      const ends = p.ends_at
-        ? `<span class="${soon ? 'text-orange-600 font-semibold' : ''}">⏱ ${promoTimeLeft(new Date(p.ends_at).getTime() - Date.now())}</span> · ends ${promoFmtDate(p.ends_at)}`
-        : 'No end date';
-      return `
-        <div class="card p-5">
-          <div class="flex items-center gap-2 flex-wrap mb-2">
-            ${unreadIds.has(p.id) ? '<span class="badge badge-orange">New</span>' : ''}
-            ${audience}
-            <span class="badge badge-blue">${p.scope}: ${promoEsc(p.target_name)}</span>
-          </div>
-          <h3 class="font-semibold">${promoEsc(p.title)}</h3>
-          <p class="text-sm text-gray-500 mt-1">${promoEsc(p.message)}</p>
-          <p class="text-xs text-gray-500 mt-3">${ends}</p>
-        </div>`;
-    }).join('') || `<div class="card p-8 text-center text-gray-400 text-sm md:col-span-2">No promotions right now. New offers will show up here.</div>`;
-    localStorage.setItem(promoSeenKey(), new Date().toISOString());
-  } else {
-    console.error('Error loading promotions:', promos.reason);
-    promoBox.innerHTML = `<p class="text-xs text-red-500">Failed to load promotions.</p>`;
+    promoList.forEach(p => {
+      html += `<div class="px-4 py-3 border-b border-gray-100">
+        <div class="flex items-center gap-2 mb-0.5">${unreadP.has(p.id) ? '<span class="badge badge-orange">New</span>' : ''}<span class="badge badge-purple">Promotion</span>${p.ends_at ? `<span class="text-[11px] text-gray-400 ml-auto">ends ${promoFmtDate(p.ends_at)}</span>` : ''}</div>
+        <p class="text-sm font-semibold">${promoEsc(p.title)}</p>
+        <p class="text-xs text-gray-500">${promoEsc(p.message)}</p>
+      </div>`;
+    });
   }
+  if(notices.status !== 'fulfilled' && promos.status !== 'fulfilled') html = `<p class="text-xs text-red-500 p-4">Couldn't load notifications right now. Please try again in a moment.</p>`;
+  box.innerHTML = html || `<p class="text-sm text-gray-400 text-center p-6">No notifications yet.</p>`;
+  if(notices.status === 'fulfilled') markNoticesSeen(releaseNotices);
+  if(promos.status === 'fulfilled') localStorage.setItem(promoSeenKey(), new Date().toISOString());
   setPromoBadges(promoUnread(promoList).length + unreadNotices(releaseNotices).length);
 }
+window.toggleNotifPanel = function(ev){
+  if(ev) ev.stopPropagation();
+  const p = document.getElementById('notifPanel');
+  const open = p.classList.toggle('hidden') === false;
+  if(open) renderPromotions();
+};
+document.addEventListener('click', e => {
+  const p = document.getElementById('notifPanel');
+  if(p && !p.classList.contains('hidden') && !e.target.closest('#notifWrap')) p.classList.add('hidden');
+});
 
 window.showSection = (id, linkEl) => {
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
@@ -736,7 +667,6 @@ window.showSection = (id, linkEl) => {
   else if(id==='sales') loadMyClients();
   else if(id==='reports') renderTeamReports();
   else if(id==='profile') renderProfile();
-  else if(id==='promos') renderPromotions();
 };
 
 window.openModal  = (id) => document.getElementById(id).classList.add('open');
@@ -805,6 +735,19 @@ async function loadMyTeam(){
 // ── MY TEAM: org chart drill-down (self as root, drill into subordinates) ──
 let teamDrillStack = []; // {role, id, name} — empty means show self as root
 
+
+function agentClick(a){
+  const q = v => String(v||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  return `showContactModal('${q(a.name)}','Agent','${q(a.agent_id)}','${q(a.phone)}','${q(a.email)}')`;
+}
+window.showContactModal = function(name, roleLabel, idNo, phone, email){
+  const set=(i,v)=>{document.getElementById(i).textContent=v||'—';};
+  document.getElementById('piAvatar').textContent=(name||'?')[0].toUpperCase();
+  set('piName',name); set('piRole',roleLabel); set('piId',idNo); set('piPhone',phone); set('piEmail',email);
+  set('piReportsTo','—'); set('piSalesCount','—'); set('piSalesValue','—');
+  openModal('personInfoModal');
+};
+
 function orgNode(opts){
   return `
     <div class="card org-node p-3 ${opts.clickable?'cursor-pointer':''}" ${opts.onclick?`onclick="${opts.onclick}"`:''}>
@@ -850,8 +793,8 @@ async function renderTeamChart(){
       ? (rootData.teamLeaders||[]).map(tl => ({ name: tl.name, email: tl.email, roleLabel:'Team Leader', clickable:true, onclick:`teamDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` }))
       : [];
     const directAgentsOnly = rootRole==='team_leader'
-      ? (rootData.agents||[]).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:false }))
-      : (rootData.agents||[]).filter(a => (rootRole==='unit_manager' && !a.team_leader_id && !a.sales_manager_id) || (rootRole==='sales_manager' && !a.team_leader_id)).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:false }));
+      ? (rootData.agents||[]).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:true, onclick:agentClick(a) }))
+      : (rootData.agents||[]).filter(a => (rootRole==='unit_manager' && !a.team_leader_id && !a.sales_manager_id) || (rootRole==='sales_manager' && !a.team_leader_id)).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:true, onclick:agentClick(a) }));
 
     const children = [...directSM, ...directTLOnly, ...directAgentsOnly];
     chart.innerHTML = `
@@ -876,10 +819,10 @@ async function renderTeamChart(){
     if(current.role==='sales_manager'){
       children = [
         ...(data.teamLeaders||[]).map(tl => ({ name: tl.name, email: tl.email, roleLabel:'Team Leader', clickable:true, onclick:`teamDrillInto('team_leader','${tl.id}','${tl.name.replace(/'/g,"\\'")}')` })),
-        ...(data.agents||[]).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:false })),
+        ...(data.agents||[]).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:true, onclick:agentClick(a) })),
       ];
     } else if(current.role==='team_leader'){
-      children = (data.agents||[]).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:false }));
+      children = (data.agents||[]).map(a => ({ name: a.name, email: a.email, roleLabel:'Agent', clickable:true, onclick:agentClick(a) }));
     }
     chart.innerHTML = `
       <div class="org-wrap">

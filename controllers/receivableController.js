@@ -46,7 +46,7 @@ const getMyReceivables = async (req, res) => {
 // POST /api/commission-receivables (admin only)
 const createReceivable = async (req, res) => {
   try {
-    const { developer_id, buyer_id, amount, release_date, release_type, monthly_amount, tranche_months, notes } = req.body;
+    const { developer_id, buyer_id, amount, release_date, release_type, monthly_amount, tranche_months, notes, percent } = req.body;
     if (!buyer_id || !amount || !release_date) {
       return res.status(400).json({ message: 'Linked sale, amount, and release date are required.' });
     }
@@ -61,6 +61,7 @@ const createReceivable = async (req, res) => {
         monthly_amount: monthly_amount || null,
         tranche_months: tranche_months || null,
         notes: notes || null,
+        percent: percent ? String(percent).trim().slice(0, 20) : null,
       }])
       .select()
       .single();
@@ -75,7 +76,7 @@ const createReceivable = async (req, res) => {
 // PUT /api/commission-receivables/:id (admin only)
 const updateReceivable = async (req, res) => {
   try {
-    const { developer_id, buyer_id, amount, release_date, release_type, monthly_amount, tranche_months, notes } = req.body;
+    const { developer_id, buyer_id, amount, release_date, release_type, monthly_amount, tranche_months, notes, percent } = req.body;
     const { data, error } = await supabase
       .from('commission_receivables')
       .update({ developer_id, buyer_id, amount, release_date, release_type, monthly_amount: monthly_amount || null, tranche_months: tranche_months || null, notes: notes || null })

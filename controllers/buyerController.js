@@ -371,4 +371,37 @@ const cancelBuyer = async (req, res) => {
   }
 };
 
-module.exports = { getBuyers, getTeamBuyers, getPreviousRoleSalesHistory, createBuyer, updateBuyer, setBuyerOverrides, deleteBuyer, restoreBuyer, permanentlyDeleteBuyer, cancelBuyer };
+// PATCH /api/buyers/:id/verify — Admin only. Marks a sale as verified (turns green, seller is notified).
+// Body { verified:false } undoes it.
+const verifyBuyer = async (req, res) => {
+  try {
+    const verified = req.body.verified !== false;
+    const { data: existing } = await supabase.from('buyers').select('id, cancelled').eq('id', req.params.id).single();
+    if (!existing) return res.status(404).json({ message: 'Not found.' });
+    if (existing.cancelled) return res.status(400).json({ message: 'A cancelled sale cannot be verified.' });
+    const note = verified && req.body.note ? String(req.body.note).trim().slice(0, 500) : null;
+    const patch = verified ? { verified: true, verified_at: new Date(), verified_by: req.user.id, verify_note: note || null } : { verified: false, verified_at: null, verified_by: null, verify_note: null };
+    const { error } = await supabase.from('buyers').update(patch).eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ message: verified ? 'Sale verified.' : 'Verification removed.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+// PATCH /api/buyers/:id/incentive-archive — Admin only. Hides/restores a sale in the Incentives & Override list
+// (does NOT touch the sale itself). Body { archived:true|false }.
+const setIncentiveArchived = async (req, res) => {
+  try {
+    const archived = req.body.archived !== false;
+    const { error } = await supabase.from('buyers').update({ incentive_archived: archived }).eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ message: archived ? 'Archived.' : 'Restored.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getBuyers, getTeamBuyers, getPreviousRoleSalesHistory, createBuyer, updateBuyer, setBuyerOverrides, deleteBuyer, restoreBuyer, permanentlyDeleteBuyer, cancelBuyer, verifyBuyer, setIncentiveArchived };
