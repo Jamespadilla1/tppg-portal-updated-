@@ -4190,7 +4190,6 @@ async function renderBuyers(){
         <td class="px-5 py-3 text-gray-400 text-xs">${reportsTo}</td>
         <td class="px-5 py-3 flex gap-2">
           ${b.cancelled ? '' : (b.verified ? `<button onclick="verifyBuyerAdmin('${b.id}',false)" class="text-xs text-gray-400 hover:text-white">Unverify</button>` : `<button onclick="openVerifyModal('${b.id}','${(b.name||'').replace(/'/g,"\\'")}')" class="text-xs text-green-400 hover:text-green-300 font-semibold">Verify</button>`)}
-          ${b.cancelled ? '' : `<button onclick="cancelBuyerAdmin('${b.id}')" class="text-xs text-yellow-400 hover:text-yellow-300">Cancel</button>`}
           <button onclick="deleteBuyerAdmin('${b.id}')" class="text-xs text-red-400 hover:text-red-300">Archive</button>
         </td>
       </tr>`;

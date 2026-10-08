@@ -353,8 +353,8 @@ const cancelBuyer = async (req, res) => {
     const { data: existing } = await supabase.from('buyers').select('input_by_id, input_by_role, cancelled, unit_id').eq('id', req.params.id).single();
     if (!existing) return res.status(404).json({ message: 'Not found.' });
     if (existing.cancelled) return res.status(400).json({ message: 'This sale is already cancelled.' });
-    if (req.user.role !== 'admin' && (existing.input_by_id !== req.user.id || existing.input_by_role !== req.user.role)) {
-      return res.status(403).json({ message: 'You can only cancel sales you added.' });
+    if (existing.input_by_id !== req.user.id || existing.input_by_role !== req.user.role) {
+      return res.status(403).json({ message: 'Only the person who added this sale can cancel it.' });
     }
     const { error } = await supabase.from('buyers').update({ cancelled: true, updated_at: new Date() }).eq('id', req.params.id);
     if (error) throw error;
