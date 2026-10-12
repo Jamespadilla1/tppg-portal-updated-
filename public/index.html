@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TPPG Portal</title>
+<title>TPPG Agent Portal · The Premier Property Group</title>
+<meta name="description" content="The workspace for The Premier Property Group's agents, team leaders, and managers. Record sales, follow your team, and track commission releases in one place.">
+<meta name="theme-color" content="#0B0B0C">
+<link rel="icon" type="image/png" href="imgs/favicon.png">
+<link rel="apple-touch-icon" href="imgs/apple-touch-icon.png">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
   tailwind.config = {
@@ -14,73 +18,105 @@
             50:'#f7f7f7', 100:'#e8e8e8', 200:'#d1d1d1', 300:'#b0b0b0',
             400:'#8a8a8a', 500:'#6b6b6b', 600:'#4e4e4e', 700:'#383838',
             800:'#262626', 900:'#1a1a1a', 950:'#0d0d0d'
-          }
-        }
+          },
+          // Same palette as the public TPPG website
+          ink:   { DEFAULT:'#0B0B0C', 800:'#121214', 700:'#18181B', 600:'#232327' },
+          brand: { DEFAULT:'#F97316', hover:'#EA580C', soft:'#FDBA74' }
+        },
+        maxWidth: { site: '76rem' }
       }
     }
   }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
 <style>
   * { font-family: 'DM Sans', sans-serif; }
-  .ph { color:#9ca3af; }
-  .field { width:100%; padding:11px 14px; border:1px solid #e5e7eb; border-radius:8px; font-size:.875rem; color:#111827; outline:none; }
-  .card { background:white; border-radius:16px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
-  .num-tag { font-size:11px; letter-spacing:.05em; color:#f97316; font-weight:600; }
+  html { scroll-behavior: smooth; }
+  body { background:#0B0B0C; }
+  h1, h2 { text-wrap: balance; }
+  .serif, .serif * { font-family: 'Fraunces', serif; }
+  .accent { font-family: 'Fraunces', serif; font-style: italic; font-weight: 400; color: #FDBA74; }
+  .eyebrow { font-size: .8rem; font-weight: 600; letter-spacing: .01em; color: #F97316; }
+  .container-site { width:100%; max-width:76rem; margin-inline:auto; padding-inline:1.25rem; }
+  @media (min-width:640px){ .container-site { padding-inline:2rem; } }
+  .btn-primary { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.375rem; background:#F97316; padding:.75rem 1.25rem; font-size:.875rem; font-weight:600; color:#fff; transition:background-color .15s; }
+  .btn-primary:hover { background:#EA580C; }
+  .btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.375rem; border:1px solid rgba(255,255,255,.15); padding:.75rem 1.25rem; font-size:.875rem; font-weight:600; color:#fff; transition:border-color .15s; }
+  .btn-ghost:hover { border-color: rgba(255,255,255,.4); }
+  .section-title { margin-top:.75rem; font-size:1.7rem; font-weight:700; line-height:1.15; letter-spacing:-.02em; color:#fff; }
+  @media (min-width:640px){ .section-title { margin-top:1rem; font-size:2.6rem; } }
+  :focus-visible { outline: 2px solid #F97316; outline-offset: 2px; }
+  .grain::after { content:""; position:absolute; inset:0; pointer-events:none; opacity:.07;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  @keyframes rise { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+  .rise { animation: rise .8s cubic-bezier(.2,.7,.2,1) both; }
+  .rise-1{animation-delay:.05s}.rise-2{animation-delay:.15s}.rise-3{animation-delay:.25s}.rise-4{animation-delay:.4s}
+  @media (prefers-reduced-motion: reduce) { .rise { animation:none; } html { scroll-behavior:auto; } }
 </style>
 </head>
-<body class="bg-gray-950 text-white overflow-x-hidden">
+<body class="bg-ink text-zinc-100 antialiased overflow-x-hidden">
 
 <!-- ===== NAV ===== -->
-<nav class="sticky top-0 z-50 bg-gray-950/80 backdrop-blur border-b border-white/10">
-  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <div class="h-10 flex items-center justify-center">
-        <img src="imgs/logo.jpg" class="h-full w-auto object-contain" onerror="this.style.display='none'">
-      </div>
-      <span class="font-semibold text-lg">TPPG Portal</span>
+<nav class="sticky top-0 z-50 h-[72px] border-b border-white/[0.06] bg-ink/80 backdrop-blur-md">
+  <div class="container-site flex h-full items-center justify-between gap-4">
+    <a href="#heroSection" class="flex shrink-0 items-center gap-3" aria-label="TPPG Agent Portal, back to top">
+      <img src="imgs/logo.png" alt="The Premier Property Group" width="480" height="229" class="h-11 w-auto sm:h-12">
+      <span class="hidden h-7 w-px bg-white/15 sm:block"></span>
+      <span class="hidden text-sm font-semibold tracking-wide text-zinc-300 sm:block">Agent Portal</span>
+    </a>
+    <div class="hidden items-center gap-8 text-sm text-zinc-400 lg:flex">
+      <a href="#inventory" class="transition hover:text-white">What you'll sell</a>
+      <a href="#why" class="transition hover:text-white">Why TPPG</a>
+      <a href="#how" class="transition hover:text-white">How it works</a>
+      <a href="#team" class="transition hover:text-white">Our team</a>
     </div>
-    <div class="hidden md:flex items-center gap-8 text-sm text-gray-400">
-      <a href="#listings" class="hover:text-white transition">Listings</a>
-      <a href="#why" class="hover:text-white transition">Why Us</a>
-      <a href="#how" class="hover:text-white transition">How It Works</a>
-      <a href="#contact" class="hover:text-white transition">Contact</a>
-    </div>
-    <div class="flex items-center gap-3">
-      <button onclick="openLogin(); showLogin()" class="text-sm text-gray-300 hover:text-white transition px-4 py-2">Log in</button>
-      <button onclick="openLogin(); showRegister()" class="text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-lg transition">Join as an Agent</button>
+    <div class="flex items-center gap-1.5 sm:gap-3">
+      <button onclick="openLogin(); showLogin()" class="px-3 py-2 text-sm text-zinc-300 transition hover:text-white sm:px-4">Log in</button>
+      <button onclick="openLogin(); showRegister()" class="btn-primary px-4 py-2.5 sm:px-5"><span>Join<span class="hidden sm:inline"> as an agent</span></span></button>
     </div>
   </div>
 </nav>
 
 <!-- ===== HERO (split layout — login panel slides in from the right on click) ===== -->
-<section id="heroSection" class="relative min-h-[calc(100vh-73px)] flex items-center overflow-hidden">
+<section id="heroSection" class="grain relative isolate flex min-h-[calc(100svh-72px)] items-center overflow-hidden py-14 sm:py-16">
   <div class="absolute inset-0 -z-10">
-    <img src="https://images.unsplash.com/photo-1539657428515-b57a1abdd9f7?fm=jpg&q=80&w=2000&auto=format&fit=crop" class="w-full h-full object-cover opacity-10" alt="">
-    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-gray-950/60 to-gray-950"></div>
+    <img src="imgs/hero.jpg" alt="" class="h-full w-full object-cover object-center">
+    <div class="absolute inset-0 bg-ink/75"></div>
+    <div class="absolute inset-0 bg-gradient-to-r from-ink via-ink/70 to-transparent"></div>
+    <div class="absolute -left-40 bottom-24 h-[28rem] w-[28rem] rounded-full bg-brand/15 blur-[120px]"></div>
+    <div class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-ink via-ink/60 to-transparent"></div>
   </div>
 
-  <div id="heroInner" class="relative max-w-6xl mx-auto px-6 flex flex-col lg:flex-row items-center gap-10 lg:gap-12">
+  <div id="heroInner" class="container-site relative flex flex-col items-center gap-10 lg:flex-row lg:gap-12">
 
     <!-- Left: headline content — shifts left and left-aligns once login opens -->
-    <div id="heroContent" class="hero-content flex-1 min-w-0 text-center">
-      <p class="num-tag mb-4">The Premier Property Group</p>
-      <h1 class="text-4xl md:text-6xl font-bold leading-tight mb-6">
-        Find your next property<br>with confidence.
+    <div id="heroContent" class="hero-content min-w-0 flex-1 text-center">
+      <p class="eyebrow rise rise-1">TPPG Agent Portal</p>
+      <h1 class="rise rise-2 mt-4 text-[2.4rem] font-bold leading-[1.04] tracking-tight text-white sm:text-6xl lg:text-[4.5rem]">
+        Your sales, your team,
+        <span class="accent block">all in one place.</span>
       </h1>
-      <p class="hero-subtext text-gray-400 text-base leading-relaxed max-w-lg mx-auto mb-10">
-        The Premier Property Group's listing and management platform — for agents, managers, and admins alike.
+      <p class="hero-subtext rise rise-3 mx-auto mt-5 max-w-xl text-[0.95rem] leading-relaxed text-zinc-300 sm:mt-6 sm:text-lg">
+        The workspace for The Premier Property Group’s agents, team leaders, and managers. Record sales, follow your
+        team, and track commission releases from your first reservation to payout.
       </p>
-      <div class="hero-cta-row flex flex-wrap gap-4 justify-center mb-14">
-        <a href="#listings" class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-7 py-3.5 rounded-lg transition">Browse Listings</a>
-        <button onclick="openLogin()" class="border border-white/15 hover:border-white/30 text-white font-medium px-7 py-3.5 rounded-lg transition">Agent Login →</button>
+      <div class="hero-cta-row rise rise-4 mt-8 flex flex-wrap justify-center gap-3">
+        <button onclick="openLogin(); showLogin()" class="btn-primary px-6 py-3.5">
+          Log in to the portal
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <button onclick="openLogin(); showRegister()" class="btn-ghost bg-ink/40 px-6 py-3.5 backdrop-blur">Apply as an agent</button>
       </div>
+      <dl class="hero-stats-row rise rise-4 mx-auto mt-10 grid max-w-xl grid-cols-3 gap-3 border-t border-white/10 pt-6 text-[0.8rem] sm:flex sm:flex-wrap sm:justify-center sm:gap-x-10 sm:gap-y-4 sm:text-sm">
+        <div><dt class="text-zinc-500">Our team</dt><dd class="mt-1 font-semibold text-white">50-strong and growing</dd></div>
+        <div><dt class="text-zinc-500">Developer partners</dt><dd class="mt-1 font-semibold text-white">21 and counting</dd></div>
+        <div><dt class="text-zinc-500">Where we sell</dt><dd class="mt-1 font-semibold text-white">Iloilo · Cebu · Palawan</dd></div>
+      </dl>
     </div>
 
-    <!-- Right: login/register panel — collapsed & invisible by default, slides in on open -->
     <div id="loginPane" class="login-pane shrink-0">
-      <div class="auth-card relative w-[23rem] max-h-[85vh] overflow-y-auto">
+      <div class="auth-card relative max-h-[85vh] overflow-y-auto">
         <button onclick="closeLogin()" aria-label="Close" class="absolute top-6 right-6 w-7 h-7 rounded-full border border-white/10 hover:border-white/25 flex items-center justify-center text-gray-500 hover:text-white transition-colors text-xs z-10">✕</button>
 
         <div class="px-8 pt-9 pb-8">
@@ -343,6 +379,21 @@
   .panel-content { animation:fadeIn .4s ease both; }
   @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 </style>
+<style>
+  /* Portal landing overrides (keep after the auth styles) */
+  .auth-card { width: 100%; background: linear-gradient(160deg, rgba(24,24,27,.96) 0%, rgba(14,14,16,.96) 100%); backdrop-filter: blur(12px); }
+  .login-pane.open { width: min(23rem, calc(100vw - 2.5rem)); }
+  .hero-content.split .hero-stats-row { margin-left: 0; justify-content: flex-start; }
+  @media (max-width: 1023.98px) {
+    /* Stacked layout on phones/tablets: keep the hero centered and put the panel under it */
+    .hero-content.split { text-align: center; }
+    .hero-content.split .hero-subtext, .hero-content.split .hero-stats-row { margin-left: auto; }
+    .hero-content.split .hero-cta-row, .hero-content.split .hero-stats-row { justify-content: center; }
+    .login-pane { transform: translateY(1.5rem); }
+    .login-pane.open { transform: none; }
+  }
+  #loginPane { scroll-margin-top: 88px; }
+</style>
 
 <script>
   function openLogin(){
@@ -533,195 +584,264 @@
   }
 </script>
 
+<script>
+  // On phones/tablets the panel opens below the hero, so bring it into view.
+  (function () {
+    const open = window.openLogin;
+    window.openLogin = function () {
+      open();
+      if (window.matchMedia('(max-width: 1023.98px)').matches) {
+        setTimeout(() => document.getElementById('loginPane').scrollIntoView({ behavior: 'smooth', block: 'start' }), 350);
+      }
+    };
+  })();
+</script>
 
-<!-- ===== LISTINGS ===== -->
-<section id="listings" class="max-w-7xl mx-auto px-6 py-24">
-  <div class="flex items-end justify-between mb-10 flex-wrap gap-4">
-    <div>
-      <h2 class="text-3xl font-bold">Browse by developer, property, and unit</h2>
-    </div>
-  </div>
-  <div class="grid md:grid-cols-3 gap-5">
-    <div class="card p-0 overflow-hidden text-gray-900">
-      <div class="h-40 bg-gray-100 flex items-center justify-center text-xs text-gray-400">[Image]</div>
-      <div class="p-5">
-        <span class="inline-block text-[10px] font-semibold uppercase tracking-wide bg-orange-50 text-orange-600 px-2.5 py-1 rounded-full mb-3">[Status]</span>
-        <h3 class="font-semibold text-lg mb-1">[Property name]</h3>
-        <p class="text-xs text-gray-400 mb-4">[Location]</p>
-        <div class="flex items-center justify-between border-t border-gray-100 pt-4">
-          <span class="font-bold text-orange-600">[Price]</span>
-          <span class="text-gray-300">→</span>
-        </div>
+<!-- ===== WHAT YOU'LL SELL ===== -->
+<section id="inventory" class="scroll-mt-20 border-y border-white/[0.06] bg-ink-800 py-14 sm:py-28">
+  <div class="container-site">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div class="max-w-3xl">
+        <p class="eyebrow">What you’ll sell</p>
+        <h2 class="section-title">Condos, house and lot, and lots <span class="accent">from developers we know.</span></h2>
       </div>
+      <p class="max-w-sm text-[0.95rem] leading-relaxed text-zinc-400 sm:text-right">
+        Every unit is logged Developer → Property → Unit with live status, so you always know what’s available.
+      </p>
     </div>
-    <div class="card p-0 overflow-hidden text-gray-900">
-      <div class="h-40 bg-gray-100 flex items-center justify-center text-xs text-gray-400">[Image]</div>
-      <div class="p-5">
-        <span class="inline-block text-[10px] font-semibold uppercase tracking-wide bg-orange-50 text-orange-600 px-2.5 py-1 rounded-full mb-3">[Status]</span>
-        <h3 class="font-semibold text-lg mb-1">[Property name]</h3>
-        <p class="text-xs text-gray-400 mb-4">[Location]</p>
-        <div class="flex items-center justify-between border-t border-gray-100 pt-4">
-          <span class="font-bold text-orange-600">[Price]</span>
-          <span class="text-gray-300">→</span>
+
+    <ul class="mt-8 grid gap-3 sm:mt-12 sm:gap-5 md:grid-cols-3">
+      <li class="group flex overflow-hidden rounded-2xl border border-white/[0.07] bg-ink md:flex-col">
+        <div class="relative min-h-[8.5rem] w-[36%] shrink-0 overflow-hidden md:aspect-[4/3] md:w-auto">
+          <img src="imgs/condo.jpg" alt="High-rise condominium tower with balconies" loading="lazy" class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" style="object-position:18% 40%">
         </div>
-      </div>
-    </div>
-    <div class="card p-0 overflow-hidden text-gray-900">
-      <div class="h-40 bg-gray-100 flex items-center justify-center text-xs text-gray-400">[Image]</div>
-      <div class="p-5">
-        <span class="inline-block text-[10px] font-semibold uppercase tracking-wide bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full mb-3">[Status]</span>
-        <h3 class="font-semibold text-lg mb-1">[Property name]</h3>
-        <p class="text-xs text-gray-400 mb-4">[Location]</p>
-        <div class="flex items-center justify-between border-t border-gray-100 pt-4">
-          <span class="font-bold text-orange-600">[Price]</span>
-          <span class="text-gray-300">→</span>
+        <div class="flex flex-1 flex-col p-4 sm:p-6">
+          <h3 class="text-base font-semibold text-white sm:text-xl">Condominiums</h3>
+          <p class="mt-1 text-[0.82rem] leading-relaxed text-zinc-400 sm:mt-2 sm:text-sm">Studios to 2-bedroom units for first-time buyers, young professionals, and rental investors.</p>
         </div>
-      </div>
-    </div>
+      </li>
+      <li class="group flex overflow-hidden rounded-2xl border border-white/[0.07] bg-ink md:flex-col">
+        <div class="relative min-h-[8.5rem] w-[36%] shrink-0 overflow-hidden md:aspect-[4/3] md:w-auto">
+          <img src="imgs/house.jpg" alt="House with a landscaped front lawn" loading="lazy" class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" style="object-position:50% 45%">
+        </div>
+        <div class="flex flex-1 flex-col p-4 sm:p-6">
+          <h3 class="text-base font-semibold text-white sm:text-xl">House &amp; Lot</h3>
+          <p class="mt-1 text-[0.82rem] leading-relaxed text-zinc-400 sm:mt-2 sm:text-sm">Homes inside subdivisions for growing families and buyers upgrading from a condo.</p>
+        </div>
+      </li>
+      <li class="group flex overflow-hidden rounded-2xl border border-white/[0.07] bg-ink md:flex-col">
+        <div class="relative min-h-[8.5rem] w-[36%] shrink-0 overflow-hidden md:aspect-[4/3] md:w-auto">
+          <img src="imgs/lot.jpg" alt="Aerial view of residential lots and roads" loading="lazy" class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" style="object-position:50% 50%">
+        </div>
+        <div class="flex flex-1 flex-col p-4 sm:p-6">
+          <h3 class="text-base font-semibold text-white sm:text-xl">Lots</h3>
+          <p class="mt-1 text-[0.82rem] leading-relaxed text-zinc-400 sm:mt-2 sm:text-sm">Residential lots for clients building their own home or holding a long-term investment.</p>
+        </div>
+      </li>
+    </ul>
   </div>
 </section>
 
-<!-- ===== WHY US ===== -->
-<section id="why" class="bg-white text-gray-900 py-24">
-  <div class="max-w-7xl mx-auto px-6">
-    <div class="mb-12">
-      <p class="num-tag mb-3">Why Premier</p>
-      <h2 class="text-3xl font-bold max-w-xl">Built for agents who close, and clients who trust</h2>
+<!-- ===== WHY TPPG ===== -->
+<section id="why" class="scroll-mt-20 py-14 sm:py-28">
+  <div class="container-site">
+    <div class="max-w-3xl">
+      <p class="eyebrow">Why TPPG</p>
+      <h2 class="section-title">Built for agents who close, <span class="accent">and clients who trust.</span></h2>
     </div>
-    <div class="grid md:grid-cols-4 gap-px bg-gray-100 rounded-2xl overflow-hidden border border-gray-100">
-      <div class="bg-white p-8">
-        <div class="text-orange-500 text-xs font-semibold mb-5">01</div>
-        <h3 class="font-semibold mb-2">Verified Inventory</h3>
-        <p class="text-sm text-gray-500 leading-relaxed">Every unit is logged Developer → Property → Unit, with live status (Available / Hold / Sold) — no ghost listings.</p>
-      </div>
-      <div class="bg-white p-8">
-        <div class="text-orange-500 text-xs font-semibold mb-5">02</div>
-        <h3 class="font-semibold mb-2">Role-Based Portal</h3>
-        <p class="text-sm text-gray-500 leading-relaxed">Admins, Unit Managers, Sales Managers, Team Leaders, and Agents each get a dashboard scoped to their own team and sales.</p>
-      </div>
-      <div class="bg-white p-8">
-        <div class="text-orange-500 text-xs font-semibold mb-5">03</div>
-        <h3 class="font-semibold mb-2">Transparent Commission</h3>
-        <p class="text-sm text-gray-500 leading-relaxed">Clear rate tiers by rank, auto-computed net payouts, and override/incentive visibility that's scoped fairly.</p>
-      </div>
-      <div class="bg-white p-8">
-        <div class="text-orange-500 text-xs font-semibold mb-5">04</div>
-        <h3 class="font-semibold mb-2">Real-Time Team View</h3>
-        <p class="text-sm text-gray-500 leading-relaxed">Org-chart team visibility and personal vs. team sales tracking, so every level sees exactly where they stand.</p>
-      </div>
-    </div>
+    <ol class="mt-8 grid gap-px overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.07] sm:mt-12 sm:grid-cols-2 lg:grid-cols-4">
+      <li class="flex gap-3.5 bg-ink px-4 py-4 sm:block sm:p-7">
+        <span class="serif mt-0.5 shrink-0 text-sm text-brand">01</span>
+        <div>
+          <h3 class="font-semibold text-white sm:mt-4">Verified inventory</h3>
+          <p class="mt-1 text-[0.82rem] leading-relaxed text-zinc-400 sm:mt-2 sm:text-sm">Every unit is logged Developer → Property → Unit, with live status (Available / Hold / Sold). No ghost listings.</p>
+        </div>
+      </li>
+      <li class="flex gap-3.5 bg-ink px-4 py-4 sm:block sm:p-7">
+        <span class="serif mt-0.5 shrink-0 text-sm text-brand">02</span>
+        <div>
+          <h3 class="font-semibold text-white sm:mt-4">A dashboard for every role</h3>
+          <p class="mt-1 text-[0.82rem] leading-relaxed text-zinc-400 sm:mt-2 sm:text-sm">Admins, unit managers, sales managers, team leaders, and agents each see a dashboard scoped to their own team and sales.</p>
+        </div>
+      </li>
+      <li class="flex gap-3.5 bg-ink px-4 py-4 sm:block sm:p-7">
+        <span class="serif mt-0.5 shrink-0 text-sm text-brand">03</span>
+        <div>
+          <h3 class="font-semibold text-white sm:mt-4">Transparent commission</h3>
+          <p class="mt-1 text-[0.82rem] leading-relaxed text-zinc-400 sm:mt-2 sm:text-sm">Clear rate tiers by rank, auto-computed net payouts, and override and incentive visibility that’s scoped fairly.</p>
+        </div>
+      </li>
+      <li class="flex gap-3.5 bg-ink px-4 py-4 sm:block sm:p-7">
+        <span class="serif mt-0.5 shrink-0 text-sm text-brand">04</span>
+        <div>
+          <h3 class="font-semibold text-white sm:mt-4">Real-time team view</h3>
+          <p class="mt-1 text-[0.82rem] leading-relaxed text-zinc-400 sm:mt-2 sm:text-sm">Org-chart visibility and personal vs. team sales tracking, so every level sees exactly where they stand.</p>
+        </div>
+      </li>
+    </ol>
   </div>
 </section>
 
 <!-- ===== HOW IT WORKS (hierarchy) ===== -->
-<section id="how" class="max-w-7xl mx-auto px-6 py-24">
-  <div class="mb-14">
-    <p class="num-tag mb-3">How The Portal Works</p>
-    <h2 class="text-3xl font-bold mb-3">One hierarchy, five dashboards, full visibility</h2>
-    <p class="text-gray-400 text-sm max-w-md">Every application starts as an agent applicant — Admin reviews and places you into the structure.</p>
-  </div>
-  <div class="grid md:grid-cols-5 gap-4">
-    <div class="card bg-gray-900 border border-white/10 p-6 text-center">
-      <div class="w-10 h-10 mx-auto mb-4 rounded-full bg-orange-500 flex items-center justify-center text-xs font-bold">A</div>
-      <h3 class="font-semibold mb-2 text-sm">Admin</h3>
-      <p class="text-xs text-gray-500 leading-relaxed">Full org chart. Approves applicants, manages listings & commission releases.</p>
+<section id="how" class="scroll-mt-20 border-y border-white/[0.06] bg-ink-800 py-14 sm:py-28">
+  <div class="container-site">
+    <div class="grid gap-4 sm:gap-6 lg:grid-cols-12 lg:items-end">
+      <div class="lg:col-span-7">
+        <p class="eyebrow">How the portal works</p>
+        <h2 class="section-title">One hierarchy, five dashboards, <span class="accent">full visibility.</span></h2>
+      </div>
+      <p class="text-[0.95rem] leading-relaxed text-zinc-400 sm:text-base lg:col-span-5">
+        Every application starts as an agent applicant. An admin reviews it and places you in the structure.
+      </p>
     </div>
-    <div class="card bg-gray-900 border border-white/10 p-6 text-center">
-      <div class="w-10 h-10 mx-auto mb-4 rounded-full bg-orange-500 flex items-center justify-center text-xs font-bold">UM</div>
-      <h3 class="font-semibold mb-2 text-sm">Unit Manager</h3>
-      <p class="text-xs text-gray-500 leading-relaxed">4.0% base rate. Oversees a downward team, adds clients directly.</p>
-    </div>
-    <div class="card bg-gray-900 border border-white/10 p-6 text-center">
-      <div class="w-10 h-10 mx-auto mb-4 rounded-full bg-orange-500 flex items-center justify-center text-xs font-bold">SM</div>
-      <h3 class="font-semibold mb-2 text-sm">Sales Manager</h3>
-      <p class="text-xs text-gray-500 leading-relaxed">3.25%–3.7% by rank. Can report to a UM, or stand solo.</p>
-    </div>
-    <div class="card bg-gray-900 border border-white/10 p-6 text-center">
-      <div class="w-10 h-10 mx-auto mb-4 rounded-full bg-orange-500 flex items-center justify-center text-xs font-bold">TL</div>
-      <h3 class="font-semibold mb-2 text-sm">Team Leader</h3>
-      <p class="text-xs text-gray-500 leading-relaxed">3.0% base rate. Manages a team of agents, records own sales.</p>
-    </div>
-    <div class="card bg-gray-900 border border-white/10 p-6 text-center">
-      <div class="w-10 h-10 mx-auto mb-4 rounded-full bg-orange-500 flex items-center justify-center text-xs font-bold">AG</div>
-      <h3 class="font-semibold mb-2 text-sm">Agent</h3>
-      <p class="text-xs text-gray-500 leading-relaxed">2.0%–2.75% by rank. Reports to a TL, SM, or UM directly.</p>
-    </div>
-  </div>
-  <div class="mt-8 flex flex-wrap gap-4 justify-center">
-    <div class="border border-white/10 rounded-lg px-6 py-4 text-center">
-      <div class="font-mono text-sm">Gross = TCN × Rate%</div>
-      <div class="text-xs text-gray-500 mt-2">Rate set per person, per rank, by Admin</div>
-    </div>
-    <div class="border border-white/10 rounded-lg px-6 py-4 text-center">
-      <div class="font-mono text-sm">Net = Gross − 10% WT − 3% PT</div>
-      <div class="text-xs text-gray-500 mt-2">Auto-computed on every recorded sale</div>
+
+    <ol class="mt-8 grid gap-3 sm:mt-12 sm:grid-cols-2 sm:gap-4 lg:grid-cols-5">
+      <li class="flex items-start gap-4 rounded-xl border border-white/[0.07] bg-ink p-4 sm:block sm:p-6">
+        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-brand/60 text-xs font-bold text-brand-soft">A</span>
+        <div><h3 class="font-semibold text-white sm:mt-5">Admin</h3><p class="mt-1 text-[0.82rem] leading-relaxed text-zinc-400 sm:mt-2">Full org chart. Approves applicants, manages listings and commission releases.</p></div>
+      </li>
+      <li class="flex items-start gap-4 rounded-xl border border-white/[0.07] bg-ink p-4 sm:block sm:p-6">
+        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-brand/60 text-xs font-bold text-brand-soft">UM</span>
+        <div><h3 class="font-semibold text-white sm:mt-5">Unit Manager</h3><p class="mt-1 text-[0.82rem] leading-relaxed text-zinc-400 sm:mt-2">4.0% base rate. Oversees a downward team and adds clients directly.</p></div>
+      </li>
+      <li class="flex items-start gap-4 rounded-xl border border-white/[0.07] bg-ink p-4 sm:block sm:p-6">
+        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-brand/60 text-xs font-bold text-brand-soft">SM</span>
+        <div><h3 class="font-semibold text-white sm:mt-5">Sales Manager</h3><p class="mt-1 text-[0.82rem] leading-relaxed text-zinc-400 sm:mt-2">3.25%–3.7% by rank. Can report to a unit manager, or stand solo.</p></div>
+      </li>
+      <li class="flex items-start gap-4 rounded-xl border border-white/[0.07] bg-ink p-4 sm:block sm:p-6">
+        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-brand/60 text-xs font-bold text-brand-soft">TL</span>
+        <div><h3 class="font-semibold text-white sm:mt-5">Team Leader</h3><p class="mt-1 text-[0.82rem] leading-relaxed text-zinc-400 sm:mt-2">3.0% base rate. Manages a team of agents and records own sales.</p></div>
+      </li>
+      <li class="flex items-start gap-4 rounded-xl border border-brand/40 bg-gradient-to-br from-brand/[0.12] to-ink p-4 sm:block sm:p-6">
+        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand text-xs font-bold text-white">AG</span>
+        <div><h3 class="font-semibold text-white sm:mt-5">Agent</h3><p class="mt-1 text-[0.82rem] leading-relaxed text-zinc-400 sm:mt-2">2.0%–2.75% by rank. Reports to a team leader, sales manager, or unit manager.</p></div>
+      </li>
+    </ol>
+
+    <div class="mt-4 grid gap-3 sm:grid-cols-2 sm:gap-4">
+      <div class="flex flex-col gap-1 rounded-xl border border-white/[0.07] bg-ink px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <span class="font-mono text-sm text-white">Gross = TCN × Rate%</span>
+        <span class="text-xs text-zinc-500">Rate set per person, per rank, by the admin</span>
+      </div>
+      <div class="flex flex-col gap-1 rounded-xl border border-white/[0.07] bg-ink px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <span class="font-mono text-sm text-white">Net = Gross − 10% WT − 3% PT</span>
+        <span class="text-xs text-zinc-500">Auto-computed on every recorded sale</span>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ===== TEAM SPOTLIGHT ===== -->
-<section id="team" class="bg-white text-gray-900 py-24">
-  <div class="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-14 items-center">
-    <div class="rounded-2xl bg-gray-950 text-white p-10 aspect-[4/5] flex flex-col justify-between relative overflow-hidden">
-      <div>
-        <div class="text-4xl font-bold">[Stat — pending confirmation]</div>
-        <div class="text-xs text-gray-400 mt-2 uppercase tracking-wide">[Label]</div>
+<!-- ===== OUR TEAM ===== -->
+<section id="team" class="scroll-mt-20 py-14 sm:py-28">
+  <div class="container-site grid gap-8 sm:gap-12 lg:grid-cols-12 lg:items-center lg:gap-16">
+    <figure class="relative overflow-hidden rounded-2xl border border-white/[0.08] shadow-[0_40px_80px_-40px_rgba(0,0,0,0.8)] lg:col-span-7">
+      <div class="relative aspect-[16/10] sm:aspect-[16/9]">
+        <img src="imgs/team.jpg" alt="The TPPG team: agents, leaders, and professionals of The Premier Property Group" loading="lazy" class="absolute inset-0 h-full w-full object-cover" style="object-position:50% 35%">
+        <div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-ink/85 to-transparent"></div>
+        <figcaption class="absolute bottom-4 left-5 right-5 flex items-end justify-between gap-4 sm:bottom-6 sm:left-7 sm:right-7">
+          <span class="serif text-xl italic text-white sm:text-2xl">The TPPG family</span>
+          <span class="hidden text-xs font-semibold uppercase tracking-[0.16em] text-zinc-300 sm:block">Strong and growing</span>
+        </figcaption>
       </div>
-      <div class="border-t border-white/10 pt-4">
-        <div class="font-semibold">[Name — pending confirmation]</div>
-        <div class="text-xs text-orange-400 uppercase tracking-wide mt-1">[Role]</div>
-      </div>
-    </div>
-    <div>
-      <p class="num-tag mb-3">Top Performer</p>
-      <h2 class="text-3xl font-bold mb-5">We celebrate the agents who make it happen</h2>
-      <p class="text-gray-500 leading-relaxed mb-8">Every closed reservation is a milestone we share with the whole network — tracked transparently through the portal, from first client record to final net payout. Join a team that recognizes hustle.</p>
-      <div class="flex gap-10">
-        <div><div class="text-xl font-bold text-orange-600">[Stat — pending confirmation]</div><div class="text-xs text-gray-400 mt-1">[Label]</div></div>
-        <div><div class="text-xl font-bold text-orange-600">[Stat — pending confirmation]</div><div class="text-xs text-gray-400 mt-1">[Label]</div></div>
+    </figure>
+
+    <div class="lg:col-span-5">
+      <p class="eyebrow">Our team</p>
+      <h2 class="section-title">A 50-strong team <span class="accent">that celebrates every close.</span></h2>
+      <p class="mt-4 text-[0.95rem] leading-relaxed text-zinc-400 sm:mt-5 sm:text-base">
+        Every reservation is a milestone we share with the whole network, tracked from the first client record to the
+        final net payout. We’re working toward ₱1 billion in sales by 2027, and building a team where every agent can
+        grow, lead, and succeed.
+      </p>
+
+      <ul class="mt-6 divide-y divide-white/[0.07] border-y border-white/[0.07]">
+        <li class="flex items-center gap-4 py-3.5">
+          <span class="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg border border-brand/40 bg-brand/[0.08]"><span class="text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-brand-soft">Top</span><span class="serif text-xl leading-none text-white">3</span></span>
+          <span><span class="block font-semibold leading-snug text-white">Master Broker Award, Visayas</span><span class="text-sm text-zinc-400">Cebu Landmasters Inc. · 2025</span></span>
+        </li>
+        <li class="flex items-center gap-4 py-3.5">
+          <span class="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg border border-brand/40 bg-brand/[0.08]"><span class="text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-brand-soft">Top</span><span class="serif text-xl leading-none text-white">1</span></span>
+          <span><span class="block font-semibold leading-snug text-white">Iloilo Group</span><span class="text-sm text-zinc-400">Cebu Landmasters Inc. · 2025</span></span>
+        </li>
+        <li class="flex items-center gap-4 py-3.5">
+          <span class="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg border border-brand/40 bg-brand/[0.08]"><span class="text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-brand-soft">Top</span><span class="serif text-xl leading-none text-white">6</span></span>
+          <span><span class="block font-semibold leading-snug text-white">Iloilo Broker Group</span><span class="text-sm text-zinc-400">Wee Comm · 2025</span></span>
+        </li>
+      </ul>
+
+      <div class="mt-6 flex items-center gap-4">
+        <ul class="flex -space-x-3">
+          <li class="h-12 w-12 overflow-hidden rounded-full bg-white ring-4 ring-ink"><img src="imgs/shienna-rose-cordero.jpg" alt="Shienna Rose Cordero" loading="lazy" class="h-full w-full object-cover object-top"></li>
+          <li class="h-12 w-12 overflow-hidden rounded-full bg-white ring-4 ring-ink"><img src="imgs/ian-rey-yongque.jpg" alt="Ian Rey Yongque" loading="lazy" class="h-full w-full object-cover object-top"></li>
+          <li class="h-12 w-12 overflow-hidden rounded-full bg-white ring-4 ring-ink"><img src="imgs/rechel-joy-villorente.jpg" alt="Rechel Joy Villorente" loading="lazy" class="h-full w-full object-cover object-top"></li>
+        </ul>
+        <p class="text-sm leading-snug text-zinc-400">Led by Shienna, Ian and Rechel, with 47 more agents and professionals.</p>
       </div>
     </div>
   </div>
 </section>
 
 <!-- ===== CTA ===== -->
-<section id="contact" class="max-w-7xl mx-auto px-6 py-24">
-  <div class="bg-orange-500 rounded-2xl px-10 py-14 flex flex-wrap items-center justify-between gap-6">
-    <h2 class="text-2xl md:text-3xl font-bold text-white max-w-lg">Ready to find your next property, or build your career with us?</h2>
-    <button onclick="openLogin()" class="bg-gray-950 text-white font-semibold px-8 py-3.5 rounded-lg">Apply as an Agent →</button>
+<section id="contact" class="scroll-mt-20 pb-14 sm:pb-28">
+  <div class="container-site">
+    <div class="grain relative isolate overflow-hidden rounded-2xl border border-white/[0.08] px-5 py-12 text-center sm:px-12 sm:py-20">
+      <img src="imgs/cta.jpg" alt="" loading="lazy" class="absolute inset-0 -z-20 h-full w-full object-cover">
+      <div class="absolute inset-0 -z-10 bg-ink/85"></div>
+      <div class="absolute left-1/2 top-full -z-10 h-[28rem] w-[40rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/30 blur-[120px]"></div>
+      <h2 class="mx-auto max-w-3xl text-[1.7rem] font-bold leading-tight tracking-tight text-white sm:text-5xl">
+        Build your real estate career <span class="accent">with TPPG.</span>
+      </h2>
+      <p class="mx-auto mt-4 max-w-xl text-[0.95rem] leading-relaxed text-zinc-300 sm:mt-5 sm:text-base">
+        Apply as an agent in a few minutes. An admin reviews your application, and you’ll get your Agent ID to log in once approved.
+      </p>
+      <div class="mx-auto mt-7 grid max-w-xs gap-3 sm:mt-9 sm:flex sm:max-w-none sm:flex-wrap sm:justify-center">
+        <button onclick="openLogin(); showRegister()" class="btn-primary">
+          Apply as an agent
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <button onclick="openLogin(); showLogin()" class="btn-ghost bg-ink/40 backdrop-blur">I already have an account</button>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- ===== PARTNERS (static, dynamic — pulled from /api/developers/public) ===== -->
-<section class="max-w-7xl mx-auto px-6 pb-20">
-  <p class="text-center text-xs uppercase tracking-widest text-gray-500 mb-8">Developer Partners</p>
-  <div id="trustTrack" class="flex flex-wrap justify-center gap-x-10 gap-y-6 items-center">
-    <!-- populated by loadDevelopers() below; falls back to placeholders if the fetch fails -->
-    <div class="trust-logo-card border border-dashed border-white/15 rounded-lg"><span class="text-xs uppercase tracking-widest text-gray-500 px-1 text-center">[Partner]</span></div>
-    <div class="trust-logo-card border border-dashed border-white/15 rounded-lg"><span class="text-xs uppercase tracking-widest text-gray-500 px-1 text-center">[Partner]</span></div>
-    <div class="trust-logo-card border border-dashed border-white/15 rounded-lg"><span class="text-xs uppercase tracking-widest text-gray-500 px-1 text-center">[Partner]</span></div>
-    <div class="trust-logo-card border border-dashed border-white/15 rounded-lg"><span class="text-xs uppercase tracking-widest text-gray-500 px-1 text-center">[Partner]</span></div>
-    <div class="trust-logo-card border border-dashed border-white/15 rounded-lg"><span class="text-xs uppercase tracking-widest text-gray-500 px-1 text-center">[Partner]</span></div>
-    <div class="trust-logo-card border border-dashed border-white/15 rounded-lg"><span class="text-xs uppercase tracking-widest text-gray-500 px-1 text-center">[Partner]</span></div>
+<!-- ===== PARTNERS (pulled from /api/developers/public; falls back to the main partners below) ===== -->
+<section class="border-t border-white/[0.06] bg-ink-800 py-14 sm:py-20">
+  <div class="container-site">
+    <p class="text-center text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">Developer partners</p>
+    <div id="trustTrack" class="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.07] sm:grid-cols-4">
+      <div class="trust-logo-card"><img src="imgs/developers/ayala-land.png" alt="Ayala Land" class="trust-logo mono"></div>
+      <div class="trust-logo-card"><img src="imgs/developers/smdc.png" alt="SMDC" class="trust-logo mono"></div>
+      <div class="trust-logo-card"><img src="imgs/developers/megaworld.png" alt="Megaworld" class="trust-logo mono"></div>
+      <div class="trust-logo-card"><img src="imgs/developers/cebu-landmasters.png" alt="Cebu Landmasters" class="trust-logo mono"></div>
+      <div class="trust-logo-card"><img src="imgs/developers/vista-land.png" alt="Vista Land" class="trust-logo mono"></div>
+      <div class="trust-logo-card"><img src="imgs/developers/rockwell-land.png" alt="Rockwell Land" class="trust-logo mono"></div>
+      <div class="trust-logo-card"><img src="imgs/developers/avida.png" alt="Avida" class="trust-logo mono"></div>
+      <div class="trust-logo-card"><img src="imgs/developers/camella.png" alt="Camella" class="trust-logo mono"></div>
+    </div>
   </div>
 </section>
 
 <style>
   .trust-logo-card {
-    height: 128px; width: 210px; flex-shrink: 0;
+    height: 7rem; background: #121214;
     display: flex; align-items: center; justify-content: center;
-    padding: 8px;
-    transition: transform .15s;
+    padding: 1rem 1.5rem;
+    transition: background-color .2s;
   }
-  .trust-logo-card:hover { transform: scale(1.08); }
+  @media (min-width:640px){ .trust-logo-card { height: 8rem; } }
+  .trust-logo-card:hover { background: #18181B; }
   .trust-logo {
-    max-height: 100%; max-width: 100%; width: auto; height: auto;
+    max-height: 3.25rem; max-width: 9.5rem; width: auto; height: auto;
     object-fit: contain;
     opacity: 0;
     animation: logo-fade-in .25s ease forwards;
   }
+  /* White marks on dark, same treatment as the public website */
+  .trust-logo.mono { filter: brightness(0) invert(1); animation-name: logo-fade-in-mono; }
+  .trust-logo-card:hover .trust-logo.mono { opacity: 1 !important; }
   .logo-skeleton {
-    width: 70%; height: 45%;
+    width: 70%; height: 40%;
     border-radius: 6px;
     background: linear-gradient(90deg, #1a1a1a 25%, #232323 37%, #1a1a1a 63%);
     background-size: 400% 100%;
@@ -731,10 +851,8 @@
     0% { background-position: 100% 50%; }
     100% { background-position: 0 50%; }
   }
-  @keyframes logo-fade-in {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
+  @keyframes logo-fade-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes logo-fade-in-mono { from { opacity: 0; } to { opacity: .7; } }
 </style>
 
 <script>
@@ -784,7 +902,7 @@
       if (!res.ok) throw new Error('Failed to load developers');
       const developers = await res.json();
 
-      if (!Array.isArray(developers) || developers.length === 0) return; // keep placeholders
+      if (!Array.isArray(developers) || developers.length === 0) return; // keep the built-in partner logos
 
       // Show lightweight skeleton cards immediately (no raw white-bg images ever shown)
       track.innerHTML = developers.map((d, i) =>
@@ -800,61 +918,60 @@
         if (!slot) return;
 
         if (!d.logo_url) {
-          slot.classList.add('border', 'border-dashed', 'border-white/15', 'rounded-lg');
-          slot.innerHTML = `<span class="text-xs uppercase tracking-widest text-gray-500 px-1 text-center">${d.name}</span>`;
+          slot.innerHTML = `<span class="text-center text-xs font-semibold uppercase tracking-widest text-zinc-400">${d.name}</span>`;
           return;
         }
 
         const cleaned = await stripWhiteBackground(d.logo_url);
         const finalSrc = cleaned || d.logo_url; // fall back to original only if stripping failed (e.g. CORS)
-        slot.innerHTML = `<img src="${finalSrc}" alt="${d.name}" title="${d.name}" class="trust-logo logo-ready">`;
+        // Cleaned (transparent) logos get the same white-on-dark treatment as the public website.
+        slot.innerHTML = `<img src="${finalSrc}" alt="${d.name}" title="${d.name}" class="trust-logo logo-ready${cleaned ? ' mono' : ''}">`;
       }));
     } catch (err) {
       console.error('Error loading developers for partner grid:', err);
-      // leave placeholder cards in place
+      // keep the built-in partner logos
     }
   }
   document.addEventListener('DOMContentLoaded', loadDevelopers);
 </script>
 
 <!-- ===== FOOTER ===== -->
-<footer class="border-t border-white/10 py-14">
-  <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-4 gap-10 mb-10">
-    <div>
-      <div class="flex items-center gap-3 mb-4">
-        <div class="h-9 flex items-center justify-center">
-          <img src="imgs/logo.jpg" class="h-full w-auto object-contain" onerror="this.style.display='none'">
-        </div>
-        <span class="font-semibold">TPPG Portal</span>
-      </div>
-      <p class="text-sm text-gray-500 max-w-xs">Connecting agents and families to verified real estate across the Philippines.</p>
+<footer class="border-t border-white/[0.06] bg-ink">
+  <div class="container-site grid gap-10 py-12 sm:py-16 lg:grid-cols-12 lg:gap-8">
+    <div class="lg:col-span-5">
+      <img src="imgs/logo.png" alt="The Premier Property Group" width="480" height="229" loading="lazy" class="h-16 w-auto">
+      <p class="mt-5 max-w-xs text-sm leading-relaxed text-zinc-400">
+        The TPPG Agent Portal: the workspace for our agents, team leaders, and managers.
+      </p>
+      <p class="mt-5 flex gap-3 text-sm text-zinc-300">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2" class="mt-0.5 h-4 w-4 shrink-0"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+        <span>Iloilo Business Park, Megaworld Boulevard, Mandurriao<br>Iloilo City, 5000 Iloilo</span>
+      </p>
     </div>
-    <div>
-      <h4 class="text-xs uppercase tracking-widest text-orange-500 mb-4">Explore</h4>
-      <div class="space-y-2 text-sm text-gray-400">
-        <p><a href="#listings" class="hover:text-white transition">Listings</a></p>
-        <p><a href="#why" class="hover:text-white transition">Why Us</a></p>
-        <p><a href="#how" class="hover:text-white transition">How It Works</a></p>
+    <nav aria-label="Footer" class="grid grid-cols-2 gap-8 lg:col-span-7 lg:pl-8">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">Portal</p>
+        <ul class="mt-4 space-y-2.5 text-sm">
+          <li><button onclick="openLogin(); showLogin()" class="text-left text-zinc-300 transition hover:text-white">Log in</button></li>
+          <li><button onclick="openLogin(); showRegister()" class="text-left text-zinc-300 transition hover:text-white">Apply as an agent</button></li>
+        </ul>
       </div>
-    </div>
-    <div>
-      <h4 class="text-xs uppercase tracking-widest text-orange-500 mb-4">Portal</h4>
-      <div class="space-y-2 text-sm text-gray-400">
-        <p><button onclick="openLogin()" class="hover:text-white transition text-left">Agent Login</button></p>
-        <p><button onclick="openLogin()" class="hover:text-white transition text-left">Admin Login</button></p>
-        <p><button onclick="openLogin()" class="hover:text-white transition text-left">Register</button></p>
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">Explore</p>
+        <ul class="mt-4 space-y-2.5 text-sm">
+          <li><a href="#inventory" class="text-zinc-300 transition hover:text-white">What you’ll sell</a></li>
+          <li><a href="#why" class="text-zinc-300 transition hover:text-white">Why TPPG</a></li>
+          <li><a href="#how" class="text-zinc-300 transition hover:text-white">How it works</a></li>
+          <li><a href="#team" class="text-zinc-300 transition hover:text-white">Our team</a></li>
+        </ul>
       </div>
-    </div>
-    <div>
-      <h4 class="text-xs uppercase tracking-widest text-orange-500 mb-4">Contact</h4>
-      <div class="space-y-2 text-sm text-gray-400">
-        <p>[Contact email — pending confirmation]</p><p>[Contact number — pending confirmation]</p>
-      </div>
-    </div>
+    </nav>
   </div>
-  <div class="max-w-7xl mx-auto px-6 border-t border-white/10 pt-6 flex justify-between text-xs text-gray-500">
-    <span>© 2026 The Premier Property Group. All rights reserved.</span>
-    <span>Designed for a network built on trust.</span>
+  <div class="border-t border-white/[0.06]">
+    <div class="container-site flex flex-col gap-2 py-6 text-xs text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
+      <p>© 2026 The Premier Property Group. All rights reserved.</p>
+      <p>For TPPG agents, team leaders, and managers.</p>
+    </div>
   </div>
 </footer>
 
