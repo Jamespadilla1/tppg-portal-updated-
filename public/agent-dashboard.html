@@ -1032,7 +1032,7 @@ function renderUnitsList(){
           <span class="badge ${soldOut?'bg-red':'bg-green'} shrink-0">${soldOut ? 'Sold Out' : left + ' unit' + (left===1?'':'s') + ' left'}</span>
         </div>
         <p class="text-orange-600 font-bold text-sm">${peso(u.tcp)}</p>
-        <p class="text-gray-500 text-xs">${bedroomLabel(u.bedrooms)}${u.bedrooms!==0 ? ' BR' : ''} · ${u.square_meters??'—'} sqm</p>
+        <p class="text-gray-500 text-xs">${(u.bedrooms===null||u.bedrooms===undefined||u.bedrooms==='') ? '' : bedroomLabel(u.bedrooms) + (u.bedrooms!==0 ? ' BR' : '') + ' · '}${u.square_meters??'—'} sqm</p>
       </div>
     </div>`;
   }).join('') || `<p class="col-span-full text-center text-gray-500 text-xs py-8">No units yet for ${propCurrentPropName}.</p>`;

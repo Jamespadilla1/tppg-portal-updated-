@@ -2809,6 +2809,7 @@ async function renderUnits(){
   const token = localStorage.getItem('token');
   const showLot = ['House and Lot','Lot'].includes(currentPropType);
   document.getElementById('uLotRow').classList.toggle('hidden', !showLot);
+  applyLotMode();
   try {
     const res = await fetch(`/api/units?property_id=${currentPropId}&archived=${showingArchivedUnits}`, {
       headers: { 'Authorization': 'Bearer ' + token }
@@ -2834,11 +2835,11 @@ async function renderUnits(){
             <span class="badge ${soldOut?'bg-red':'bg-green'} shrink-0">${soldOut ? 'Sold Out' : left + ' unit' + (left===1?'':'s') + ' left'}</span>
           </div>
           <p class="text-orange-400 font-bold text-sm">${peso(u.tcp)}</p>
-          <p class="text-gray-500 text-xs">${bedroomLabel(u.bedrooms)}${u.bedrooms!==0 ? ' BR' : ''} · ${u.square_meters??'—'} sqm${u.lot_type?' · '+u.lot_type:''}</p>
+          ${isLotProperty() ? `<p class="text-gray-500 text-xs">${u.square_meters??'—'} sqm${u.downpayment_terms_months ? ' · ' + u.downpayment_terms_months + '-mo term' : ''}</p>` : `<p class="text-gray-500 text-xs">${bedroomLabel(u.bedrooms)}${u.bedrooms!==0 ? ' BR' : ''} · ${u.square_meters??'—'} sqm${u.lot_type?' · '+u.lot_type:''}</p>
           <div class="flex items-center gap-1.5 flex-wrap">
             <span class="badge bg-blue text-xs">${u.furnishing||'Bare Unit'}</span>
             <span class="badge ${u.construction_status==='Under Construction'?'bg-yellow':(u.construction_status==='Pre-selling'?'bg-blue':'bg-green')} text-xs">${u.construction_status||'RFO'}</span>
-          </div>
+          </div>`}
           ${['Under Construction','Pre-selling'].includes(u.construction_status) && u.estimated_finish_date ? `<p class="text-gray-500 text-xs">Est. finish: ${new Date(u.estimated_finish_date).toLocaleDateString('en-PH',{year:'numeric',month:'short'})}</p>` : ''}
         </div>
       </div>
@@ -2862,17 +2863,19 @@ function viewUnit(id){
     </div>
     <p class="text-gray-400 text-sm mb-3">${currentPropName}</p>
     <div class="grid grid-cols-2 gap-3 mb-3">
-      <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Bedrooms</p><p class="text-white font-bold">${bedroomLabel(u.bedrooms)}</p></div>
+      ${isLotProperty() ? '' : `<div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Bedrooms</p><p class="text-white font-bold">${bedroomLabel(u.bedrooms)}</p></div>`}
       <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Square Meters</p><p class="text-white font-bold">${u.square_meters??'—'}</p></div>
       <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Lot Position</p><p class="text-white font-bold">${u.lot_type||'—'}</p></div>
-      <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Furnishing</p><p class="text-white font-bold">${u.furnishing||'Bare Unit'}</p></div>
-      <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Construction Status</p><p class="text-white font-bold">${u.construction_status||'RFO'}</p></div>
+      ${isLotProperty() ? '' : `<div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Furnishing</p><p class="text-white font-bold">${u.furnishing||'Bare Unit'}</p></div>
+      <div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Construction Status</p><p class="text-white font-bold">${u.construction_status||'RFO'}</p></div>`}
       ${['Under Construction','Pre-selling'].includes(u.construction_status) && u.estimated_finish_date ? `<div class="bg-white/4 rounded-lg p-3 border border-white/8"><p class="text-gray-500 text-xs mb-0.5">Est. Finish Date</p><p class="text-white font-bold">${new Date(u.estimated_finish_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})}</p></div>` : ''}
     </div>
     <div class="rounded-xl bg-orange-500/10 border border-orange-500/25 p-4 mb-3 space-y-2">
       <div class="flex justify-between items-center"><p class="text-xs text-gray-400 uppercase tracking-wide">TCP (Total Contract Price)</p><p class="text-lg font-bold text-orange-400">${peso(u.tcp)}</p></div>
       <div class="flex justify-between items-center"><p class="text-xs text-gray-400">Reservation Fee</p><p class="text-sm font-semibold text-white">${u.reservation_fee ? peso(u.reservation_fee) : '—'}</p></div>
       <div class="flex justify-between items-center"><p class="text-xs text-gray-400">Downpayment</p><p class="text-sm font-semibold text-white">${u.downpayment ? peso(u.downpayment) : '—'}</p></div>
+      ${isLotProperty() && u.downpayment && u.downpayment_terms_months ? `<div class="flex justify-between items-center"><p class="text-xs text-gray-400">Monthly Downpayment</p><p class="text-sm font-semibold text-white">${peso(Math.round(u.downpayment / u.downpayment_terms_months))}</p></div>
+      <div class="flex justify-between items-center"><p class="text-xs text-gray-400">Monthly Term</p><p class="text-sm font-semibold text-white">${u.downpayment_terms_months} months</p></div>` : ''}
     </div>
     ${u.computation_image_url ? `
     <p class="text-gray-500 text-xs mb-1">Computation</p>
@@ -2955,6 +2958,31 @@ function printUnitSheet(id){
 function parseMoney(str){
   return parseFloat((str||'').toString().replace(/,/g,'')) || 0;
 }
+// ── LOT PROPERTIES: a "Lot" property gets a simpler form (Lot Number, SQM, TCP, Reservation Fee, Downpayment, Monthly DP, Monthly Term) ──
+function isLotProperty(){ return currentPropType === 'Lot'; }
+function applyLotMode(){
+  const lot = isLotProperty();
+  ['u','eU'].forEach(p => {
+    ['Image','CompImage','Beds','Furnish','ConstStatus','UnitsLeft','Desc'].forEach(k => {
+      const el = document.getElementById(p+k);
+      if(el && el.closest('div')) el.closest('div').classList.toggle('hidden', lot);
+    });
+    const status = document.getElementById(p+'ConstStatus');
+    document.getElementById(p+'FinishRow').classList.toggle('hidden', lot || !status || !['Under Construction','Pre-selling'].includes(status.value));
+    document.getElementById(p+'LotRow').classList.toggle('hidden', lot || currentPropType !== 'House and Lot');
+    const setLabel = (id, text) => { const el = document.getElementById(id); if(el){ const l = el.closest('div').querySelector('label'); if(l) l.textContent = text; } };
+    setLabel(p+'Name', lot ? 'Lot Number *' : (p==='u' ? 'Unit Name / Number *' : 'Unit Name / Number'));
+    setLabel(p+'DPTerms', lot ? 'Monthly Term (months)' : 'Downpayment Terms (months)');
+    setLabel(p+'MonthlyDP', lot ? 'Monthly Downpayment (₱)' : 'Monthly DP (₱)');
+    const nm = document.getElementById(p+'Name'); if(nm) nm.placeholder = lot ? 'e.g. Block 3 Lot 12' : (p==='u' ? 'e.g. Tower A - Unit 501' : '');
+  });
+  const word = lot ? 'Lot' : 'Unit';
+  document.getElementById('unitAddBtn').textContent = '+ Add ' + word;
+  document.querySelector('#addUnitModal h3').textContent = 'Add ' + word;
+  document.querySelector('#addUnitModal button[onclick="saveUnit()"]').textContent = 'Save ' + word;
+  document.querySelector('#editUnitModal h3').textContent = 'Edit ' + word;
+  document.querySelector('#editUnitModal button[onclick="updateUnit()"]').textContent = 'Update ' + word;
+}
 function bedroomLabel(n){
   if(n===null || n===undefined || n==='') return '—';
   return Number(n)===0 ? 'Studio' : n;
@@ -3014,12 +3042,12 @@ async function saveUnit(){
   fd.append('reservation_fee', parseMoney(document.getElementById('uResFee').value) || '');
   fd.append('downpayment', parseMoney(document.getElementById('uDownpayment').value) || '');
   fd.append('downpayment_terms_months', document.getElementById('uDPTerms').value || '24');
-  fd.append('bedrooms', document.getElementById('uBeds').value || '');
+  fd.append('bedrooms', isLotProperty() ? '' : (document.getElementById('uBeds').value || ''));
   fd.append('square_meters', document.getElementById('uSqm').value || '');
   fd.append('lot_type', ['House and Lot','Lot'].includes(currentPropType) ? document.getElementById('uLotType').value : '');
   fd.append('furnishing', document.getElementById('uFurnish').value);
-  fd.append('units_left', unitsLeft);
-  fd.append('construction_status', constStatus);
+  fd.append('units_left', isLotProperty() ? '1' : unitsLeft);
+  fd.append('construction_status', isLotProperty() ? 'RFO' : constStatus);
   fd.append('estimated_finish_date', ['Under Construction','Pre-selling'].includes(constStatus) ? finishDate : '');
   fd.append('description', document.getElementById('uDesc').value.trim());
   const imgFile = document.getElementById('uImage').files[0];
@@ -3079,6 +3107,7 @@ function openEditUnit(id){
   document.getElementById('eUDesc').value=u.description||'';
   document.getElementById('eUImage').value='';
   document.getElementById('eUCompImage').value='';
+  applyLotMode();
   openModal('editUnitModal');
 }
 async function updateUnit(){
@@ -3098,7 +3127,7 @@ async function updateUnit(){
   fd.append('reservation_fee', parseMoney(document.getElementById('eUResFee').value) || '');
   fd.append('downpayment', parseMoney(document.getElementById('eUDownpayment').value) || '');
   fd.append('downpayment_terms_months', document.getElementById('eUDPTerms').value || '24');
-  fd.append('bedrooms', document.getElementById('eUBeds').value || '');
+  fd.append('bedrooms', isLotProperty() ? '' : (document.getElementById('eUBeds').value || ''));
   fd.append('square_meters', document.getElementById('eUSqm').value || '');
   fd.append('lot_type', ['House and Lot','Lot'].includes(currentPropType) ? document.getElementById('eULotType').value : '');
   fd.append('furnishing', document.getElementById('eUFurnish').value);
