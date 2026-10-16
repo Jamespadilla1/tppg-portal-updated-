@@ -2963,7 +2963,7 @@ function isLotProperty(){ return currentPropType === 'Lot'; }
 function applyLotMode(){
   const lot = isLotProperty();
   ['u','eU'].forEach(p => {
-    ['Image','CompImage','Beds','Furnish','ConstStatus','UnitsLeft','Desc'].forEach(k => {
+    ['Beds','Furnish','ConstStatus','UnitsLeft','Desc'].forEach(k => {
       const el = document.getElementById(p+k);
       if(el && el.closest('div')) el.closest('div').classList.toggle('hidden', lot);
     });
@@ -2972,6 +2972,7 @@ function applyLotMode(){
     document.getElementById(p+'LotRow').classList.toggle('hidden', lot || currentPropType !== 'House and Lot');
     const setLabel = (id, text) => { const el = document.getElementById(id); if(el){ const l = el.closest('div').querySelector('label'); if(l) l.textContent = text; } };
     setLabel(p+'Name', lot ? 'Lot Number *' : (p==='u' ? 'Unit Name / Number *' : 'Unit Name / Number'));
+    setLabel(p+'Image', lot ? 'Lot Photo' : (p==='u' ? 'Unit Photo' : 'Unit Photo (leave blank to keep current)'));
     setLabel(p+'DPTerms', lot ? 'Monthly Term (months)' : 'Downpayment Terms (months)');
     setLabel(p+'MonthlyDP', lot ? 'Monthly Downpayment (₱)' : 'Monthly DP (₱)');
     const nm = document.getElementById(p+'Name'); if(nm) nm.placeholder = lot ? 'e.g. Block 3 Lot 12' : (p==='u' ? 'e.g. Tower A - Unit 501' : '');
