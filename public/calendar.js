@@ -31,7 +31,7 @@
   const AUTO = {
     commission:  { label: 'Commission release', color: '#16a34a' },
     incentive:   { label: 'Incentive',          color: '#9333ea' },
-    override:    { label: 'Override',           color: '#2563eb' },
+    override:    { label: 'Overriding Commission', color: '#2563eb' },
     reservation: { label: 'Reservation date',   color: '#ca8a04' },
     promo_end:   { label: 'Promo ends',         color: '#ea580c' },
   };
@@ -300,7 +300,7 @@
   // ── page layout ──
   function buildShell(root) {
     const chips = Object.entries(TYPES).map(([k, t]) => `<button type="button" class="tcal-chip" data-kind="${k}" style="--c:${t.color}" aria-pressed="true"><i></i>${t.label}</button>`).join('')
-      + `<button type="button" class="tcal-chip" data-kind="auto" style="--c:#a8a29e" aria-pressed="true" title="Commission releases, incentives, overrides, reservations and promo end dates">${ICON.lock}Automatic</button>`;
+      + `<button type="button" class="tcal-chip" data-kind="auto" style="--c:#a8a29e" aria-pressed="true" title="Commission releases, incentives, overriding commissions, reservations and promo end dates">${ICON.lock}Automatic</button>`;
     root.innerHTML = `
       <div class="tcal-wrap">
         <div class="tcal-card tcal-main">

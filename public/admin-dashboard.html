@@ -459,6 +459,23 @@ tr:hover td{background:rgba(0,0,0,.02)}
         </div>
       </div>
 
+      <!-- PAY SLIP UPLOAD (one per sale) -->
+      <div id="payslipModal" class="modal-backdrop">
+        <div class="modal-box">
+          <button onclick="closeModal('payslipModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+          <h3 class="font-bold text-lg mb-1">Upload Pay Slip</h3>
+          <p class="text-xs text-gray-500 mb-4" id="psSubtitle"></p>
+          <input type="hidden" id="psBuyerId">
+          <div class="space-y-3">
+            <div><label class="text-xs text-gray-400 mb-1 block">Pay slip (photo/scan of the hard copy, or the digital slip) *</label><input id="psFile" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" class="field"></div>
+            <p class="text-[11px] text-gray-500">JPG, PNG, WEBP or PDF, up to 10 MB. Uploading again replaces the current pay slip.</p>
+            <div><label class="text-xs text-gray-400 mb-1 block">Note for the seller <span class="text-gray-600">(optional)</span></label><textarea id="psNote" rows="2" maxlength="500" class="field" placeholder="e.g. Commission for October release"></textarea></div>
+            <p id="psErr" class="text-red-400 text-xs hidden"></p>
+            <button id="psSaveBtn" onclick="savePayslip()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Upload Pay Slip</button>
+          </div>
+        </div>
+      </div>
+
       <!-- QUICK ADD RELEASE (Full DP / Pre Selling / Spot Cash only) -->
       <div id="quickReleaseModal" class="modal-backdrop">
         <div class="modal-box">
@@ -481,8 +498,8 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <!-- INCENTIVES & OVERRIDE (per-sale, set by clicking through Commission Records) -->
       <div class="card overflow-hidden">
         <div class="px-5 py-3 border-b border-white/8">
-          <h3 class="font-semibold text-sm">Incentives & Override</h3>
-          <p class="text-xs text-gray-500 mt-0.5">Click a sale under Commission Records above to set an incentive for the agent and an override for whoever they report to. Incentive is visible only to that agent; override is visible only to the recipient.</p>
+          <h3 class="font-semibold text-sm">Incentives & Overriding Commission</h3>
+          <p class="text-xs text-gray-500 mt-0.5">Click a sale under Commission Records above to set an incentive for the agent and an overriding commission for whoever they report to. Incentive is visible only to that agent; the overriding commission is visible only to the recipient.</p>
         </div>
         <div class="px-5 py-3 border-b border-white/8 flex flex-wrap items-center gap-2">
           <select id="incRoleFilter" onchange="renderReceivables()" class="field w-52">
@@ -499,7 +516,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
         <p id="incArchiveNote" class="hidden px-5 py-2 text-xs text-gray-500 border-b border-white/8">Archived records. Sales of sellers who were promoted (or removed) land here automatically; you can also archive any row yourself and restore it later.</p>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
-            <th class="text-left px-5 py-2">Seller</th><th class="text-left px-5 py-2">Client</th><th class="text-left px-5 py-2">Incentive</th><th class="text-left px-5 py-2">Override Recipient</th><th class="text-left px-5 py-2">Override Amount</th><th class="text-left px-5 py-2">Date</th><th class="text-left px-5 py-2">Actions</th>
+            <th class="text-left px-5 py-2">Seller</th><th class="text-left px-5 py-2">Client</th><th class="text-left px-5 py-2">Incentive</th><th class="text-left px-5 py-2">Overriding Comm. Recipient</th><th class="text-left px-5 py-2">Overriding Commission</th><th class="text-left px-5 py-2">Date</th><th class="text-left px-5 py-2">Actions</th>
           </tr></thead>
           <tbody id="receivablesBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
@@ -510,18 +527,18 @@ tr:hover td{background:rgba(0,0,0,.02)}
     <div id="incentiveOverrideModal" class="modal-backdrop">
       <div class="modal-box">
         <button onclick="closeModal('incentiveOverrideModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
-        <h3 class="font-bold text-lg mb-1" id="ioTitle">Incentive & Override</h3>
-        <p class="text-xs text-gray-500 mb-4">Incentive is visible only to the agent who made this sale. Override is visible only to the person they report to.</p>
+        <h3 class="font-bold text-lg mb-1" id="ioTitle">Incentive & Overriding Commission</h3>
+        <p class="text-xs text-gray-500 mb-4">Incentive is visible only to the agent who made this sale. The overriding commission is visible only to the person they report to.</p>
         <input type="hidden" id="ioBuyerId">
         <input type="hidden" id="ioOverrideField">
         <div class="space-y-3">
           <div><label class="text-xs text-gray-400 mb-1 block">Incentive for this sale (₱)</label><input id="ioIncentive" type="text" inputmode="decimal" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Reason for incentive <span class="text-gray-600">(optional)</span></label><input id="ioIncentiveReason" type="text" class="field" placeholder="e.g. Fast closing, referral bonus, top performer this month"></div>
           <div id="ioOverrideRow">
-            <label class="text-xs text-gray-400 mb-1 block" id="ioOverrideLabel">Override amount (₱)</label>
+            <label class="text-xs text-gray-400 mb-1 block" id="ioOverrideLabel">Overriding commission (₱)</label>
             <input id="ioOverride" type="text" inputmode="decimal" class="field" placeholder="0" oninput="formatMoneyInput(this)">
           </div>
-          <p id="ioNoOverrideNote" class="hidden text-xs text-gray-500 italic">This seller has no one above them in the reporting chain, so no override applies here.</p>
+          <p id="ioNoOverrideNote" class="hidden text-xs text-gray-500 italic">This seller has no one above them in the reporting chain, so no overriding commission applies here.</p>
           <div><label class="text-xs text-gray-400 mb-1 block">Date</label><input id="ioDate" type="date" class="field"></div>
           <p id="ioErr" class="text-red-400 text-xs hidden"></p>
           <button onclick="saveIncentiveOverride()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save</button>
@@ -760,7 +777,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
         <!-- Release notifications -->
         <div class="card p-6 space-y-4">
           <h3 class="font-semibold">Release Notifications</h3>
-          <p class="text-xs text-gray-500 -mt-2">Agents, team leaders, sales managers and unit managers get a heads-up on their Updates page (and the bell) this many days before a commission release, incentive or override is due.</p>
+          <p class="text-xs text-gray-500 -mt-2">Agents, team leaders, sales managers and unit managers get a heads-up on their Updates page (and the bell) this many days before a commission release, incentive or overriding commission is due.</p>
           <div>
             <label class="text-xs text-gray-400 mb-1 block">Notify this many days before a release</label>
             <input id="setReleaseNoticeDays" type="number" min="1" max="60" step="1" class="field" placeholder="e.g. 3">
@@ -2929,6 +2946,8 @@ function viewUnit(id){
       ${isLotProperty() && u.downpayment && u.downpayment_terms_months ? `<div class="flex justify-between items-center"><p class="text-xs text-gray-400">Monthly Downpayment</p><p class="text-sm font-semibold text-white">${peso(Math.round(u.downpayment / u.downpayment_terms_months))}</p></div>
       <div class="flex justify-between items-center"><p class="text-xs text-gray-400">Monthly Term</p><p class="text-sm font-semibold text-white">${u.downpayment_terms_months} months</p></div>` : ''}
     </div>
+    <p class="text-gray-500 text-xs mb-1">Price History</p>
+    <div id="unitPriceHistory" class="rounded-lg border border-white/8 bg-white/4 p-3 mb-3 text-xs text-gray-500">Loading price history…</div>
     ${u.computation_image_url ? `
     <p class="text-gray-500 text-xs mb-1">Computation</p>
     <img src="${u.computation_image_url}" class="w-full rounded-lg border border-white/8 mb-4">
@@ -2947,6 +2966,28 @@ function viewUnit(id){
     </div>
   `;
   openModal('unitDetailModal');
+  loadUnitPriceHistory(u.id);
+}
+// Each TCP change for this unit, newest first, with how much it went up or down
+async function loadUnitPriceHistory(unitId){
+  const box = document.getElementById('unitPriceHistory');
+  try {
+    const res = await fetch(`/api/units/${unitId}/price-history`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
+    const rows = await res.json().catch(()=>null);
+    if(!res.ok || !Array.isArray(rows)) throw new Error(rows && rows.message ? rows.message : 'HTTP ' + res.status);
+    if(!rows.length){ box.innerHTML = 'No price changes recorded yet. Changes are tracked from now on, each time this unit\'s TCP is edited.'; return; }
+    box.innerHTML = `<div class="space-y-1.5">${rows.map(r=>{
+      const when = new Date(r.changed_at).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'});
+      if(r.old_tcp === null || r.old_tcp === undefined) return `<div class="flex justify-between gap-3"><span>${when} · Listed at</span><span class="text-white font-medium">${peso(r.new_tcp)}</span></div>`;
+      const diff = Number(r.new_tcp) - Number(r.old_tcp);
+      const pct = Number(r.old_tcp) ? (diff / Number(r.old_tcp) * 100).toFixed(1) : null;
+      const cls = diff > 0 ? 'text-green-400' : 'text-red-400';
+      return `<div class="flex justify-between gap-3"><span>${when} · ${peso(r.old_tcp)} → <span class="text-white font-medium">${peso(r.new_tcp)}</span></span><span class="${cls} whitespace-nowrap">${diff > 0 ? '▲ +' : '▼ −'}${peso(Math.abs(diff))}${pct !== null ? ` (${diff > 0 ? '+' : ''}${pct}%)` : ''}</span></div>`;
+    }).join('')}</div>`;
+  } catch(err){
+    console.error('Error loading price history:', err);
+    box.innerHTML = `<span class="text-red-400">Couldn't load price history. ${promoEsc(err.message)}</span>`;
+  }
 }
 
 // Printable one-pager for a unit — a clean spec sheet an agent can hand to a client.
@@ -4467,7 +4508,9 @@ async function deleteBuyerAdmin(id){
 
 let allReceivablesCache = [];
 
+let lastCommRecordsArgs = null; // so the list can be redrawn after a pay slip upload
 window.openCommClientRecords = async (role, id, name) => {
+  lastCommRecordsArgs = [role, id, name];
   const records = commBuyersCache.filter(b => b.input_by_role===role && b.input_by_id===id);
   document.getElementById('commClientsTitle').textContent = `${name}'s Client Records`;
   document.getElementById('commClientsSubtitle').textContent = `${records.length} record${records.length===1?'':'s'} added by this ${COMM_ROLE_LABEL[role]||role} · click a record to add its commission release`;
@@ -4529,14 +4572,74 @@ window.openCommClientRecords = async (role, id, name) => {
             `).join('')}
           </div>
         </div>` : ''}
-        ${releaseBtn ? `
+        ${b.payslip_url ? `
+        <div class="mt-3 pt-3 border-t border-white/8 text-xs">
+          <p class="text-gray-400"><span class="badge bg-green">📄 Pay slip uploaded</span> <span class="text-gray-500">${new Date(b.payslip_uploaded_at).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})}</span>
+            · <a href="${promoEsc(b.payslip_url)}" target="_blank" rel="noopener" class="text-blue-400 hover:text-blue-300 hover:underline">View</a>
+            · <button onclick="removePayslip('${b.id}')" class="text-red-400 hover:text-red-300">Remove</button></p>
+          ${b.payslip_note ? `<p class="text-gray-500 italic mt-1">“${promoEsc(b.payslip_note)}”</p>` : ''}
+        </div>` : ''}
+        ${(releaseBtn || !b.cancelled) ? `
         <div class="mt-3 pt-3 border-t border-white/8 flex flex-wrap gap-2">
           ${releaseBtn}
+          ${b.cancelled ? '' : `<button onclick="openPayslipModal('${b.id}','${b.name.replace(/'/g,"\\'")}')" class="text-[11px] px-2.5 py-1 rounded-md bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors">${b.payslip_url ? 'Replace Pay Slip' : 'Upload Pay Slip'}</button>`}
         </div>` : ''}
       </div>`;
   }).join('') || '<p class="text-center text-gray-500 text-xs py-8">No client records added by this person yet.</p>';
 
   openModal('commClientsModal');
+};
+
+// ── Pay slips (one per sale): admin uploads, the seller sees it on their client row and in their bell ──
+window.openPayslipModal = (buyerId, clientName) => {
+  document.getElementById('psBuyerId').value = buyerId;
+  document.getElementById('psSubtitle').textContent = 'Client: ' + clientName;
+  document.getElementById('psFile').value = '';
+  document.getElementById('psNote').value = '';
+  document.getElementById('psErr').classList.add('hidden');
+  openModal('payslipModal');
+};
+function updateCommBuyerCache(updated){
+  const i = commBuyersCache.findIndex(x=>x.id===updated.id);
+  if(i >= 0) commBuyersCache[i] = { ...commBuyersCache[i], ...updated };
+  if(lastCommRecordsArgs) openCommClientRecords(...lastCommRecordsArgs);
+}
+window.savePayslip = async () => {
+  const errEl = document.getElementById('psErr');
+  const fail = msg => { errEl.textContent = msg; errEl.classList.remove('hidden'); };
+  const file = document.getElementById('psFile').files[0];
+  if(!file) return fail('Choose a pay slip file to upload.');
+  if(file.size > 10 * 1024 * 1024) return fail('The pay slip must be 10 MB or smaller.');
+  const form = new FormData();
+  form.append('payslip', file);
+  form.append('note', document.getElementById('psNote').value.trim());
+  const btn = document.getElementById('psSaveBtn');
+  btn.disabled = true; btn.textContent = 'Uploading…';
+  try {
+    const res = await fetch(`/api/buyers/${document.getElementById('psBuyerId').value}/payslip`, {
+      method: 'PATCH', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }, body: form
+    });
+    const body = await res.json().catch(()=>({}));
+    if(!res.ok) return fail(body.message || 'Failed to upload the pay slip.');
+    closeModal('payslipModal');
+    updateCommBuyerCache(body);
+  } catch(err){
+    console.error('Error uploading pay slip:', err);
+    fail('Failed to upload the pay slip.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Upload Pay Slip';
+  }
+};
+window.removePayslip = async (buyerId) => {
+  if(!confirm('Remove this pay slip? The seller will no longer see it.')) return;
+  const form = new FormData();
+  form.append('remove', 'true');
+  try {
+    const res = await fetch(`/api/buyers/${buyerId}/payslip`, { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }, body: form });
+    const body = await res.json().catch(()=>({}));
+    if(!res.ok){ alert(body.message || 'Failed to remove the pay slip.'); return; }
+    updateCommBuyerCache(body);
+  } catch(err){ console.error('Error removing pay slip:', err); alert('Failed to remove the pay slip.'); }
 };
 
 window.openQuickRelease = (buyerId, clientName, paymentTerm) => {
@@ -4810,7 +4913,7 @@ function sellerLabelForBuyer(b){
 
 let incShowArchive = false;
 window.setIncentiveArchive = async function(id, archived){
-  if(archived && !confirm('Archive this incentive/override record? You can restore it later.')) return;
+  if(archived && !confirm('Archive this incentive / overriding commission record? You can restore it later.')) return;
   try {
     const res = await fetch(`/api/buyers/${id}/incentive-archive`, { method:'PATCH', headers:{ 'Authorization':'Bearer '+localStorage.getItem('token'), 'Content-Type':'application/json' }, body: JSON.stringify({ archived }) });
     if(!res.ok) throw new Error();
@@ -4898,14 +5001,14 @@ window.openIncentiveOverride = (buyerId, clientName, sellerRole, sellerId) => {
 
   document.getElementById('ioBuyerId').value = buyerId;
   document.getElementById('ioOverrideField').value = recipient ? recipient.field : '';
-  document.getElementById('ioTitle').textContent = `Incentive & Override — ${clientName}`;
+  document.getElementById('ioTitle').textContent = `Incentive & Overriding Commission — ${clientName}`;
   document.getElementById('ioIncentive').value = buyer && buyer.incentive_amount ? Number(buyer.incentive_amount).toLocaleString('en-US') : '';
   document.getElementById('ioIncentiveReason').value = buyer && buyer.incentive_reason ? buyer.incentive_reason : '';
   document.getElementById('ioDate').value = buyer && buyer.incentive_date ? buyer.incentive_date.slice(0,10) : '';
 
   if(recipient){
     document.getElementById('ioOverrideRow').classList.remove('hidden');
-    document.getElementById('ioOverrideLabel').textContent = `Override for ${recipient.person.name} (${COMM_ROLE_LABEL[recipient.tier]})`;
+    document.getElementById('ioOverrideLabel').textContent = `Overriding commission for ${recipient.person.name} (${COMM_ROLE_LABEL[recipient.tier]})`;
     const existingVal = buyer ? buyer[recipient.field] : null;
     document.getElementById('ioOverride').value = existingVal ? Number(existingVal).toLocaleString('en-US') : '';
     document.getElementById('ioNoOverrideNote').classList.add('hidden');
@@ -5507,7 +5610,7 @@ function renderInventoryReport({devs, props, units}){
 
 // Commission Payout Summary — the same math as Commission Monitoring (rate × sale value, less 10%
 // withholding and 3% percentage tax), on the filtered sales only. Cancelled sales never count.
-// Overrides and incentives are added at the amounts admin entered (no tax is taken from them here).
+// Overriding commissions and incentives are added at the amounts admin entered (no tax is taken from them here).
 function renderCommissionPayoutReport({buyers, people}){
   document.getElementById('reportTitle').textContent = 'Commission Payout Summary';
   const units = reportsRawData.units;
@@ -5535,7 +5638,7 @@ function renderCommissionPayoutReport({buyers, people}){
     ['Total Gross Commission', peso(totalGross), ''],
     ['Total Taxes Withheld', peso(totalTax), 'text-red-400'],
     ['Total Net Commission', peso(totalNet), 'text-orange-400'],
-    ['Total Overrides', peso(totalOverrides), 'text-blue-400'],
+    ['Total Overriding Commission', peso(totalOverrides), 'text-blue-400'],
     ['Total Incentives', peso(totalIncentives), 'text-purple-400'],
     ['Total Payout', peso(totalNet + totalOverrides + totalIncentives), 'text-green-400'],
     ['Sales Counted', levels.reduce((s,l)=>s+l.count,0), ''],
@@ -5546,7 +5649,7 @@ function renderCommissionPayoutReport({buyers, people}){
     data:{ labels: levels.map(l=>l.label), datasets:[
       { label:'Gross', data: levels.map(l=>l.gross), backgroundColor:'#e2733a' },
       { label:'Net', data: levels.map(l=>l.net), backgroundColor:'#22c55e' },
-      { label:'Overrides', data: levels.map(l=>l.overrides), backgroundColor:'#3b82f6' },
+      { label:'Overriding Commission', data: levels.map(l=>l.overrides), backgroundColor:'#3b82f6' },
     ]},
     options:{ plugins:{ title:{display:true,text:'Gross vs Net Commission by Level',color:'#9ca3af'}, legend:{labels:{color:'#9ca3af'}} }, scales:{ x:{ticks:{color:'#9ca3af'}}, y:{ticks:{color:'#9ca3af'}} } }
   });
@@ -5558,11 +5661,11 @@ function renderCommissionPayoutReport({buyers, people}){
   reportChart2 = drawChart('reportChart2', reportChart2, {
     type:'doughnut',
     data:{ labels: levels.map(l=>l.label), datasets:[{ data: payout, backgroundColor: CHART_COLORS }] },
-    options:{ plugins:{ title:{display:true,text:'Payout Distribution (Net + Overrides)',color:'#9ca3af'}, legend:{labels:{color:'#9ca3af'}} } }
+    options:{ plugins:{ title:{display:true,text:'Payout Distribution (Net + Overriding Commission)',color:'#9ca3af'}, legend:{labels:{color:'#9ca3af'}} } }
   });
   setChartSummary(2, summarizeShare(levels.map(l=>l.label), payout, peso, 'level') + (totalIncentives ? ` Incentives of ${peso(totalIncentives)} are paid on top.` : ''));
 
-  currentReportHeaders = ['Level','Sales Count','TCN','Gross','Net','Overrides','Net + Overrides'];
+  currentReportHeaders = ['Level','Sales Count','TCN','Gross','Net','Overriding Commission','Net + Overriding'];
   currentReportRows = levels.map(l=>[l.label, l.count, l.tcn, l.gross, l.net, l.overrides, l.net + l.overrides]);
   document.getElementById('reportTableHead').innerHTML = currentReportHeaders.map(h=>`<th class="text-left px-5 py-2">${h}</th>`).join('');
   document.getElementById('reportTableBody').innerHTML = levels.map(l=>`<tr><td class="px-5 py-2 text-xs">${l.label}</td><td class="px-5 py-2 text-xs">${l.count}</td><td class="px-5 py-2 text-xs">${peso(l.tcn)}</td><td class="px-5 py-2 text-xs">${peso(l.gross)}</td><td class="px-5 py-2 text-xs text-orange-400">${peso(l.net)}</td><td class="px-5 py-2 text-xs text-blue-400">${l.overrides ? peso(l.overrides) : '—'}</td><td class="px-5 py-2 text-xs text-green-400 font-semibold">${peso(l.net + l.overrides)}</td></tr>`).join('');

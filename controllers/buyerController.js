@@ -1,5 +1,6 @@
 const supabase = require('../config/db');
 const { fetchTeamFor } = require('./teamViewController');
+const uploadToStorage = require('../utils/uploadToStorage');
 
 // Decrement/restore a real unit's "Units Available" count when a sale is linked/unlinked/reversed.
 // Returns { error } on failure so callers can log it without blocking the buyer operation itself —
@@ -429,4 +430,38 @@ const setIncentiveArchived = async (req, res) => {
   }
 };
 
-module.exports = { getBuyers, getTeamBuyers, getPreviousRoleSalesHistory, createBuyer, updateBuyer, setBuyerOverrides, deleteBuyer, restoreBuyer, permanentlyDeleteBuyer, cancelBuyer, verifyBuyer, setIncentiveArchived };
+// PATCH /api/buyers/:id/payslip — Admin only. Uploads the seller's pay slip for this sale (image or
+// PDF, form field "payslip", optional "note"), replacing any earlier one. Body remove=true deletes it
+// from the sale. One pay slip per sale; the seller sees it on their client row and in their bell.
+const PAYSLIP_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+const PAYSLIP_MAX_BYTES = 10 * 1024 * 1024;
+const setBuyerPayslip = async (req, res) => {
+  try {
+    const { data: existing, error: findErr } = await supabase.from('buyers').select('id, name, cancelled').eq('id', req.params.id).maybeSingle();
+    if (findErr) throw findErr;
+    if (!existing) return res.status(404).json({ message: 'Sale record not found.' });
+
+    let patch;
+    if (req.body.remove === 'true' || req.body.remove === true) {
+      patch = { payslip_url: null, payslip_note: null, payslip_uploaded_at: null };
+    } else {
+      if (existing.cancelled) return res.status(400).json({ message: 'A cancelled sale has no pay slip.' });
+      const file = req.file;
+      if (!file) return res.status(400).json({ message: 'Choose a pay slip file to upload.' });
+      if (!PAYSLIP_TYPES.includes(file.mimetype)) return res.status(400).json({ message: 'The pay slip must be a JPG, PNG, WEBP image or a PDF.' });
+      if (file.size > PAYSLIP_MAX_BYTES) return res.status(400).json({ message: 'The pay slip must be 10 MB or smaller.' });
+      const url = await uploadToStorage(file, 'payslips');
+      const note = req.body.note ? String(req.body.note).trim().slice(0, 500) : null;
+      patch = { payslip_url: url, payslip_note: note || null, payslip_uploaded_at: new Date() };
+    }
+
+    const { data, error } = await supabase.from('buyers').update(patch).eq('id', req.params.id).select().single();
+    if (error) { console.error('setBuyerPayslip update failed:', error); return res.status(500).json({ message: 'Update failed: ' + error.message + ' (did you run database/payslips.sql?)' }); }
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getBuyers, getTeamBuyers, getPreviousRoleSalesHistory, createBuyer, updateBuyer, setBuyerOverrides, deleteBuyer, restoreBuyer, permanentlyDeleteBuyer, cancelBuyer, verifyBuyer, setIncentiveArchived, setBuyerPayslip };

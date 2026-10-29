@@ -288,7 +288,7 @@
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
-            <th class="text-left px-5 py-2">Buyer Name</th><th class="text-left px-5 py-2">Purchases</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Project</th><th class="text-left px-5 py-2">Unit Purchased</th><th class="text-left px-5 py-2">Reservation Date</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Net Selling Price</th><th class="text-left px-5 py-2">Payment Option</th><th class="text-left px-5 py-2">Booking Complete</th><th class="text-left px-5 py-2">Sold By</th><th class="text-left px-5 py-2">My Override</th><th class="text-left px-5 py-2">Actions</th>
+            <th class="text-left px-5 py-2">Buyer Name</th><th class="text-left px-5 py-2">Purchases</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Project</th><th class="text-left px-5 py-2">Unit Purchased</th><th class="text-left px-5 py-2">Reservation Date</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Net Selling Price</th><th class="text-left px-5 py-2">Payment Option</th><th class="text-left px-5 py-2">Booking Complete</th><th class="text-left px-5 py-2">Sold By</th><th class="text-left px-5 py-2">My Overriding Commission</th><th class="text-left px-5 py-2">Actions</th>
           </tr></thead>
           <tbody id="clientsBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
         </table></div>
@@ -639,14 +639,19 @@ function releaseFmtDate(value){
 //  - overrides on their team's sales (team leaders, sales managers and unit managers only)
 // A cancelled or archived sale never produces a notice.
 async function computeReleaseNotices(){
-  // Bell notices: only "sale approved" (verified by Admin) in the last 14 days. No commission/incentive notices.
+  // Bell notices from the last 14 days: "sale approved" (verified by Admin) and "pay slip uploaded".
+  // No commission/incentive notices.
   const res = await fetch('/api/buyers', { headers: { 'Authorization': 'Bearer ' + token } });
   if(!res.ok) throw new Error('Failed to load notices');
   const myBuyers = await res.json();
-  return myBuyers
-    .filter(b => !b.cancelled && b.verified && b.verified_at && Date.now() - new Date(b.verified_at).getTime() <= 14*86400000)
-    .map(b => ({ key: `verified:${b.id}:${b.verified_at}`, client: b.name, note: b.verify_note || '', date: b.verified_at }))
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  const recent = iso => iso && Date.now() - new Date(iso).getTime() <= 14*86400000;
+  const approved = myBuyers
+    .filter(b => !b.cancelled && b.verified && recent(b.verified_at))
+    .map(b => ({ kind: 'verified', key: `verified:${b.id}:${b.verified_at}`, client: b.name, note: b.verify_note || '', date: b.verified_at }));
+  const payslips = myBuyers
+    .filter(b => !b.cancelled && b.payslip_url && recent(b.payslip_uploaded_at))
+    .map(b => ({ kind: 'payslip', key: `payslip:${b.id}:${b.payslip_uploaded_at}`, client: b.name, note: b.payslip_note || '', date: b.payslip_uploaded_at, url: b.payslip_url }));
+  return [...approved, ...payslips].sort((a, b) => new Date(b.date) - new Date(a.date));
 }
 
 // Which notices has this person already looked at? (remembered per person, in this browser)
@@ -675,7 +680,14 @@ async function renderPromotions(){
   const unreadP = new Set(promoUnread(promoList).map(p => p.id));
 
   releaseNotices.forEach(n => {
-    html += `<div class="px-4 py-3 border-b border-gray-100">
+    html += n.kind === 'payslip'
+    ? `<div class="px-4 py-3 border-b border-gray-100">
+      <div class="flex items-center gap-2 mb-0.5">${unreadN.has(n.key) ? '<span class="badge badge-orange">New</span>' : ''}<span class="badge badge-blue">📄 Pay slip uploaded</span><span class="text-[11px] text-gray-400 ml-auto">${promoFmtDate(n.date)}</span></div>
+      <p class="text-sm font-semibold">${promoEsc(n.client)}</p>
+      <p class="text-xs text-gray-500">Admin uploaded your pay slip for this sale. <a href="${promoEsc(n.url)}" target="_blank" rel="noopener" class="text-blue-600 hover:underline font-medium">View pay slip</a></p>
+      ${n.note ? `<p class="text-xs mt-1 p-2 rounded bg-gray-50 border border-gray-200"><span class="text-gray-500">Note from Admin:</span> ${promoEsc(n.note)}</p>` : ''}
+    </div>`
+    : `<div class="px-4 py-3 border-b border-gray-100">
       <div class="flex items-center gap-2 mb-0.5">${unreadN.has(n.key) ? '<span class="badge badge-orange">New</span>' : ''}<span class="badge badge-green">✓ Sale approved</span><span class="text-[11px] text-gray-400 ml-auto">${promoFmtDate(n.date)}</span></div>
       <p class="text-sm font-semibold">${promoEsc(n.client)}</p>
       <p class="text-xs text-gray-500">Your sale went through — verified by Admin.</p>
@@ -1838,7 +1850,7 @@ async function loadMyClients(){
           ${showingArchivedClients
             ? `<button onclick="restoreClient('${b.id}')" class="text-green-600 hover:text-green-700 hover:underline font-medium">Restore</button>`
             : (b.input_by_id === myUserId
-                ? `${b.cancelled ? '' : `<button onclick="editClient('${b.id}')" class="text-orange-600 hover:text-orange-700 hover:underline font-medium">Edit</button>`}<button onclick="reAddClient('${b.id}')" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">Re-add</button>${b.cancelled ? '' : `<button onclick="cancelClient('${b.id}')" class="text-yellow-600 hover:text-yellow-700 hover:underline font-medium">Cancel</button>`}<button onclick="archiveClient('${b.id}')" class="text-red-500 hover:text-red-600 hover:underline font-medium">Archive</button>`
+                ? `${b.payslip_url && !b.cancelled ? `<a href="${promoEsc(b.payslip_url)}" target="_blank" rel="noopener" class="text-green-600 hover:text-green-700 hover:underline font-medium">📄 Pay slip</a>` : ''}${b.cancelled ? '' : `<button onclick="editClient('${b.id}')" class="text-orange-600 hover:text-orange-700 hover:underline font-medium">Edit</button>`}<button onclick="reAddClient('${b.id}')" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">Re-add</button>${b.cancelled ? '' : `<button onclick="cancelClient('${b.id}')" class="text-yellow-600 hover:text-yellow-700 hover:underline font-medium">Cancel</button>`}<button onclick="archiveClient('${b.id}')" class="text-red-500 hover:text-red-600 hover:underline font-medium">Archive</button>`
                 : '—')}
         </td>
       </tr>`).join('') || `<tr><td colspan="14" class="px-5 py-5 text-center text-gray-500 text-xs">${showingArchivedClients ? 'No archived clients.' : 'No buyers recorded yet.'}</td></tr>`;

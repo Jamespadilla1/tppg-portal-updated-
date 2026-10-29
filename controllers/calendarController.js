@@ -297,8 +297,8 @@ async function autoItemsFor(dir, me, from, to) {
         if (!b[field]) return;
         items.push({
           id: `auto-override-${b.id}-${field}`, kind: 'override', date: incDate,
-          title: `Override · ${b.name}`, client: b.name, seller: sellerName(b),
-          amount: b[field], detail: `Override for the ${OVERRIDE_ROLE[field].replace('_', ' ')}`,
+          title: `Overriding Commission · ${b.name}`, client: b.name, seller: sellerName(b),
+          amount: b[field], detail: `Overriding commission for the ${OVERRIDE_ROLE[field].replace('_', ' ')}`,
         });
       });
     }
@@ -331,8 +331,8 @@ async function autoItemsFor(dir, me, from, to) {
       (teamBuyers || []).filter(live).forEach(b => {
         items.push({
           id: `auto-override-${b.id}-${overrideField}`, kind: 'override', date: String(b.incentive_date).slice(0, 10),
-          title: `Override · ${b.name}`, client: b.name, seller: sellerName(b),
-          amount: b[overrideField], detail: 'Override from your team\'s sale',
+          title: `Overriding Commission · ${b.name}`, client: b.name, seller: sellerName(b),
+          amount: b[overrideField], detail: 'Overriding commission from your team\'s sale',
         });
       });
     }

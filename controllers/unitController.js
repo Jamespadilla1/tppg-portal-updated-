@@ -1,6 +1,18 @@
 const supabase = require('../config/db');
 const uploadToStorage = require('../utils/uploadToStorage');
 
+// ── Price history ──
+// Every time a unit's TCP is set (when listed) or changes (on edit), one row is added to
+// unit_price_history. A failed history write is logged but never blocks saving the unit itself.
+async function recordPriceChange(unitId, oldTcp, newTcp) {
+  const { error } = await supabase.from('unit_price_history').insert([{
+    unit_id: String(unitId),
+    old_tcp: oldTcp === null || oldTcp === undefined ? null : Number(oldTcp),
+    new_tcp: Number(newTcp),
+  }]);
+  if (error) console.error('Failed to record price history (did you run database/unit_price_history.sql?):', error);
+}
+
 // GET /api/units?property_id=xxx&archived=true
 const getUnits = async (req, res) => {
   try {
@@ -55,6 +67,7 @@ const createUnit = async (req, res) => {
       .single();
 
     if (error) throw error;
+    if (unit.tcp !== null && unit.tcp !== undefined && unit.tcp !== '') await recordPriceChange(unit.id, null, unit.tcp);
     res.status(201).json(unit);
   } catch (err) {
     console.error(err);
@@ -87,6 +100,9 @@ const updateUnit = async (req, res) => {
     if (req.files?.image?.[0]) updateData.image_url = await uploadToStorage(req.files.image[0], 'unit-photos');
     if (req.files?.computation_image?.[0]) updateData.computation_image_url = await uploadToStorage(req.files.computation_image[0], 'unit-computations');
 
+    // The price before this edit, so a change can be added to the price history
+    const { data: before } = await supabase.from('units').select('tcp').eq('id', req.params.id).maybeSingle();
+
     const { data: unit, error } = await supabase
       .from('units')
       .update(updateData)
@@ -96,6 +112,8 @@ const updateUnit = async (req, res) => {
 
     if (error) throw error;
     if (!unit) return res.status(404).json({ message: 'Unit not found.' });
+
+    if (before && Number(before.tcp) !== Number(unit.tcp)) await recordPriceChange(unit.id, before.tcp, unit.tcp);
 
     res.json(unit);
   } catch (err) {
@@ -147,4 +165,20 @@ const permanentlyDeleteUnit = async (req, res) => {
   }
 };
 
-module.exports = { getUnits, createUnit, updateUnit, deleteUnit, restoreUnit, permanentlyDeleteUnit };
+// GET /api/units/:id/price-history — newest first
+const getPriceHistory = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('unit_price_history')
+      .select('*')
+      .eq('unit_id', String(req.params.id))
+      .order('changed_at', { ascending: false });
+    if (error) { console.error('getPriceHistory failed:', error); return res.status(500).json({ message: 'Could not load price history: ' + error.message + ' (did you run database/unit_price_history.sql?)' }); }
+    res.json(data || []);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getUnits, createUnit, updateUnit, deleteUnit, restoreUnit, permanentlyDeleteUnit, getPriceHistory };
