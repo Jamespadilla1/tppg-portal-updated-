@@ -152,6 +152,16 @@ tr:hover td{background:rgba(0,0,0,.02)}
     </div>
     <div class="flex items-center gap-2">
       <span id="pendingAlert" class="hidden badge bg-yellow text-xs cursor-pointer" onclick="go('agents',document.querySelectorAll('.nav-link')[1])">⚠ Pending Agents</span>
+      <div class="relative">
+        <button id="adminBell" onclick="toggleAdminNotif(event)" class="relative border border-white/10 rounded-lg px-2 py-1.5 text-gray-400 hover:text-white hover:bg-white/5 transition-colors" aria-label="Notifications" title="Notifications">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span id="adminBellCount" class="hidden absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1">0</span>
+        </button>
+        <div id="adminNotifPanel" class="hidden absolute right-0 mt-2 w-80 max-w-[90vw] bg-gray-900 border border-white/10 rounded-xl shadow-xl z-50">
+          <div class="px-4 py-2.5 border-b border-white/10 font-semibold text-sm">Notifications</div>
+          <div id="adminNotifBody" class="max-h-96 overflow-y-auto"></div>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -401,7 +411,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
-            <th class="text-left px-5 py-2">Client Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Developer</th><th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Type</th><th class="text-left px-5 py-2">Unit</th><th class="text-left px-5 py-2">Bedrooms</th><th class="text-left px-5 py-2">Furnishing</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Added By</th><th class="text-left px-5 py-2">Reports To</th><th class="text-left px-5 py-2">Actions</th>
+            <th class="text-left px-5 py-2">Client Name</th><th class="text-left px-5 py-2">Purchases</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Developer</th><th class="text-left px-5 py-2">Property</th><th class="text-left px-5 py-2">Type</th><th class="text-left px-5 py-2">Unit</th><th class="text-left px-5 py-2">Bedrooms</th><th class="text-left px-5 py-2">Furnishing</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Added By</th><th class="text-left px-5 py-2">Reports To</th><th class="text-left px-5 py-2">Actions</th>
           </tr></thead>
           <tbody id="buyersBody" class="divide-y divide-white/6 text-gray-300"></tbody>
         </table></div>
@@ -4242,6 +4252,7 @@ async function renderBuyers(){
 
     // Raw client list (Buyer Dashboard tab)
     const buyerRoleSel = document.getElementById('buyerRoleFilter').value;
+    buildAdminRepeatGroups(withUnit, saleTCP); // across every seller, so a client who bought from two agents still counts as a repeat buyer
     document.getElementById('buyersBody').innerHTML = withUnit.filter(b => b.input_by_role === buyerRoleSel).map(b => {
       const person = b.input_by_role ? resolvePerson(b.input_by_role, b.input_by_id) : null;
       const addedBy = person
@@ -4250,7 +4261,8 @@ async function renderBuyers(){
       const reportsTo = b.input_by_role ? resolveReportsTo(b.input_by_role, b.input_by_id) : '—';
       return `
       <tr class="${b.cancelled ? 'opacity-50' : ''}" style="${b.verified && !b.cancelled ? 'background:rgba(34,197,94,.10);box-shadow:inset 3px 0 0 #22c55e' : ''}">
-        <td class="px-5 py-3 font-medium text-white text-xs">${b.name}${b.cancelled ? ` <span class="badge bg-red">Cancelled</span>` : ''}${b.verified && !b.cancelled ? ` <span class="badge bg-green">✓ Verified</span>` : ''}</td>
+        <td class="px-5 py-3 font-medium text-white text-xs">${b.name}${b.cancelled ? ` <span class="badge bg-red">Cancelled</span>` : ''}${b.verified && !b.cancelled ? ` <span class="badge bg-green">✓ Verified</span>` : ''}${b.cancelled && b.cancel_reason ? `<div class="text-[11px] text-gray-400 font-normal mt-0.5">Reason: ${promoEsc(b.cancel_reason)}</div>` : ''}</td>
+        <td class="px-5 py-3 text-xs">${adminPurchasesCell(b)}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${b.email||'—'}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${b.phone||'—'}</td>
         <td class="px-5 py-3 text-gray-400 text-xs">${b.developer ? b.developer.name : '—'}</td>
@@ -4267,7 +4279,8 @@ async function renderBuyers(){
           <button onclick="deleteBuyerAdmin('${b.id}')" class="text-xs text-red-400 hover:text-red-300">Archive</button>
         </td>
       </tr>`;
-    }).join('') || `<tr><td colspan="13" class="px-5 py-5 text-center text-gray-500 text-xs">No clients for this role yet.</td></tr>`;
+    }).join('') || `<tr><td colspan="14" class="px-5 py-5 text-center text-gray-500 text-xs">No clients for this role yet.</td></tr>`;
+    loadAdminNotifs();
 
     // Sales Dashboard tab (card drill-down)
     sbDrillStack = [];
@@ -4277,6 +4290,114 @@ async function renderBuyers(){
     console.error('Error loading sales & buyers:', err);
   }
 }
+// ── Repeat buyers (Buyer Dashboard) ──
+// Two sales belong to the same client when the email matches or the phone matches.
+// A sale with neither is matched on the exact name.
+let adminRepeatGroups = {}, adminRepeatTCP = () => 0;
+function buildAdminRepeatGroups(list, tcpFn){
+  adminRepeatTCP = tcpFn;
+  const keysOf = b => {
+    const keys = [];
+    const email = (b.email||'').trim().toLowerCase();
+    const phone = (b.phone||'').replace(/\D/g,'');
+    if(email) keys.push('e:' + email);
+    if(phone.length >= 7) keys.push('p:' + phone);
+    if(!keys.length) keys.push('n:' + (b.name||'').trim().toLowerCase());
+    return keys;
+  };
+  const groupOf = {}, groups = [];
+  list.forEach(b=>{
+    const keys = keysOf(b);
+    let g = keys.map(k=>groupOf[k]).find(x=>x!==undefined);
+    if(g===undefined){ g = groups.length; groups.push([]); }
+    groups[g].push(b);
+    keys.forEach(k=>{ if(groupOf[k]===undefined) groupOf[k] = g; });
+  });
+  adminRepeatGroups = {};
+  groups.forEach(gr=>gr.forEach(b=>{ adminRepeatGroups[b.id] = gr; }));
+}
+function adminPurchasesCell(b){
+  const n = (adminRepeatGroups[b.id]||[b]).length;
+  if(n < 2) return '<span class="text-gray-500">1</span>';
+  return `<button onclick="toggleAdminRepeatRows(this,'${b.id}')" class="badge bg-purple hover:underline">Repeat buyer · ${n}</button>`;
+}
+window.toggleAdminRepeatRows = function(btn, buyerId){
+  const tr = btn.closest('tr');
+  const next = tr.nextElementSibling;
+  if(next && next.classList.contains('repeat-detail')){ next.remove(); return; }
+  const ROLE = { agent:'Agent', team_leader:'Team Leader', sales_manager:'Sales Manager', unit_manager:'Unit Manager' };
+  const group = (adminRepeatGroups[buyerId]||[]).slice().sort((a,b)=>String(a.reservation_date||a.created_at).localeCompare(String(b.reservation_date||b.created_at)));
+  const row = document.createElement('tr');
+  row.className = 'repeat-detail';
+  row.style.background = 'rgba(168,85,247,.08)';
+  row.innerHTML = `<td colspan="${tr.children.length}" class="px-5 py-3">
+    <p class="text-xs font-semibold text-purple-300 mb-2">All purchases by ${promoEsc(group[0] ? group[0].name : '')} (${group.length})</p>
+    <table class="w-full text-xs"><tbody>${group.map((s,i)=>`
+      <tr class="border-t border-white/8">
+        <td class="py-1.5 pr-3 text-gray-500">#${i+1}</td>
+        <td class="py-1.5 pr-3">${s.reservation_date ? String(s.reservation_date).slice(0,10) : new Date(s.created_at).toLocaleDateString()}</td>
+        <td class="py-1.5 pr-3">${promoEsc(s.property ? s.property.name : (s.manual_property_name || '—'))} / ${promoEsc(s.unit ? s.unit.unit_name : (s.manual_unit_name || '—'))}</td>
+        <td class="py-1.5 pr-3 text-orange-400">${peso(adminRepeatTCP(s))}</td>
+        <td class="py-1.5 pr-3 text-gray-400">${promoEsc(s.input_by_name || '—')} (${ROLE[s.input_by_role] || '—'})</td>
+        <td class="py-1.5">${s.cancelled ? '<span class="badge bg-red">Cancelled</span>' : (s.verified ? '<span class="badge bg-green">✓ Verified</span>' : '<span class="badge bg-yellow">Active</span>')}</td>
+      </tr>`).join('')}</tbody></table>
+  </td>`;
+  tr.after(row);
+};
+
+// ── Admin bell: sales cancelled in the last 30 days, with the seller's reason ──
+// "Seen" is remembered in this browser (localStorage), per admin account.
+const ADMIN_NOTIF_DAYS = 30;
+function adminSeenKey(){ return 'adminSeenCancels:' + (localStorage.getItem('personId') || localStorage.getItem('name') || 'admin'); }
+function adminSeenIds(){ try { return new Set(JSON.parse(localStorage.getItem(adminSeenKey()) || '[]')); } catch(e){ return new Set(); } }
+let adminNotifCache = [];
+async function loadAdminNotifs(){
+  const body = document.getElementById('adminNotifBody');
+  try {
+    const res = await fetch('/api/buyers', { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const buyers = await res.json();
+    const since = Date.now() - ADMIN_NOTIF_DAYS * 86400000;
+    adminNotifCache = buyers.filter(b => b.cancelled && b.cancelled_at && new Date(b.cancelled_at).getTime() >= since)
+      .sort((a,b) => new Date(b.cancelled_at) - new Date(a.cancelled_at));
+  } catch(err){
+    console.error('Error loading notifications:', err);
+    body.innerHTML = '<p class="px-4 py-5 text-center text-xs text-red-400">Couldn\'t load notifications.</p>';
+    return;
+  }
+  renderAdminNotifs();
+}
+function renderAdminNotifs(){
+  const seen = adminSeenIds();
+  const unseen = adminNotifCache.filter(b => !seen.has(b.id)).length;
+  const cnt = document.getElementById('adminBellCount');
+  cnt.textContent = unseen;
+  cnt.classList.toggle('hidden', unseen === 0);
+  const ROLE = { agent:'Agent', team_leader:'Team Leader', sales_manager:'Sales Manager', unit_manager:'Unit Manager' };
+  document.getElementById('adminNotifBody').innerHTML = adminNotifCache.map(b => `
+    <div class="px-4 py-3 border-b border-white/6 text-xs">
+      <div class="flex items-center gap-2 mb-1">${seen.has(b.id) ? '' : '<span class="badge bg-yellow">New</span>'}<span class="badge bg-red">Sale cancelled</span><span class="text-gray-500 ml-auto">${new Date(b.cancelled_at).toLocaleDateString('en-PH',{month:'short',day:'numeric'})}</span></div>
+      <p class="text-gray-200"><b>${promoEsc(b.name)}</b> — cancelled by ${promoEsc(b.input_by_name || 'the seller')} (${ROLE[b.input_by_role] || '—'})</p>
+      <p class="text-gray-400 italic mt-0.5">“${promoEsc(b.cancel_reason || 'No reason given')}”</p>
+    </div>`).join('') || `<p class="px-4 py-5 text-center text-xs text-gray-500">No cancelled sales in the last ${ADMIN_NOTIF_DAYS} days.</p>`;
+}
+window.toggleAdminNotif = function(e){
+  e.stopPropagation();
+  const panel = document.getElementById('adminNotifPanel');
+  const opening = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden');
+  if(opening){
+    renderAdminNotifs(); // still shows "New" on this opening
+    try { localStorage.setItem(adminSeenKey(), JSON.stringify(adminNotifCache.map(b => b.id))); } catch(err){}
+    document.getElementById('adminBellCount').classList.add('hidden');
+  }
+};
+document.addEventListener('click', e => {
+  const panel = document.getElementById('adminNotifPanel');
+  if(panel && !panel.classList.contains('hidden') && !e.target.closest('#adminNotifPanel')) panel.classList.add('hidden');
+});
+setInterval(loadAdminNotifs, 120000);
+
 window.openVerifyModal = function(id, name){
   document.getElementById('verifyBuyerId').value = id;
   document.getElementById('verifyModalClient').textContent = 'Client: ' + name;
@@ -5716,6 +5837,7 @@ async function removePromo(id){
 // ── INIT ──
 addLog('Admin logged in');
 renderOverview();
+loadAdminNotifs();
 </script>
 <script>
 // ── DOUBLE-CLICK / DOUBLE-SUBMIT GUARD ──

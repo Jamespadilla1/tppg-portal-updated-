@@ -283,12 +283,12 @@
           <div class="flex items-center gap-4">
             <button id="showArchivedBtn" onclick="toggleShowArchived()" class="text-xs text-gray-500 hover:text-gray-700 hover:underline font-medium">Show Archived</button>
             <button id="viewSalesHistoryLink" onclick="openSalesHistoryModal()" class="hidden text-xs text-blue-600 hover:text-blue-700 hover:underline font-medium">View Sales History</button>
-            <button onclick="openModal('addBuyerModal')" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Client</button>
+            <button onclick="openAddClient()" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Client</button>
           </div>
         </div>
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-gray-200">
-            <th class="text-left px-5 py-2">Buyer Name</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Project</th><th class="text-left px-5 py-2">Unit Purchased</th><th class="text-left px-5 py-2">Reservation Date</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Net Selling Price</th><th class="text-left px-5 py-2">Payment Option</th><th class="text-left px-5 py-2">Booking Complete</th><th class="text-left px-5 py-2">Sold By</th><th class="text-left px-5 py-2">My Override</th><th class="text-left px-5 py-2">Actions</th>
+            <th class="text-left px-5 py-2">Buyer Name</th><th class="text-left px-5 py-2">Purchases</th><th class="text-left px-5 py-2">Email</th><th class="text-left px-5 py-2">Phone</th><th class="text-left px-5 py-2">Project</th><th class="text-left px-5 py-2">Unit Purchased</th><th class="text-left px-5 py-2">Reservation Date</th><th class="text-left px-5 py-2">TCP</th><th class="text-left px-5 py-2">Net Selling Price</th><th class="text-left px-5 py-2">Payment Option</th><th class="text-left px-5 py-2">Booking Complete</th><th class="text-left px-5 py-2">Sold By</th><th class="text-left px-5 py-2">My Override</th><th class="text-left px-5 py-2">Actions</th>
           </tr></thead>
           <tbody id="clientsBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
         </table></div>
@@ -380,10 +380,25 @@
 </div>
 
 <!-- ADD BUYER -->
+<div id="cancelSaleModal" class="modal-backdrop">
+  <div class="modal-box">
+    <button onclick="closeModal('cancelSaleModal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-700 text-xl">&times;</button>
+    <h3 class="font-bold text-lg mb-1">Cancel Sale</h3>
+    <p class="text-xs text-gray-500 mb-4" id="cancelSaleClient"></p>
+    <input type="hidden" id="cancelSaleId">
+    <div class="space-y-3">
+      <div><label class="text-xs text-gray-500 mb-1 block">Reason for cancelling *</label><textarea id="cancelSaleReason" rows="3" maxlength="500" class="field" placeholder="e.g. Buyer stopped paying the downpayment"></textarea></div>
+      <p class="text-xs text-gray-500">This is FINAL and cannot be undone. The sale stays visible but is excluded from commission and reports. Admin is notified with your reason.</p>
+      <p id="cancelSaleErr" class="text-red-500 text-xs hidden">Please give a reason for cancelling.</p>
+      <button onclick="confirmCancelClient()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2.5 rounded-lg font-semibold text-sm transition-colors">Yes, cancel this sale</button>
+    </div>
+  </div>
+</div>
+
 <div id="addBuyerModal" class="modal-backdrop">
   <div class="modal-box">
     <button onclick="closeModal('addBuyerModal')" class="absolute top-4 right-5 text-gray-400 hover:text-gray-700 text-xl">&times;</button>
-    <h3 class="font-bold text-lg mb-4">Add Client</h3>
+    <h3 class="font-bold text-lg mb-4" id="bModalTitle">Add Client</h3>
     <div class="space-y-3">
       <div><label class="text-xs text-gray-500 mb-1 block">Full Name *</label><input id="bName" type="text" class="field"></div>
       <div><label class="text-xs text-gray-500 mb-1 block">Email</label><input id="bEmail" type="email" class="field"></div>
@@ -420,7 +435,7 @@
         <option value="no">No</option>
       </select></div>
       <p id="bErr" class="text-red-500 text-xs hidden">Name is required.</p>
-      <button onclick="saveBuyer()" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Client</button>
+      <button id="bSaveBtn" onclick="saveBuyer()" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Client</button>
     </div>
   </div>
 </div>
@@ -732,7 +747,114 @@ window.reAddClient = function(buyerId){
   document.getElementById('bBookingComplete').value = '';
   document.getElementById('bDpMonthsWrap').classList.add('hidden');
   document.getElementById('bErr').classList.add('hidden');
+  editingBuyerId = null; editingUnitId = null;
+  setBuyerFormMode(false);
   openModal('addBuyerModal');
+};
+
+// ── Add vs Edit share the same form. editingBuyerId is set only while editing an existing sale. ──
+let editingBuyerId = null, editingUnitId = null;
+function setBuyerFormMode(editing){
+  document.getElementById('bModalTitle').textContent = editing ? 'Edit Client' : 'Add Client';
+  document.getElementById('bSaveBtn').textContent = editing ? 'Update Client' : 'Save Client';
+}
+function resetBuyerForm(){
+  ['bName','bEmail','bPhone','bAddr','bManualProp','bManualUnit','bManualTCP','bReservationDate','bNetSellingPrice','bPaymentOption','bDpMonths','bBookingComplete'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('bDpMonthsWrap').classList.add('hidden');
+  document.getElementById('bErr').classList.add('hidden');
+}
+window.openAddClient = function(){
+  editingBuyerId = null; editingUnitId = null;
+  resetBuyerForm();
+  setBuyerUnitMode('manual');
+  setBuyerFormMode(false);
+  openModal('addBuyerModal');
+};
+window.editClient = async function(buyerId){
+  const b = myClientsCache.find(x=>x.id===buyerId);
+  if(!b) return;
+  editingBuyerId = b.id; editingUnitId = b.unit_id || null;
+  resetBuyerForm();
+  setBuyerFormMode(true);
+  document.getElementById('bName').value = b.name || '';
+  document.getElementById('bEmail').value = b.email || '';
+  document.getElementById('bPhone').value = b.phone || '';
+  document.getElementById('bAddr').value = b.address || '';
+  if(b.unit_id){
+    bDevsCache = []; // fresh lists, so the dropdowns match the current listings
+    await setBuyerUnitMode('listed');
+    const unit = bAllUnitsCache.find(u=>u.id===b.unit_id);
+    const prop = unit ? bPropsCache.find(p=>p.id===unit.property_id) : null;
+    if(prop){
+      document.getElementById('bDeveloper').value = prop.developer_id; onBDeveloperChange();
+      document.getElementById('bProperty').value = prop.id; onBPropertyChange();
+      document.getElementById('bUnit').value = unit.id; onBUnitChange();
+    }
+  } else {
+    setBuyerUnitMode('manual');
+    document.getElementById('bManualUnit').value = b.manual_unit_name || '';
+    document.getElementById('bManualProp').value = b.manual_property_name || '';
+  }
+  // Show the price locked in at the time of sale, not the unit's current price
+  document.getElementById('bManualTCP').value = b.manual_tcp ? moneyInputText(String(b.manual_tcp)) : document.getElementById('bManualTCP').value;
+  document.getElementById('bReservationDate').value = b.reservation_date ? String(b.reservation_date).slice(0,10) : '';
+  document.getElementById('bNetSellingPrice').value = b.net_selling_price ? moneyInputText(String(b.net_selling_price)) : '';
+  document.getElementById('bPaymentOption').value = b.payment_option || '';
+  onPaymentTermsChange();
+  document.getElementById('bDpMonths').value = b.dp_months || '';
+  document.getElementById('bBookingComplete').value = b.booking_requirements_complete || '';
+  openModal('addBuyerModal');
+};
+
+// ── Repeat buyers ──
+// Two sales belong to the same client when the email matches or the phone matches.
+// A sale with neither is matched on the exact name. Each client's sales are kept in repeatGroups.
+let repeatGroups = {};
+function clientKeys(b){
+  const keys = [];
+  const email = (b.email||'').trim().toLowerCase();
+  const phone = (b.phone||'').replace(/\D/g,'');
+  if(email) keys.push('e:' + email);
+  if(phone.length >= 7) keys.push('p:' + phone);
+  if(!keys.length) keys.push('n:' + (b.name||'').trim().toLowerCase());
+  return keys;
+}
+function buildRepeatGroups(list){
+  const groupOf = {}, groups = [];
+  list.forEach(b=>{
+    const keys = clientKeys(b);
+    let g = keys.map(k=>groupOf[k]).find(x=>x!==undefined);
+    if(g===undefined){ g = groups.length; groups.push([]); }
+    groups[g].push(b);
+    keys.forEach(k=>{ if(groupOf[k]===undefined) groupOf[k] = g; });
+  });
+  repeatGroups = {};
+  groups.forEach(gr=>gr.forEach(b=>{ repeatGroups[b.id] = gr; }));
+}
+function purchasesCell(b){
+  const n = (repeatGroups[b.id]||[b]).length;
+  if(n < 2) return '<span class="text-gray-400">1</span>';
+  return `<button onclick="toggleRepeatRows(this,'${b.id}')" class="badge badge-purple hover:underline">Repeat buyer · ${n}</button>`;
+}
+window.toggleRepeatRows = function(btn, buyerId){
+  const tr = btn.closest('tr');
+  const next = tr.nextElementSibling;
+  if(next && next.classList.contains('repeat-detail')){ next.remove(); return; }
+  const group = (repeatGroups[buyerId]||[]).slice().sort((a,b)=>String(a.reservation_date||a.created_at).localeCompare(String(b.reservation_date||b.created_at)));
+  const row = document.createElement('tr');
+  row.className = 'repeat-detail bg-purple-50';
+  row.innerHTML = `<td colspan="${tr.children.length}" class="px-5 py-3">
+    <p class="text-xs font-semibold text-purple-700 mb-2">All purchases by ${promoEsc(group[0] ? group[0].name : '')} (${group.length})</p>
+    <table class="w-full text-xs"><tbody>${group.map((s,i)=>`
+      <tr class="border-t border-purple-100">
+        <td class="py-1.5 pr-3 text-gray-500">#${i+1}</td>
+        <td class="py-1.5 pr-3">${s.reservation_date ? String(s.reservation_date).slice(0,10) : new Date(s.created_at).toLocaleDateString()}</td>
+        <td class="py-1.5 pr-3">${promoEsc(s.property ? s.property.name : (s.manual_property_name || '—'))} / ${promoEsc(s.unit ? s.unit.unit_name : (s.manual_unit_name || '—'))}</td>
+        <td class="py-1.5 pr-3 text-orange-600">${peso(saleTCP(s))}</td>
+        <td class="py-1.5">${s.cancelled ? '<span class="badge badge-red">Cancelled</span>' : (s.verified ? '<span class="badge badge-green">✓ Verified</span>' : '<span class="badge badge-yellow">Active</span>')}</td>
+      </tr>`).join('')}</tbody></table>
+  </td>`;
+  tr.after(row);
 };
 
 window.showToast = function(text, sub){
@@ -1588,13 +1710,25 @@ window.restoreClient = async function(id){
     loadMyClients();
   } catch(err) { console.error('Error restoring client:', err); alert('Failed to restore client.'); }
 };
-window.cancelClient = async function(id){
-  if(!confirm('Cancel this sale? This is FINAL and cannot be undone — it stays visible but is excluded from commission and reports.')) return;
+window.cancelClient = function(id){
+  const b = myClientsCache.find(x=>x.id===id);
+  document.getElementById('cancelSaleId').value = id;
+  document.getElementById('cancelSaleClient').textContent = b ? 'Client: ' + b.name : '';
+  document.getElementById('cancelSaleReason').value = '';
+  document.getElementById('cancelSaleErr').classList.add('hidden');
+  openModal('cancelSaleModal');
+};
+window.confirmCancelClient = async function(){
+  const id = document.getElementById('cancelSaleId').value;
+  const reason = document.getElementById('cancelSaleReason').value.trim();
+  const errEl = document.getElementById('cancelSaleErr');
+  if(reason.length < 3){ errEl.textContent = 'Please give a reason for cancelling.'; errEl.classList.remove('hidden'); return; }
   try {
-    const res = await fetch(`/api/buyers/${id}/cancel`, { method:'PATCH', headers: { 'Authorization': 'Bearer ' + token } });
-    if(!res.ok){ const err = await res.json().catch(()=>({})); alert(err.message || 'Failed to cancel sale.'); return; }
+    const res = await fetch(`/api/buyers/${id}/cancel`, { method:'PATCH', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) });
+    if(!res.ok){ const err = await res.json().catch(()=>({})); errEl.textContent = err.message || 'Failed to cancel sale.'; errEl.classList.remove('hidden'); return; }
+    closeModal('cancelSaleModal');
     loadMyClients();
-  } catch(err) { console.error('Error cancelling sale:', err); alert('Failed to cancel sale.'); }
+  } catch(err) { console.error('Error cancelling sale:', err); errEl.textContent = 'Failed to cancel sale.'; errEl.classList.remove('hidden'); }
 };
 async function loadMyClients(){
   try {
@@ -1684,9 +1818,11 @@ async function loadMyClients(){
     document.getElementById('clientRev').textContent   = peso(totalValue);
     document.getElementById('clientBest').textContent  = best ? (best.unit ? best.unit.unit_name : (best.manual_unit_name || best.manual_property_name || '—')) : '—';
 
+    buildRepeatGroups(buyers);
     document.getElementById('clientsBody').innerHTML = buyers.map(b => `
       <tr class="${(showingArchivedClients || b.cancelled) ? 'opacity-60' : ''}">
-        <td class="px-5 py-3 font-medium text-xs">${b.name}${b.cancelled ? ` <span class="badge badge-red">Cancelled</span>` : ''}</td>
+        <td class="px-5 py-3 font-medium text-xs">${b.name}${b.cancelled ? ` <span class="badge badge-red">Cancelled</span>` : ''}${b.cancelled && b.cancel_reason ? `<div class="text-[11px] text-gray-500 font-normal mt-0.5">Reason: ${promoEsc(b.cancel_reason)}</div>` : ''}</td>
+        <td class="px-5 py-3 text-xs">${purchasesCell(b)}</td>
         <td class="px-5 py-3 text-gray-500 text-xs">${b.email||'—'}</td>
         <td class="px-5 py-3 text-gray-500 text-xs">${b.phone||'—'}</td>
         <td class="px-5 py-3 text-gray-500 text-xs">${b.property ? b.property.name : (b.manual_property_name || '—')}</td>
@@ -1702,10 +1838,10 @@ async function loadMyClients(){
           ${showingArchivedClients
             ? `<button onclick="restoreClient('${b.id}')" class="text-green-600 hover:text-green-700 hover:underline font-medium">Restore</button>`
             : (b.input_by_id === myUserId
-                ? `<button onclick="reAddClient('${b.id}')" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">Re-add</button>${b.cancelled ? '' : `<button onclick="cancelClient('${b.id}')" class="text-yellow-600 hover:text-yellow-700 hover:underline font-medium">Cancel</button>`}<button onclick="archiveClient('${b.id}')" class="text-red-500 hover:text-red-600 hover:underline font-medium">Archive</button>`
+                ? `${b.cancelled ? '' : `<button onclick="editClient('${b.id}')" class="text-orange-600 hover:text-orange-700 hover:underline font-medium">Edit</button>`}<button onclick="reAddClient('${b.id}')" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">Re-add</button>${b.cancelled ? '' : `<button onclick="cancelClient('${b.id}')" class="text-yellow-600 hover:text-yellow-700 hover:underline font-medium">Cancel</button>`}<button onclick="archiveClient('${b.id}')" class="text-red-500 hover:text-red-600 hover:underline font-medium">Archive</button>`
                 : '—')}
         </td>
-      </tr>`).join('') || `<tr><td colspan="13" class="px-5 py-5 text-center text-gray-500 text-xs">${showingArchivedClients ? 'No archived clients.' : 'No buyers recorded yet.'}</td></tr>`;
+      </tr>`).join('') || `<tr><td colspan="14" class="px-5 py-5 text-center text-gray-500 text-xs">${showingArchivedClients ? 'No archived clients.' : 'No buyers recorded yet.'}</td></tr>`;
     myClientsCache = buyers;
   } catch(err) {
     console.error('Error loading clients:', err);
@@ -1757,7 +1893,7 @@ window.onBDeveloperChange = () => {
 };
 window.onBPropertyChange = () => {
   const propId = document.getElementById('bProperty').value;
-  const units = propId ? bAllUnitsCache.filter(u=>u.property_id===propId && (u.units_left??1)>0) : [];
+  const units = propId ? bAllUnitsCache.filter(u=>u.property_id===propId && ((u.units_left??1)>0 || u.id===editingUnitId)) : [];
   document.getElementById('bUnit').innerHTML = `<option value="">— Select Unit —</option>` + units.map(u=>`<option value="${u.id}">${u.unit_name} (${peso(u.tcp)})</option>`).join('') || `<option value="">— No units in stock —</option>`;
   document.getElementById('bUnitStockNote').textContent = '';
   document.getElementById('bManualTCP').value = '';
@@ -1784,8 +1920,8 @@ window.saveBuyer = async () => {
   const paymentOption = document.getElementById('bPaymentOption').value.trim();
   const unitId = buyerUnitMode==='listed' ? document.getElementById('bUnit').value : '';
   try {
-    const res = await fetch('/api/buyers', {
-      method: 'POST',
+    const res = await fetch(editingBuyerId ? `/api/buyers/${editingBuyerId}` : '/api/buyers', {
+      method: editingBuyerId ? 'PUT' : 'POST',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: name2,
@@ -1808,13 +1944,14 @@ window.saveBuyer = async () => {
       alert(errBody.message || 'Failed to save client.');
       return;
     }
+    const wasEditing = !!editingBuyerId;
+    editingBuyerId = null; editingUnitId = null;
     closeModal('addBuyerModal');
-    ['bName','bEmail','bPhone','bAddr','bManualProp','bManualUnit','bManualTCP','bReservationDate','bNetSellingPrice','bPaymentOption','bDpMonths','bBookingComplete'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('bDpMonthsWrap').classList.add('hidden');
+    resetBuyerForm();
     setBuyerUnitMode('manual');
     bDevsCache = []; // force a fresh stock-count refetch next time listed mode is opened
     loadMyClients();
-    showToast('Client added successfully!', name2);
+    showToast(wasEditing ? 'Client updated!' : 'Client added successfully!', name2);
   } catch(err) {
     console.error('Error saving client:', err);
     alert('Failed to save client.');

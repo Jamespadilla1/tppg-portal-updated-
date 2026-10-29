@@ -195,23 +195,30 @@ const createBuyer = async (req, res) => {
   }
 };
 
-// PUT /api/buyers/:id — only the original creator or admin can edit
-// If the linked unit changes, the old unit's stock is restored and the new one is decremented
+// PUT /api/buyers/:id — only the person who added the sale can edit it (same rule as cancelling).
+// If the linked unit changes, the old unit's stock is restored and the new one is decremented.
+// Editing a verified sale removes the verification, so admin checks the changed record again.
 const updateBuyer = async (req, res) => {
   try {
-    const { data: existing } = await supabase.from('buyers').select('input_by_id, unit_id').eq('id', req.params.id).single();
+    const { data: existing } = await supabase.from('buyers').select('input_by_id, input_by_role, unit_id, manual_tcp, cancelled, verified').eq('id', req.params.id).single();
     if (!existing) return res.status(404).json({ message: 'Not found.' });
-    if (req.user.role !== 'admin' && existing.input_by_id !== req.user.id) {
-      return res.status(403).json({ message: 'You can only edit buyers you added.' });
+    if (existing.input_by_id !== req.user.id || existing.input_by_role !== req.user.role) {
+      return res.status(403).json({ message: 'Only the person who added this sale can edit it.' });
     }
+    if (existing.cancelled) return res.status(400).json({ message: 'A cancelled sale cannot be edited.' });
 
-    const { name, email, phone, address, unit_id, manual_property_name, manual_unit_name, manual_tcp } = req.body;
+    const { name, email, phone, address, unit_id, manual_property_name, manual_unit_name, manual_tcp, reservation_date, net_selling_price, payment_option, dp_months, booking_requirements_complete } = req.body;
+
+    // Same required fields as createBuyer
+    if (!name || !String(name).trim()) return res.status(400).json({ message: 'Client name is required.' });
+    if (!email && !phone) return res.status(400).json({ message: 'An email or phone number is required, so the client can be reached.' });
+    if (!unit_id && !(manual_property_name && manual_unit_name)) return res.status(400).json({ message: 'Specify which unit was purchased — either pick a listed unit, or fill in both Project and Unit Purchased.' });
 
     const oldUnitId = existing.unit_id;
     const newUnitId = unit_id || null;
 
-    // Same price-locking rule as createBuyer: if this sale is (re)linked to a real unit,
-    // snapshot that unit's CURRENT price now rather than leaving it to drift with future edits.
+    // Same price-locking rule as createBuyer: a newly linked unit snapshots its CURRENT price.
+    // Same unit as before = keep the price that was locked in when the sale was made.
     let lockedTcp = unit_id ? null : (manual_tcp || null);
     if (unit_id && unit_id !== oldUnitId) {
       const { data: unitRow } = await supabase.from('units').select('tcp, units_left').eq('id', unit_id).single();
@@ -219,20 +226,31 @@ const updateBuyer = async (req, res) => {
       if ((unitRow.units_left ?? 1) <= 0) return res.status(400).json({ message: 'This unit is sold out — no units left to link a sale to.' });
       lockedTcp = unitRow.tcp;
     } else if (unit_id) {
-      const { data: unitRow } = await supabase.from('units').select('tcp').eq('id', unit_id).single();
-      if (unitRow) lockedTcp = unitRow.tcp;
+      lockedTcp = existing.manual_tcp;
+      if (!lockedTcp) {
+        const { data: unitRow } = await supabase.from('units').select('tcp').eq('id', unit_id).single();
+        if (unitRow) lockedTcp = unitRow.tcp;
+      }
     }
+
+    const patch = {
+      name, email, phone, address,
+      unit_id: unit_id || null,
+      manual_property_name: unit_id ? null : (manual_property_name || null),
+      manual_unit_name: unit_id ? null : (manual_unit_name || null),
+      manual_tcp: lockedTcp,
+      reservation_date: reservation_date || null,
+      net_selling_price: net_selling_price || null,
+      payment_option: payment_option || null,
+      dp_months: payment_option === 'Monthly Down Payment' ? (dp_months || null) : null,
+      booking_requirements_complete: booking_requirements_complete || null,
+      updated_at: new Date()
+    };
+    if (existing.verified) Object.assign(patch, { verified: false, verified_at: null, verified_by: null, verify_note: null });
 
     const { data: buyer, error } = await supabase
       .from('buyers')
-      .update({
-        name, email, phone, address,
-        unit_id: unit_id || null,
-        manual_property_name: unit_id ? null : (manual_property_name || null),
-        manual_unit_name: unit_id ? null : (manual_unit_name || null),
-        manual_tcp: lockedTcp,
-        updated_at: new Date()
-      })
+      .update(patch)
       .eq('id', req.params.id)
       .select()
       .single();
@@ -345,19 +363,25 @@ const permanentlyDeleteBuyer = async (req, res) => {
   }
 };
 
-// PATCH /api/buyers/:id/cancel — Admin can cancel any sale; other roles can only cancel their OWN.
-// This is FINAL (no un-cancel). Cancelled sales stay visible (grayed out) but are excluded from
-// commission and reports — typically used when a buyer stops paying their downpayment.
+// PATCH /api/buyers/:id/cancel — only the person who added the sale can cancel it, and they must
+// give a reason (body { reason }). This is FINAL (no un-cancel). Cancelled sales stay visible (grayed
+// out) but are excluded from commission and reports. Admin sees the reason on the Buyer Dashboard and
+// in the admin bell (built from cancelled_at), and a line is written to the Activity Log.
 const cancelBuyer = async (req, res) => {
   try {
-    const { data: existing } = await supabase.from('buyers').select('input_by_id, input_by_role, cancelled, unit_id').eq('id', req.params.id).single();
+    const reason = String(req.body.reason || '').trim().slice(0, 500);
+    if (reason.length < 3) return res.status(400).json({ message: 'Please give a reason for cancelling this sale.' });
+    const { data: existing } = await supabase.from('buyers').select('name, input_by_id, input_by_role, input_by_name, cancelled, unit_id').eq('id', req.params.id).single();
     if (!existing) return res.status(404).json({ message: 'Not found.' });
     if (existing.cancelled) return res.status(400).json({ message: 'This sale is already cancelled.' });
     if (existing.input_by_id !== req.user.id || existing.input_by_role !== req.user.role) {
       return res.status(403).json({ message: 'Only the person who added this sale can cancel it.' });
     }
-    const { error } = await supabase.from('buyers').update({ cancelled: true, updated_at: new Date() }).eq('id', req.params.id);
-    if (error) throw error;
+    const { error } = await supabase.from('buyers').update({ cancelled: true, cancel_reason: reason, cancelled_at: new Date(), updated_at: new Date() }).eq('id', req.params.id);
+    if (error) { console.error('cancelBuyer update failed:', error); return res.status(500).json({ message: 'Update failed: ' + error.message + ' (did you run database/cancel_reason.sql?)' }); }
+
+    const { error: logErr } = await supabase.from('logs').insert([{ message: `Sale cancelled: ${existing.name} — reason: ${reason}`, actor: existing.input_by_name || 'Seller', role: req.user.role }]);
+    if (logErr) console.error('Failed to log cancellation:', logErr);
 
     if (existing.unit_id) {
       const { error: restoreErr } = await restoreUnitStock(existing.unit_id);
