@@ -7,14 +7,15 @@ const SCOPES = ['Developer', 'Property'];
 // Kept as a plain function (no database calls) so the audience rules can be tested on their own.
 //   audiences: which audience values the caller may see — ['public'] for the landing page,
 //              ['public', 'team'] for logged-in team members.
-// A promotion is hidden when it is switched off, has passed its end date, or points at a developer /
-// property that no longer exists (or a property that has been archived).
+// A promotion is hidden when it is switched off, has not reached its start time yet, has passed its end
+// time, or points at a developer / property that no longer exists (or a property that has been archived).
 function visiblePromos(rows, { developers, properties, audiences, now = Date.now() }) {
   const devById = new Map(developers.map(d => [String(d.id), d]));
   const propById = new Map(properties.map(p => [String(p.id), p]));
   return rows
     .filter(p => audiences.includes(p.audience))
     .filter(p => p.active)
+    .filter(p => !p.starts_at || new Date(p.starts_at).getTime() <= now)
     .filter(p => !p.ends_at || new Date(p.ends_at).getTime() > now)
     .map(p => {
       const target = p.scope === 'Developer' ? devById.get(String(p.target_id)) : propById.get(String(p.target_id));
@@ -57,7 +58,7 @@ const getMyPromotions = async (req, res) => {
     if (error) throw error;
     const lookups = await loadLookups();
     const list = visiblePromos(rows || [], { ...lookups, audiences: AUDIENCES })
-      .map(p => ({ id: p.id, title: p.title, message: p.message, scope: p.scope, target_name: p.target_name, audience: p.audience, ends_at: p.ends_at, created_at: p.created_at }));
+      .map(p => ({ id: p.id, title: p.title, message: p.message, scope: p.scope, target_name: p.target_name, audience: p.audience, starts_at: p.starts_at, ends_at: p.ends_at, created_at: p.created_at }));
     res.json(list);
   } catch (err) {
     console.error(err);
@@ -86,7 +87,7 @@ const getAllPromotions = async (req, res) => {
 // POST /api/promotions — admin
 const createPromotion = async (req, res) => {
   try {
-    const { title, message, scope, target_id, audience, ends_at } = req.body;
+    const { title, message, scope, target_id, audience, starts_at, ends_at } = req.body;
     const t = String(title || '').trim();
     const m = String(message || '').trim();
     if (!t || !m) return res.status(400).json({ message: 'A title and a message are required.' });
@@ -111,9 +112,18 @@ const createPromotion = async (req, res) => {
       endsAt = d.toISOString();
     }
 
+    // Optional start time. Left out = the promotion goes live as soon as it is saved.
+    const row = { title: t, message: m, scope, target_id: String(target_id), audience, ends_at: endsAt, active: true };
+    if (starts_at) {
+      const s = new Date(starts_at);
+      if (isNaN(s.getTime())) return res.status(400).json({ message: 'The start date is not valid.' });
+      if (endsAt && s.getTime() >= new Date(endsAt).getTime()) return res.status(400).json({ message: 'The start must be before the end.' });
+      row.starts_at = s.toISOString();
+    }
+
     const { data, error } = await supabase
       .from('promotions')
-      .insert([{ title: t, message: m, scope, target_id: String(target_id), audience, ends_at: endsAt, active: true }])
+      .insert([row])
       .select()
       .single();
     if (error) throw error;

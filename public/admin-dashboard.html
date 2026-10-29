@@ -190,8 +190,8 @@ tr:hover td{background:rgba(0,0,0,.02)}
             <option value="dp">Monthly DP</option>
             <option value="fulldp">Full DP</option>
           </select></div>
-          <div><label class="text-xs text-gray-400 mb-1 block" id="ovSearchMinLabel">Min TCP (₱)</label><input id="ovSearchBudgetMin" type="text" inputmode="numeric" placeholder="0" class="field w-32" oninput="formatMoneyInput(this)"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block" id="ovSearchMaxLabel">Max TCP (₱)</label><input id="ovSearchBudgetMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-32" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block" id="ovSearchMinLabel">Min TCP (₱)</label><input id="ovSearchBudgetMin" type="text" inputmode="decimal" placeholder="0" class="field w-32" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block" id="ovSearchMaxLabel">Max TCP (₱)</label><input id="ovSearchBudgetMax" type="text" inputmode="decimal" placeholder="No limit" class="field w-32" oninput="formatMoneyInput(this)"></div>
         </div>
         <div id="ovSearchResults" class="mt-3"></div>
       </div>
@@ -297,8 +297,8 @@ tr:hover td{background:rgba(0,0,0,.02)}
               <option value="dp">Monthly DP</option>
               <option value="fulldp">Full DP</option>
             </select></div>
-            <div><label class="text-xs text-gray-400 mb-1 block" id="plSearchMinLabel">Min TCP (₱)</label><input id="plSearchBudgetMin" type="text" inputmode="numeric" placeholder="0" class="field w-32" oninput="formatMoneyInput(this)"></div>
-            <div><label class="text-xs text-gray-400 mb-1 block" id="plSearchMaxLabel">Max TCP (₱)</label><input id="plSearchBudgetMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-32" oninput="formatMoneyInput(this)"></div>
+            <div><label class="text-xs text-gray-400 mb-1 block" id="plSearchMinLabel">Min TCP (₱)</label><input id="plSearchBudgetMin" type="text" inputmode="decimal" placeholder="0" class="field w-32" oninput="formatMoneyInput(this)"></div>
+            <div><label class="text-xs text-gray-400 mb-1 block" id="plSearchMaxLabel">Max TCP (₱)</label><input id="plSearchBudgetMax" type="text" inputmode="decimal" placeholder="No limit" class="field w-32" oninput="formatMoneyInput(this)"></div>
             <button onclick="searchPropertiesGlobal('pl')" class="bg-orange-500 hover:bg-orange-600 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors">Search</button>
           </div>
           <div id="plSearchResults" class="mt-3"></div>
@@ -459,7 +459,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
           <input type="hidden" id="qrPaymentTerm">
           <div class="space-y-3">
             <div><label class="text-xs text-gray-400 mb-1 block">Date</label><input id="qrDate" type="date" class="field"></div>
-            <div><label class="text-xs text-gray-400 mb-1 block">Amount Receivable (₱)</label><input id="qrAmount" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
+            <div><label class="text-xs text-gray-400 mb-1 block">Amount Receivable (₱)</label><input id="qrAmount" type="text" inputmode="decimal" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
             <div><label class="text-xs text-gray-400 mb-1 block">Percent <span class="text-gray-600">(optional)</span></label><input id="qrPercent" type="text" class="field" placeholder="e.g. 5%"></div>
             <div><label class="text-xs text-gray-400 mb-1 block">Note <span class="text-gray-600">(optional)</span></label><textarea id="qrNote" rows="2" class="field" placeholder="Add a note for this release"></textarea></div>
             <p id="qrErr" class="text-red-400 text-xs hidden"></p>
@@ -505,11 +505,11 @@ tr:hover td{background:rgba(0,0,0,.02)}
         <input type="hidden" id="ioBuyerId">
         <input type="hidden" id="ioOverrideField">
         <div class="space-y-3">
-          <div><label class="text-xs text-gray-400 mb-1 block">Incentive for this sale (₱)</label><input id="ioIncentive" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Incentive for this sale (₱)</label><input id="ioIncentive" type="text" inputmode="decimal" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Reason for incentive <span class="text-gray-600">(optional)</span></label><input id="ioIncentiveReason" type="text" class="field" placeholder="e.g. Fast closing, referral bonus, top performer this month"></div>
           <div id="ioOverrideRow">
             <label class="text-xs text-gray-400 mb-1 block" id="ioOverrideLabel">Override amount (₱)</label>
-            <input id="ioOverride" type="text" inputmode="numeric" class="field" placeholder="0" oninput="formatMoneyInput(this)">
+            <input id="ioOverride" type="text" inputmode="decimal" class="field" placeholder="0" oninput="formatMoneyInput(this)">
           </div>
           <p id="ioNoOverrideNote" class="hidden text-xs text-gray-500 italic">This seller has no one above them in the reporting chain, so no override applies here.</p>
           <div><label class="text-xs text-gray-400 mb-1 block">Date</label><input id="ioDate" type="date" class="field"></div>
@@ -532,7 +532,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
         </div>
 
         <div id="mrScheduleFields" class="space-y-3">
-          <div><label class="text-xs text-gray-400 mb-1 block">Monthly Amount (₱)</label><input id="mrMonthlyAmount" type="text" inputmode="numeric" class="field" placeholder="15,000" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Monthly Amount (₱)</label><input id="mrMonthlyAmount" type="text" inputmode="decimal" class="field" placeholder="15,000" oninput="formatMoneyInput(this)"></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Number of Months</label><input id="mrMonths" type="number" min="1" class="field" placeholder="12"></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Start Date</label><input id="mrStartDate" type="date" class="field"></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Percent <span class="text-gray-600">(optional, applied to every month)</span></label><input id="mrPercent" type="text" class="field" placeholder="e.g. 5%"></div>
@@ -609,9 +609,8 @@ tr:hover td{background:rgba(0,0,0,.02)}
           <div><label class="text-xs text-gray-400 mb-1 block">Developer</label><select id="sfDeveloper" class="field w-40" onchange="onSfDeveloperChange()"><option value="">All Developers</option></select></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Property</label><select id="sfProperty" class="field w-40"><option value="">All Properties</option></select></div>
           <div><label class="text-xs text-gray-400 mb-1 block">Agent / Team Member</label><select id="sfPerson" class="field w-44"><option value="">Everyone</option></select></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Min TCP (₱)</label><input id="sfTcpMin" type="text" inputmode="numeric" placeholder="0" class="field w-28" oninput="formatMoneyInput(this)"></div>
-          <div><label class="text-xs text-gray-400 mb-1 block">Max TCP (₱)</label><input id="sfTcpMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-28" oninput="formatMoneyInput(this)"></div>
-          <button onclick="applySalesFilters()" class="bg-orange-500 hover:bg-orange-600 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">Apply Filters</button>
+          <div><label class="text-xs text-gray-400 mb-1 block">Min TCP (₱)</label><input id="sfTcpMin" type="text" inputmode="decimal" placeholder="0" class="field w-28" oninput="formatMoneyInput(this)"></div>
+          <div><label class="text-xs text-gray-400 mb-1 block">Max TCP (₱)</label><input id="sfTcpMax" type="text" inputmode="decimal" placeholder="No limit" class="field w-28" oninput="formatMoneyInput(this)"></div>
           <button onclick="clearSalesFilters()" class="px-4 py-2.5 rounded-lg text-sm font-medium border border-white/10 text-gray-400 hover:text-white transition-colors">Clear</button>
         </div>
         <p id="sfSummary" class="text-xs text-gray-500"></p>
@@ -660,7 +659,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div class="card overflow-hidden">
         <div class="overflow-x-auto"><table class="w-full text-sm">
           <thead><tr class="text-gray-500 text-xs uppercase border-b border-white/8">
-            <th class="text-left px-5 py-2">Promotion</th><th class="text-left px-5 py-2">Applies to</th><th class="text-left px-5 py-2">Audience</th><th class="text-left px-5 py-2">Ends</th><th class="text-left px-5 py-2">Status</th><th class="text-left px-5 py-2">Actions</th>
+            <th class="text-left px-5 py-2">Promotion</th><th class="text-left px-5 py-2">Applies to</th><th class="text-left px-5 py-2">Audience</th><th class="text-left px-5 py-2">Schedule</th><th class="text-left px-5 py-2">Status</th><th class="text-left px-5 py-2">Actions</th>
           </tr></thead>
           <tbody id="promoBody" class="divide-y divide-white/6"></tbody>
         </table></div>
@@ -727,7 +726,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
           <p class="text-xs text-gray-500 -mt-2">Used to show year-to-date progress on the Dashboard.</p>
           <div>
             <label class="text-xs text-gray-400 mb-1 block">Target Sales for <span id="setSalesTargetYear"></span> (₱)</label>
-            <input id="setSalesTarget" type="text" inputmode="numeric" class="field" placeholder="e.g. 50,000,000" oninput="formatMoneyInput(this)">
+            <input id="setSalesTarget" type="text" inputmode="decimal" class="field" placeholder="e.g. 50,000,000" oninput="formatMoneyInput(this)">
           </div>
           <button onclick="saveSalesTarget()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg text-sm font-semibold transition-colors">Save Target</button>
           <p id="salesTargetMsg" class="text-xs text-green-400 hidden">Sales target updated.</p>
@@ -996,7 +995,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
   <div class="modal-box">
     <button onclick="closeModal('promoModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
     <h3 class="font-bold text-lg mb-1">New Promotion</h3>
-    <p class="text-xs text-gray-500 mb-4">People see it as soon as you save. Expired promotions disappear by themselves.</p>
+    <p class="text-xs text-gray-500 mb-4">People see it from its start time (or as soon as you save). Expired promotions disappear by themselves.</p>
     <div class="space-y-3">
       <div><label class="text-xs text-gray-400 mb-1 block">Title *</label><input id="pmTitle" type="text" maxlength="70" class="field" placeholder="e.g. 10% off the Tower A batch"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Message *</label><textarea id="pmMessage" maxlength="200" class="field" placeholder="A short line people will read."></textarea></div>
@@ -1012,8 +1011,18 @@ tr:hover td{background:rgba(0,0,0,.02)}
         </div>
       </div>
       <div>
+        <label class="text-xs text-gray-400 flex items-center gap-2 mb-1"><input type="checkbox" id="pmLater" onchange="togglePromoStart()"> Start later (otherwise it goes live when you save)</label>
+        <div class="grid grid-cols-2 gap-2">
+          <input id="pmStartDate" type="date" class="field" aria-label="Start date">
+          <input id="pmStartTime" type="time" class="field" aria-label="Start time">
+        </div>
+      </div>
+      <div>
         <label class="text-xs text-gray-400 flex items-center gap-2 mb-1"><input type="checkbox" id="pmLimited" checked onchange="togglePromoEnds()"> Limited time only (ends automatically)</label>
-        <input id="pmEnds" type="date" class="field">
+        <div class="grid grid-cols-2 gap-2">
+          <input id="pmEnds" type="date" class="field" aria-label="End date">
+          <input id="pmEndTime" type="time" class="field" aria-label="End time">
+        </div>
       </div>
       <p id="pmErr" class="text-red-400 text-xs hidden"></p>
       <button onclick="savePromo()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Promotion</button>
@@ -1120,20 +1129,20 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div><label class="text-xs text-gray-400 mb-1 block">Unit Photo</label><input id="uImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Computation Image</label><input id="uCompImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Unit Name / Number *</label><input id="uName" type="text" class="field" placeholder="e.g. Tower A - Unit 501"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">TCP - Total Contract Price (₱) *</label><input id="uTCP" type="text" inputmode="numeric" class="field" placeholder="3,500,000" oninput="formatMoneyInput(this);syncDPFromAmount('u')"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">TCP - Total Contract Price (₱) *</label><input id="uTCP" type="text" inputmode="decimal" class="field" placeholder="3,500,000" oninput="formatMoneyInput(this);syncDPFromAmount('u')"></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="text-xs text-gray-400 mb-1 block">Reservation Fee (₱)</label><input id="uResFee" type="text" inputmode="numeric" class="field" placeholder="25,000" oninput="formatMoneyInput(this)"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Reservation Fee (₱)</label><input id="uResFee" type="text" inputmode="decimal" class="field" placeholder="25,000" oninput="formatMoneyInput(this)"></div>
         <div>
           <label class="text-xs text-gray-400 mb-1 block">Downpayment (₱)</label>
           <div class="flex gap-1.5">
-            <input id="uDownpayment" type="text" inputmode="numeric" class="field flex-1" placeholder="350,000" oninput="formatMoneyInput(this);syncDPFromAmount('u')">
+            <input id="uDownpayment" type="text" inputmode="decimal" class="field flex-1" placeholder="350,000" oninput="formatMoneyInput(this);syncDPFromAmount('u')">
             <input id="uDownpaymentPct" type="number" step="0.1" class="field w-16 text-center px-1" placeholder="%" oninput="syncDPFromPct('u')">
           </div>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="text-xs text-gray-400 mb-1 block">Downpayment Terms (months)</label><input id="uDPTerms" type="number" min="1" class="field" placeholder="24" value="24" oninput="syncMonthlyDP('u')"></div>
-        <div><label class="text-xs text-gray-400 mb-1 block">Monthly DP (₱)</label><input id="uMonthlyDP" type="text" inputmode="numeric" class="field" placeholder="14,583" oninput="formatMoneyInput(this);syncDPFromMonthly('u')"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Monthly DP (₱)</label><input id="uMonthlyDP" type="text" inputmode="decimal" class="field" placeholder="14,583" oninput="formatMoneyInput(this);syncDPFromMonthly('u')"></div>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="text-xs text-gray-400 mb-1 block">Bedrooms</label><select id="uBeds" class="field">
@@ -1168,20 +1177,20 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div><label class="text-xs text-gray-400 mb-1 block">Unit Photo (leave blank to keep current)</label><input id="eUImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Computation Image (leave blank to keep current)</label><input id="eUCompImage" type="file" accept="image/*" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Unit Name / Number</label><input id="eUName" type="text" class="field"></div>
-      <div><label class="text-xs text-gray-400 mb-1 block">TCP - Total Contract Price (₱)</label><input id="eUTCP" type="text" inputmode="numeric" class="field" oninput="formatMoneyInput(this);syncDPFromAmount('eU')"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">TCP - Total Contract Price (₱)</label><input id="eUTCP" type="text" inputmode="decimal" class="field" oninput="formatMoneyInput(this);syncDPFromAmount('eU')"></div>
       <div class="grid grid-cols-2 gap-3">
-        <div><label class="text-xs text-gray-400 mb-1 block">Reservation Fee (₱)</label><input id="eUResFee" type="text" inputmode="numeric" class="field" oninput="formatMoneyInput(this)"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Reservation Fee (₱)</label><input id="eUResFee" type="text" inputmode="decimal" class="field" oninput="formatMoneyInput(this)"></div>
         <div>
           <label class="text-xs text-gray-400 mb-1 block">Downpayment (₱)</label>
           <div class="flex gap-1.5">
-            <input id="eUDownpayment" type="text" inputmode="numeric" class="field flex-1" oninput="formatMoneyInput(this);syncDPFromAmount('eU')">
+            <input id="eUDownpayment" type="text" inputmode="decimal" class="field flex-1" oninput="formatMoneyInput(this);syncDPFromAmount('eU')">
             <input id="eUDownpaymentPct" type="number" step="0.1" class="field w-16 text-center px-1" placeholder="%" oninput="syncDPFromPct('eU')">
           </div>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="text-xs text-gray-400 mb-1 block">Downpayment Terms (months)</label><input id="eUDPTerms" type="number" min="1" class="field" placeholder="24" oninput="syncMonthlyDP('eU')"></div>
-        <div><label class="text-xs text-gray-400 mb-1 block">Monthly DP (₱)</label><input id="eUMonthlyDP" type="text" inputmode="numeric" class="field" placeholder="14,583" oninput="formatMoneyInput(this);syncDPFromMonthly('eU')"></div>
+        <div><label class="text-xs text-gray-400 mb-1 block">Monthly DP (₱)</label><input id="eUMonthlyDP" type="text" inputmode="decimal" class="field" placeholder="14,583" oninput="formatMoneyInput(this);syncDPFromMonthly('eU')"></div>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="text-xs text-gray-400 mb-1 block">Bedrooms</label><select id="eUBeds" class="field">
@@ -1391,7 +1400,25 @@ const loadObj = k => JSON.parse(localStorage.getItem(k)||'{}');
 const saveObj = (k,d) => localStorage.setItem(k,JSON.stringify(d));
 
 // ── PESO FORMAT ──
-const peso = n => '₱'+Number(n).toLocaleString('en-PH',{minimumFractionDigits:0,maximumFractionDigits:0});
+const peso = n => '₱'+Number(n).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+// Sales value per calendar month, oldest -> newest, with empty months filled in as 0.
+// A sale's month is its reservation date when set (plain YYYY-MM-DD, parsed by parts), otherwise when it was recorded.
+function salesByMonth(rows){
+  const monthIndex = b => {
+    if(b.reservation_date){ const [y, m] = String(b.reservation_date).slice(0,10).split('-').map(Number); return y*12 + (m-1); }
+    const d = new Date(b.created_at); return d.getFullYear()*12 + d.getMonth();
+  };
+  const totals = {};
+  rows.forEach(b => { const k = monthIndex(b); if(!isNaN(k)) totals[k] = (totals[k]||0) + b.value; });
+  const keys = Object.keys(totals).map(Number);
+  if(!keys.length) return { labels: [], values: [] };
+  const labels = [], values = [];
+  for(let k = Math.min(...keys); k <= Math.max(...keys); k++){
+    labels.push(new Date(Math.floor(k/12), k%12, 1).toLocaleDateString('en-PH',{year:'numeric',month:'short'}));
+    values.push(totals[k] || 0);
+  }
+  return { labels, values };
+}
 
 // ── STATUS BADGE CLASSES ──
 const SB = { approved:'bg-green', pending:'bg-yellow', rejected:'bg-red', suspended:'bg-purple' };
@@ -2988,10 +3015,18 @@ function bedroomLabel(n){
   if(n===null || n===undefined || n==='') return '—';
   return Number(n)===0 ? 'Studio' : n;
 }
+// Keeps digits and one decimal point (max 2 decimals), and adds thousands commas: 1250000.5 -> 1,250,000.5
+function moneyInputText(raw){
+  const clean = raw.replace(/[^\d.]/g,'');
+  const dot = clean.indexOf('.');
+  const intPart = dot < 0 ? clean : clean.slice(0, dot);
+  const decPart = dot < 0 ? null : clean.slice(dot+1).replace(/\./g,'').slice(0,2);
+  if(intPart === '' && decPart === null) return '';
+  return (intPart === '' ? '0' : parseInt(intPart,10).toLocaleString('en-US')) + (decPart === null ? '' : '.' + decPart);
+}
 function formatMoneyInput(el){
   const cursorFromEnd = el.value.length - el.selectionStart;
-  const digits = el.value.replace(/[^\d]/g,'');
-  el.value = digits === '' ? '' : parseInt(digits,10).toLocaleString('en-US');
+  el.value = moneyInputText(el.value);
   const pos = Math.max(0, el.value.length - cursorFromEnd);
   el.setSelectionRange(pos, pos);
 }
@@ -3006,7 +3041,7 @@ function syncDPFromPct(prefix){
   const tcp = parseMoney(document.getElementById(prefix+'TCP').value);
   const pct = parseFloat(document.getElementById(prefix+'DownpaymentPct').value) || 0;
   const dpEl = document.getElementById(prefix+'Downpayment');
-  dpEl.value = tcp > 0 ? Math.round(tcp * pct / 100).toLocaleString('en-US') : '';
+  dpEl.value = tcp > 0 ? (Math.round((tcp * pct / 100) * 100) / 100).toLocaleString('en-US', {maximumFractionDigits:2}) : '';
   syncMonthlyDP(prefix);
 }
 // ── Full Downpayment <-> Monthly DP <-> Terms sync ──
@@ -3015,14 +3050,14 @@ function syncMonthlyDP(prefix){
   const terms = parseInt(document.getElementById(prefix+'DPTerms').value, 10) || 0;
   const monthlyEl = document.getElementById(prefix+'MonthlyDP');
   if(!monthlyEl) return;
-  monthlyEl.value = (dp > 0 && terms > 0) ? Math.round(dp / terms).toLocaleString('en-US') : '';
+  monthlyEl.value = (dp > 0 && terms > 0) ? (Math.round((dp / terms) * 100) / 100).toLocaleString('en-US', {maximumFractionDigits:2}) : '';
 }
 function syncDPFromMonthly(prefix){
   const monthly = parseMoney(document.getElementById(prefix+'MonthlyDP').value);
   const terms = parseInt(document.getElementById(prefix+'DPTerms').value, 10) || 0;
   if(terms > 0){
     const dpEl = document.getElementById(prefix+'Downpayment');
-    dpEl.value = monthly > 0 ? Math.round(monthly * terms).toLocaleString('en-US') : '';
+    dpEl.value = monthly > 0 ? (Math.round((monthly * terms) * 100) / 100).toLocaleString('en-US', {maximumFractionDigits:2}) : '';
     syncDPFromAmount(prefix); // keep % in sync too
   }
 }
@@ -4820,7 +4855,7 @@ window.addMonthlyRow = () => {
   div.className = 'flex gap-2 items-end';
   div.innerHTML = `
     <div class="flex-1"><label class="text-xs text-gray-400 mb-1 block">Date</label><input type="date" class="field mr-row-date"></div>
-    <div class="flex-1"><label class="text-xs text-gray-400 mb-1 block">Amount (₱)</label><input type="text" inputmode="numeric" class="field mr-row-amount" placeholder="0" oninput="formatMoneyInput(this)"></div>
+    <div class="flex-1"><label class="text-xs text-gray-400 mb-1 block">Amount (₱)</label><input type="text" inputmode="decimal" class="field mr-row-amount" placeholder="0" oninput="formatMoneyInput(this)"></div>
     <div style="width:5.5rem"><label class="text-xs text-gray-400 mb-1 block">Percent</label><input type="text" class="field mr-row-percent" placeholder="%"></div>
     <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-red-400 hover:text-red-300 text-xs pb-2.5">&times;</button>
   `;
@@ -5054,12 +5089,29 @@ function clearSalesFilters(){
   salesFilters = { dateFrom:'', dateTo:'', developerId:'', propertyId:'', personKey:'', tcpMin:0, tcpMax:Infinity };
   if(reportsRawData) renderSalesSummaryReport(filterSalesData(reportsRawData));
 }
+// Filters apply by themselves: dropdowns and dates on change, the TCP boxes a moment after typing stops.
+let salesFilterTimer = null;
+document.addEventListener('change', e=>{
+  if(e.target.closest && e.target.closest('#salesFilterBar')) applySalesFilters();
+});
+document.addEventListener('input', e=>{
+  if(e.target.id !== 'sfTcpMin' && e.target.id !== 'sfTcpMax') return;
+  clearTimeout(salesFilterTimer);
+  salesFilterTimer = setTimeout(applySalesFilters, 400);
+});
+// A sale's date as YYYY-MM-DD: its reservation date when set, otherwise the day it was recorded (local time).
+// Same rule as the month graph, so filtering by date and the graph always agree.
+function saleDateYmd(b){
+  if(b.reservation_date) return String(b.reservation_date).slice(0,10);
+  const d = new Date(b.created_at);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
 function filterSalesData(data){
   const f = salesFilters;
   const anyFilter = f.dateFrom || f.dateTo || f.developerId || f.propertyId || f.personKey || f.tcpMin || f.tcpMax !== Infinity;
   const filteredBuyers = data.buyers.filter(b=>{
-    if(f.dateFrom && new Date(b.created_at) < new Date(f.dateFrom)) return false;
-    if(f.dateTo && new Date(b.created_at) > new Date(f.dateTo + 'T23:59:59')) return false;
+    if(f.dateFrom && saleDateYmd(b) < f.dateFrom) return false;
+    if(f.dateTo && saleDateYmd(b) > f.dateTo) return false;
     if(f.personKey){
       const [pRole, pId] = f.personKey.split(':');
       if(b.input_by_role !== pRole || b.input_by_id !== pId) return false;
@@ -5075,7 +5127,7 @@ function filterSalesData(data){
   });
   document.getElementById('sfSummary').textContent = anyFilter
     ? `Showing ${filteredBuyers.length} of ${data.buyers.length} sales matching your filters.`
-    : `Showing all ${data.buyers.length} sales. Use the filters above to narrow this down.`;
+    : `Showing all ${data.buyers.length} sales. Change any filter above and the report updates right away.`;
   return { ...data, buyers: filteredBuyers };
 }
 
@@ -5094,16 +5146,11 @@ function renderSalesSummaryReport({devs, props, units, buyers}){
   ].map(([l,v,c])=>reportCard(l,v,c)).join('');
 
   // Chart 1: Sales value by month
-  const byMonth = {};
-  withValue.forEach(b=>{
-    const d = new Date(b.created_at);
-    const key = d.toLocaleDateString('en-PH',{year:'numeric',month:'short'});
-    byMonth[key] = (byMonth[key]||0) + b.value;
-  });
-  const monthLabels = Object.keys(byMonth);
+  const byMonth = salesByMonth(withValue);
+  const monthLabels = byMonth.labels;
   reportChart1 = drawChart('reportChart1', reportChart1, {
     type:'line',
-    data:{ labels: monthLabels, datasets:[{ label:'Sales Value', data: monthLabels.map(k=>byMonth[k]), borderColor:'#e2733a', backgroundColor:'rgba(226,115,58,.15)', fill:true, tension:.3 }] },
+    data:{ labels: monthLabels, datasets:[{ label:'Sales Value', data: byMonth.values, borderColor:'#e2733a', backgroundColor:'rgba(226,115,58,.15)', fill:true, tension:.3 }] },
     options:{ plugins:{ title:{display:true,text:'Sales Value by Month',color:'#9ca3af'}, legend:{display:false} }, scales:{ x:{ticks:{color:'#9ca3af'}}, y:{ticks:{color:'#9ca3af'}} } }
   });
 
@@ -5475,8 +5522,11 @@ const PROMO_DAY = 86400000, PROMO_HOUR = 3600000, PROMO_MIN = 60000;
 function promoEsc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function promoStatus(p){
   if(p.ends_at && new Date(p.ends_at).getTime() <= Date.now()) return 'expired';
-  return p.active ? 'live' : 'off';
+  if(!p.active) return 'off';
+  if(p.starts_at && new Date(p.starts_at).getTime() > Date.now()) return 'scheduled';
+  return 'live';
 }
+function promoFmtDateTime(iso){ return new Date(iso).toLocaleString('en-PH', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' }); }
 function promoTimeLeft(ms){
   if(ms <= 0) return 'Ended';
   const d = Math.floor(ms / PROMO_DAY), h = Math.floor((ms % PROMO_DAY) / PROMO_HOUR), m = Math.floor((ms % PROMO_HOUR) / PROMO_MIN);
@@ -5504,22 +5554,24 @@ async function renderPromotions(){
     body.innerHTML = `<tr><td colspan="6" class="px-5 py-5 text-center text-red-400 text-xs">Failed to load promotions.</td></tr>`;
     return;
   }
-  const order = { live:0, off:1, expired:2 };
+  const order = { live:0, scheduled:1, off:2, expired:3 };
   const rows = promoCache.slice().sort((a,b) => order[promoStatus(a)] - order[promoStatus(b)] || (a.ends_at ? new Date(a.ends_at).getTime() : Infinity) - (b.ends_at ? new Date(b.ends_at).getTime() : Infinity));
-  const counts = { live:0, off:0, expired:0 };
+  const counts = { live:0, scheduled:0, off:0, expired:0 };
   rows.forEach(p => counts[promoStatus(p)]++);
   document.getElementById('promoChips').innerHTML =
-    `<span class="badge bg-green">${counts.live} live</span><span class="badge bg-yellow">${counts.off} switched off</span><span class="badge bg-red">${counts.expired} expired</span>`;
+    `<span class="badge bg-green">${counts.live} live</span><span class="badge bg-purple">${counts.scheduled} scheduled</span><span class="badge bg-yellow">${counts.off} switched off</span><span class="badge bg-red">${counts.expired} expired</span>`;
 
   body.innerHTML = rows.map(p => {
     const st = promoStatus(p);
     const soon = p.ends_at && st === 'live' && (new Date(p.ends_at).getTime() - Date.now()) < 3 * PROMO_DAY;
-    const ends = !p.ends_at ? '<span class="text-gray-500">No end date</span>'
-      : st === 'expired' ? `<span class="text-gray-500">Ended ${promoFmtDate(p.ends_at)}</span>`
-      : `<div class="${soon ? 'text-orange-500 font-semibold' : ''}">${promoTimeLeft(new Date(p.ends_at).getTime() - Date.now())}</div><div class="text-gray-500 text-xs">${promoFmtDate(p.ends_at)}</div>`;
+    const starts = p.starts_at && new Date(p.starts_at).getTime() > Date.now()
+      ? `<div class="text-purple-400">Starts ${promoFmtDateTime(p.starts_at)}</div>` : '';
+    const ends = starts + (!p.ends_at ? '<span class="text-gray-500">No end date</span>'
+      : st === 'expired' ? `<span class="text-gray-500">Ended ${promoFmtDateTime(p.ends_at)}</span>`
+      : `<div class="${soon ? 'text-orange-500 font-semibold' : ''}">${st === 'scheduled' ? 'Ends' : promoTimeLeft(new Date(p.ends_at).getTime() - Date.now())}</div><div class="text-gray-500 text-xs">${promoFmtDateTime(p.ends_at)}</div>`);
     const target = p.target_name ? `${p.scope}: <b>${promoEsc(p.target_name)}</b>` : `<span class="text-red-400">${p.scope} no longer exists</span>`;
     const audience = p.audience === 'public' ? '<span class="badge bg-green">Public</span>' : '<span class="badge bg-purple">🔒 Team only</span>';
-    const stBadge = st === 'live' ? '<span class="badge bg-green">Live</span>' : st === 'off' ? '<span class="badge bg-yellow">Off</span>' : '<span class="badge bg-red">Expired</span>';
+    const stBadge = st === 'live' ? '<span class="badge bg-green">Live</span>' : st === 'scheduled' ? '<span class="badge bg-purple">Scheduled</span>' : st === 'off' ? '<span class="badge bg-yellow">Off</span>' : '<span class="badge bg-red">Expired</span>';
     return `
       <tr class="${st !== 'live' ? 'opacity-60' : ''}">
         <td class="px-5 py-3 text-xs"><div class="font-semibold">${promoEsc(p.title)}</div><div class="text-gray-500 max-w-xs">${promoEsc(p.message)}</div></td>
@@ -5539,8 +5591,15 @@ function fillPromoTargets(){
     ? list.map(x => `<option value="${promoEsc(x.id)}">${promoEsc(x.name)}</option>`).join('')
     : `<option value="">— none yet —</option>`;
 }
-function togglePromoEnds(){ document.getElementById('pmEnds').disabled = !document.getElementById('pmLimited').checked; }
+function togglePromoEnds(){ const off = !document.getElementById('pmLimited').checked; document.getElementById('pmEnds').disabled = off; document.getElementById('pmEndTime').disabled = off; }
+function togglePromoStart(){ const off = !document.getElementById('pmLater').checked; document.getElementById('pmStartDate').disabled = off; document.getElementById('pmStartTime').disabled = off; }
 function promoYmd(ts){ const d = new Date(ts); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+// Date (YYYY-MM-DD) + time (HH:MM) -> a Date in your local time, built from the parts (no timezone shift)
+function promoLocalDateTime(ymd, hm){
+  const [y, m, d] = ymd.split('-').map(Number);
+  const [hh, mm] = (hm || '00:00').split(':').map(Number);
+  return new Date(y, m - 1, d, hh, mm, 0);
+}
 
 async function openPromoModal(){
   const token = localStorage.getItem('token');
@@ -5559,10 +5618,17 @@ async function openPromoModal(){
   document.getElementById('pmScope').value = 'Developer';
   fillPromoTargets();
   document.querySelector('input[name="pmAud"][value="public"]').checked = true;
+  document.getElementById('pmLater').checked = false;
+  const startDate = document.getElementById('pmStartDate');
+  startDate.min = promoYmd(Date.now());
+  startDate.value = promoYmd(Date.now());
+  document.getElementById('pmStartTime').value = '09:00';
+  togglePromoStart();
   document.getElementById('pmLimited').checked = true;
   const ends = document.getElementById('pmEnds');
   ends.min = promoYmd(Date.now());
   ends.value = promoYmd(Date.now() + 7 * PROMO_DAY);
+  document.getElementById('pmEndTime').value = '23:59';
   togglePromoEnds();
   document.getElementById('pmErr').classList.add('hidden');
   openModal('promoModal');
@@ -5578,21 +5644,31 @@ async function savePromo(){
   const audience = document.querySelector('input[name="pmAud"]:checked').value;
   if(!title || !message) return fail('Please add a title and a message.');
   if(!target_id) return fail('Choose the developer or property this applies to.');
+  let starts_at = null, start = null;
+  if(document.getElementById('pmLater').checked){
+    const sd = document.getElementById('pmStartDate').value, st = document.getElementById('pmStartTime').value;
+    if(!sd || !st) return fail('Pick a start date and time, or untick "Start later".');
+    start = promoLocalDateTime(sd, st);
+    if(start.getTime() <= Date.now()) return fail('The start time has already passed. Untick "Start later" to go live now.');
+    starts_at = start.toISOString();
+  }
   let ends_at = null;
   if(document.getElementById('pmLimited').checked){
-    const v = document.getElementById('pmEnds').value;
-    if(!v) return fail('Pick an end date, or untick "Limited time only".');
-    const [y, m, d] = v.split('-').map(Number);
-    const end = new Date(y, m - 1, d, 23, 59, 59); // end of that day, in your local time
-    if(end.getTime() <= Date.now()) return fail('The end date has to be in the future.');
+    const v = document.getElementById('pmEnds').value, t = document.getElementById('pmEndTime').value;
+    if(!v || !t) return fail('Pick an end date and time, or untick "Limited time only".');
+    const end = promoLocalDateTime(v, t);
+    if(end.getTime() <= Date.now()) return fail('The end time has to be in the future.');
+    if(start && end.getTime() <= start.getTime()) return fail('The end has to be after the start.');
     ends_at = end.toISOString();
   }
   document.getElementById('pmErr').classList.add('hidden');
+  const payload = { title, message, scope, target_id, audience, ends_at };
+  if(starts_at) payload.starts_at = starts_at; // only sent when scheduled, so "go live now" works even before the SQL is run
   try {
     const res = await fetch('/api/promotions', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, message, scope, target_id, audience, ends_at })
+      body: JSON.stringify(payload)
     });
     if(!res.ok){ const b = await res.json().catch(() => ({})); return fail(b.message || 'Failed to save the promotion.'); }
     closeModal('promoModal');

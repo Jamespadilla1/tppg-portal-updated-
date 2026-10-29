@@ -190,8 +190,8 @@
               <option value="dp">Monthly DP</option>
               <option value="fulldp">Full DP</option>
             </select></div>
-            <div><label class="text-xs text-gray-500 mb-1 block" id="propSearchMinLabel">Min TCP (₱)</label><input id="propSearchDPMin" type="text" inputmode="numeric" placeholder="0" class="field w-32" oninput="formatMoneyInput(this)"></div>
-            <div><label class="text-xs text-gray-500 mb-1 block" id="propSearchMaxLabel">Max TCP (₱)</label><input id="propSearchDPMax" type="text" inputmode="numeric" placeholder="No limit" class="field w-32" oninput="formatMoneyInput(this)"></div>
+            <div><label class="text-xs text-gray-500 mb-1 block" id="propSearchMinLabel">Min TCP (₱)</label><input id="propSearchDPMin" type="text" inputmode="decimal" placeholder="0" class="field w-32" oninput="formatMoneyInput(this)"></div>
+            <div><label class="text-xs text-gray-500 mb-1 block" id="propSearchMaxLabel">Max TCP (₱)</label><input id="propSearchDPMax" type="text" inputmode="decimal" placeholder="No limit" class="field w-32" oninput="formatMoneyInput(this)"></div>
             <button onclick="searchPropsGlobal('prop')" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors">Search</button>
           </div>
           <div id="propSearchResults" class="mt-3"></div>
@@ -404,8 +404,8 @@
         <p id="bUnitStockNote" class="text-xs text-gray-500"></p>
       </div>
       <div><label class="text-xs text-gray-500 mb-1 block">Reservation Date</label><input id="bReservationDate" type="date" class="field"></div>
-      <div><label class="text-xs text-gray-500 mb-1 block">Total Contract Price (₱)</label><input id="bManualTCP" type="text" inputmode="numeric" class="field" placeholder="3,500,000" oninput="formatMoneyInput(this)"></div>
-      <div><label class="text-xs text-gray-500 mb-1 block">Net Selling Price (if available) (₱)</label><input id="bNetSellingPrice" type="text" inputmode="numeric" class="field" placeholder="3,300,000" oninput="formatMoneyInput(this)"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Total Contract Price (₱)</label><input id="bManualTCP" type="text" inputmode="decimal" class="field" placeholder="3,500,000" oninput="formatMoneyInput(this)"></div>
+      <div><label class="text-xs text-gray-500 mb-1 block">Net Selling Price (if available) (₱)</label><input id="bNetSellingPrice" type="text" inputmode="decimal" class="field" placeholder="3,300,000" oninput="formatMoneyInput(this)"></div>
       <div><label class="text-xs text-gray-500 mb-1 block">Payment Terms</label><select id="bPaymentOption" class="field" onchange="onPaymentTermsChange()">
         <option value="">— Select —</option>
         <option value="Monthly Down Payment">Monthly Down Payment</option>
@@ -460,14 +460,40 @@ if (!token || !['unit_manager','sales_manager','team_leader'].includes(role)) {
 }
 
 const ROLE_LABELS = { unit_manager: 'Unit Manager', sales_manager: 'Sales Manager', team_leader: 'Team Leader' };
-const peso = n => '₱' + Number(n||0).toLocaleString('en-PH', {maximumFractionDigits:0});
+const peso = n => '₱' + Number(n||0).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2});
 function parseMoney(str){
   return parseFloat((str||'').toString().replace(/,/g,'')) || 0;
 }
+// Sales value per calendar month, oldest -> newest, with empty months filled in as 0.
+// A sale's month is its reservation date when set (plain YYYY-MM-DD, parsed by parts), otherwise when it was recorded.
+function salesByMonth(rows){
+  const monthIndex = b => {
+    if(b.reservation_date){ const [y, m] = String(b.reservation_date).slice(0,10).split('-').map(Number); return y*12 + (m-1); }
+    const d = new Date(b.created_at); return d.getFullYear()*12 + d.getMonth();
+  };
+  const totals = {};
+  rows.forEach(b => { const k = monthIndex(b); if(!isNaN(k)) totals[k] = (totals[k]||0) + b.value; });
+  const keys = Object.keys(totals).map(Number);
+  if(!keys.length) return { labels: [], values: [] };
+  const labels = [], values = [];
+  for(let k = Math.min(...keys); k <= Math.max(...keys); k++){
+    labels.push(new Date(Math.floor(k/12), k%12, 1).toLocaleDateString('en-PH',{year:'numeric',month:'short'}));
+    values.push(totals[k] || 0);
+  }
+  return { labels, values };
+}
+// Keeps digits and one decimal point (max 2 decimals), and adds thousands commas: 1250000.5 -> 1,250,000.5
+function moneyInputText(raw){
+  const clean = raw.replace(/[^\d.]/g,'');
+  const dot = clean.indexOf('.');
+  const intPart = dot < 0 ? clean : clean.slice(0, dot);
+  const decPart = dot < 0 ? null : clean.slice(dot+1).replace(/\./g,'').slice(0,2);
+  if(intPart === '' && decPart === null) return '';
+  return (intPart === '' ? '0' : parseInt(intPart,10).toLocaleString('en-US')) + (decPart === null ? '' : '.' + decPart);
+}
 window.formatMoneyInput = function(el){
   const cursorFromEnd = el.value.length - el.selectionStart;
-  const digits = el.value.replace(/[^\d]/g,'');
-  el.value = digits === '' ? '' : parseInt(digits,10).toLocaleString('en-US');
+  el.value = moneyInputText(el.value);
   const pos = Math.max(0, el.value.length - cursorFromEnd);
   el.setSelectionRange(pos, pos);
 };
@@ -1508,17 +1534,12 @@ async function renderTeamReports(){
     ].map(([l,v,c])=>`<div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">${l}</p><p class="text-xl font-bold ${c}">${v}</p></div>`).join('');
 
     // Chart 1: sales value by month
-    const byMonth = {};
-    withValue.forEach(b=>{
-      const d = new Date(b.created_at);
-      const key = d.toLocaleDateString('en-PH',{year:'numeric',month:'short'});
-      byMonth[key] = (byMonth[key]||0) + b.value;
-    });
-    const monthLabels = Object.keys(byMonth);
+    const byMonth = salesByMonth(withValue);
+    const monthLabels = byMonth.labels;
     if(repChart1) repChart1.destroy();
     repChart1 = new Chart(document.getElementById('repChart1').getContext('2d'), {
       type:'line',
-      data:{ labels: monthLabels, datasets:[{ label:'Sales Value', data: monthLabels.map(k=>byMonth[k]), borderColor:'#e2733a', backgroundColor:'rgba(226,115,58,.15)', fill:true, tension:.3 }] },
+      data:{ labels: monthLabels, datasets:[{ label:'Sales Value', data: byMonth.values, borderColor:'#e2733a', backgroundColor:'rgba(226,115,58,.15)', fill:true, tension:.3 }] },
       options:{ plugins:{ title:{display:true,text:'Team Sales by Month'}, legend:{display:false} } }
     });
 
