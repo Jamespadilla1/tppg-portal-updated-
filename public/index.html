@@ -21,7 +21,13 @@
           },
           // Same palette as the public TPPG website
           ink:   { DEFAULT:'#0B0B0C', 800:'#121214', 700:'#18181B', 600:'#232327' },
-          brand: { DEFAULT:'#F97316', hover:'#EA580C', soft:'#FDBA74' }
+          brand: { DEFAULT:'#C2410C', hover:'#9A3412', soft:'#FDBA74' }
+        },
+        // WCAG AA: the brand orange fills buttons with white labels (5.2:1), while
+        // orange text on the dark background keeps the brighter shade (7:1).
+        textColor: {
+          brand: { DEFAULT:'#F97316', hover:'#FB923C', soft:'#FDBA74' },
+          zinc:  { 500:'#a1a1aa', 600:'#a1a1aa' },
         },
         maxWidth: { site: '76rem' }
       }
@@ -40,8 +46,8 @@
   .eyebrow { font-size: .8rem; font-weight: 600; letter-spacing: .01em; color: #F97316; }
   .container-site { width:100%; max-width:76rem; margin-inline:auto; padding-inline:1.25rem; }
   @media (min-width:640px){ .container-site { padding-inline:2rem; } }
-  .btn-primary { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.375rem; background:#F97316; padding:.75rem 1.25rem; font-size:.875rem; font-weight:600; color:#fff; transition:background-color .15s; }
-  .btn-primary:hover { background:#EA580C; }
+  .btn-primary { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.375rem; background:#C2410C; padding:.75rem 1.25rem; font-size:.875rem; font-weight:600; color:#fff; transition:background-color .15s; }
+  .btn-primary:hover { background:#9A3412; }
   .btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.375rem; border:1px solid rgba(255,255,255,.15); padding:.75rem 1.25rem; font-size:.875rem; font-weight:600; color:#fff; transition:border-color .15s; }
   .btn-ghost:hover { border-color: rgba(255,255,255,.4); }
   .section-title { margin-top:.75rem; font-size:1.7rem; font-weight:700; line-height:1.15; letter-spacing:-.02em; color:#fff; }

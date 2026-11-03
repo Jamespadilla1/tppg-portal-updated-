@@ -99,9 +99,9 @@
     if (document.getElementById('tcal-css')) return;
     const css = `
       #calendarRoot, .tcal-backdrop {
-        --ink:#1c1917; --ink-2:#44403c; --muted:#78716c; --faint:#a8a29e;
+        --ink:#1c1917; --ink-2:#44403c; --muted:#57534e; --faint:#706963;
         --line:#ece8e3; --line-2:#f4f1ed; --paper:#ffffff; --surface:#faf8f5;
-        --accent:#ea580c; --accent-2:#f97316; --accent-soft:#fff4ec; --accent-line:#fed7aa;
+        --accent:#ad3a0b; --accent-2:#c2410c; --accent-soft:#fff4ec; --accent-line:#fed7aa;
       }
       .tcal-wrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start;animation:tcal-rise .35s ease both}
       @media(max-width:1180px){.tcal-wrap{grid-template-columns:1fr}}
@@ -124,9 +124,9 @@
       .tcal-btn:disabled{opacity:.6;cursor:wait;transform:none}
       .tcal-btn-ghost{display:inline-flex;align-items:center;gap:6px;background:var(--paper);color:var(--ink-2);border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-size:.82rem;font-weight:500;cursor:pointer;transition:all .15s}
       .tcal-btn-ghost:hover{background:var(--surface);color:var(--ink)}
-      .tcal-btn-danger{background:transparent;color:#dc2626;border:1px solid transparent;border-radius:10px;padding:9px 12px;font-size:.82rem;font-weight:500;cursor:pointer;transition:all .15s}
+      .tcal-btn-danger{background:transparent;color:#b91c1c;border:1px solid transparent;border-radius:10px;padding:9px 12px;font-size:.82rem;font-weight:500;cursor:pointer;transition:all .15s}
       .tcal-btn-danger:hover{background:#fef2f2;border-color:#fecaca}
-      .tcal-btn-danger.armed{background:#dc2626;color:#fff;border-color:#dc2626}
+      .tcal-btn-danger.armed{background:#dc2626;color:#fff;border-color:#b91c1c}
 
       /* side column */
       .tcal-col{display:flex;flex-direction:column;gap:16px}
@@ -155,7 +155,7 @@
       .tcal-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:.68rem;font-weight:600}
       .tcal-req{color:var(--accent);font-weight:600}
       .tcal-lock{display:inline-block;width:11px;height:11px;vertical-align:-1px;flex-shrink:0}
-      .tcal-count{margin-left:auto;background:#f97316;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
+      .tcal-count{margin-left:auto;background:#c2410c;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
       .tcal-count.hidden{display:none}
 
       /* modals */
@@ -167,7 +167,7 @@
       .tcal-modal-sub{font-size:.75rem;color:var(--muted);margin:0 0 14px}
       .tcal-title-input{width:100%;border:none;border-bottom:2px solid var(--line);padding:8px 0;font-size:1.15rem;font-weight:600;color:var(--ink);outline:none;background:transparent;transition:border-color .15s;box-sizing:border-box}
       .tcal-title-input:focus{border-color:var(--tc,var(--accent-2))}
-      .tcal-title-input::placeholder{color:#c7c2bd;font-weight:500}
+      .tcal-title-input::placeholder{color:#706963;font-weight:500}
       .tcal-label{display:block;font-size:.7rem;font-weight:700;color:var(--muted);margin:16px 0 7px;text-transform:uppercase;letter-spacing:.06em}
       .tcal-field{width:100%;padding:9px 12px;background:var(--paper);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:.85rem;outline:none;box-sizing:border-box;transition:border-color .15s,box-shadow .15s}
       .tcal-field:focus{border-color:var(--accent-2);box-shadow:0 0 0 3px rgba(249,115,22,.12)}
@@ -230,7 +230,7 @@
       #calendarRoot .fc .fc-daygrid-day:hover{background:#fffaf5;cursor:pointer}
       #calendarRoot .fc .fc-day-sat,#calendarRoot .fc .fc-day-sun{background:#fcfbf9}
       #calendarRoot .fc .fc-daygrid-day-number{font-size:.78rem;font-weight:600;color:var(--ink-2);padding:6px 8px;font-variant-numeric:tabular-nums}
-      #calendarRoot .fc .fc-day-other .fc-daygrid-day-number{color:#d6d3d1}
+      #calendarRoot .fc .fc-day-other .fc-daygrid-day-number{color:#706963;opacity:.85}
       #calendarRoot .fc .fc-day-today .fc-daygrid-day-number{background:var(--accent-2);color:#fff;border-radius:999px;min-width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;padding:0 7px;margin:4px 4px 0 0;box-shadow:0 2px 8px rgba(249,115,22,.35)}
       #calendarRoot .fc .fc-daygrid-day-frame{min-height:96px}
       #calendarRoot .fc .fc-daygrid-more-link{font-size:.7rem;font-weight:600;color:var(--accent);padding:1px 6px}
@@ -470,7 +470,7 @@
       const k = `${p.role}:${p.id}`;
       html += `<label data-search="${esc((p.name + ' ' + (p.code || '')).toLowerCase())}">
         <input type="checkbox" value="${esc(k)}" ${selected.has(k) ? 'checked' : ''}>
-        <span>${esc(p.name)}</span><span style="margin-left:auto;color:#9ca3af;font-size:.72rem">${esc(p.code || '')}</span>
+        <span>${esc(p.name)}</span><span style="margin-left:auto;color:#6b7280;font-size:.72rem">${esc(p.code || '')}</span>
       </label>`;
     });
     box.innerHTML = html;
@@ -556,7 +556,7 @@
     if (canInvite) {
       const selected = new Set((ev ? ev.attendees : []).map(a => `${a.role}:${a.id}`));
       try { await loadInvitable(); renderPeople(selected); }
-      catch (e) { document.getElementById('tcalPeople').innerHTML = `<p class="tcal-empty" style="padding:8px 10px;color:#dc2626">${esc(e.message)}</p>`; }
+      catch (e) { document.getElementById('tcalPeople').innerHTML = `<p class="tcal-empty" style="padding:8px 10px;color:#b91c1c">${esc(e.message)}</p>`; }
     }
   }
 
@@ -668,16 +668,16 @@
       const t = TYPES[data.event_type] || TYPES.other;
       document.getElementById('tcalViewerTitle').textContent = data.title;
       document.querySelector('#tcalViewer .tcal-modal').style.setProperty('--tc', data.cancelled ? '#a8a29e' : t.color);
-      const people = data.attendees.length ? data.attendees.map(p => `${esc(p.name)} <span style="color:#9ca3af">(${ROLE_LABEL[p.role] || p.role})</span>`).join('<br>') : '';
+      const people = data.attendees.length ? data.attendees.map(p => `${esc(p.name)} <span style="color:#6b7280">(${ROLE_LABEL[p.role] || p.role})</span>`).join('<br>') : '';
       body.innerHTML = `
         ${data.cancelled ? `<p class="tcal-err" style="margin:0 0 12px">This event was cancelled.</p>` : ''}
-        ${data.is_required && !data.is_mine ? `<p style="margin:0 0 12px"><span class="tcal-pill" style="background:#fff7ed;color:#ea580c">You're required to attend</span></p>` : ''}
+        ${data.is_required && !data.is_mine ? `<p style="margin:0 0 12px"><span class="tcal-pill" style="background:#fff7ed;color:#ad3a0b">You're required to attend</span></p>` : ''}
         <dl class="tcal-dl">
           ${row('Type', `<span class="tcal-pill" style="background:${t.color}1a;color:${t.color}">${t.label}</span>`)}
           ${row('When', esc(whenText(data)))}
           ${row('Location', esc(data.location))}
           ${row('Notes', esc(data.notes).replace(/\n/g, '<br>'))}
-          ${row('Created by', `${esc(data.created_by.name)} <span style="color:#9ca3af">(${ROLE_LABEL[data.created_by.role] || data.created_by.role})</span>`)}
+          ${row('Created by', `${esc(data.created_by.name)} <span style="color:#6b7280">(${ROLE_LABEL[data.created_by.role] || data.created_by.role})</span>`)}
           ${row('Visible to', esc(VIS[data.visibility].label))}
           ${row('Required', people)}
         </dl>`;
@@ -900,7 +900,7 @@
       });
     } catch (e) {
       paintToday({ events: [], auto: [] });
-      box.innerHTML = `<p class="tcal-empty" style="color:#dc2626">${esc(e.message)}</p>`;
+      box.innerHTML = `<p class="tcal-empty" style="color:#b91c1c">${esc(e.message)}</p>`;
     }
 
     const card = document.getElementById('tcalChangesCard');
@@ -910,7 +910,7 @@
       cbox.innerHTML = '';
       notices.changes.forEach((ev, i) => {
         const t = TYPES[ev.event_type] || TYPES.other;
-        cbox.appendChild(sideItem(ev.cancelled ? '#dc2626' : t.color, ev.cancelled ? '<span style="color:#dc2626;font-weight:600">Cancelled</span>' : 'Updated', esc(ev.title), esc(whenText(ev)), () => openViewer('event', ev), false, i * 35));
+        cbox.appendChild(sideItem(ev.cancelled ? '#dc2626' : t.color, ev.cancelled ? '<span style="color:#b91c1c;font-weight:600">Cancelled</span>' : 'Updated', esc(ev.title), esc(whenText(ev)), () => openViewer('event', ev), false, i * 35));
       });
     }
   }
@@ -959,13 +959,13 @@
         <div class="min-w-0">
           <div class="flex items-center gap-2 flex-wrap mb-1">
             <span class="tcal-pill" style="background:${t.color}1a;color:${t.color}">${t.label}</span>
-            ${ev.is_required && !ev.is_mine ? '<span class="tcal-pill" style="background:#fff7ed;color:#ea580c">Required</span>' : ''}
+            ${ev.is_required && !ev.is_mine ? '<span class="tcal-pill" style="background:#fff7ed;color:#ad3a0b">Required</span>' : ''}
           </div>
           <p class="font-semibold text-sm" style="${ev.cancelled ? 'text-decoration:line-through' : ''}">${esc(ev.title)}</p>
           <p class="text-xs text-gray-500">${esc(whenText(ev))}${ev.location ? ' · ' + esc(ev.location) : ''}</p>
         </div>
         <div class="text-right shrink-0">
-          <p class="text-sm font-semibold" style="color:${ev.cancelled ? '#dc2626' : '#ea580c'}">${whenWord}</p>
+          <p class="text-sm font-semibold" style="color:${ev.cancelled ? '#b91c1c' : '#ad3a0b'}">${whenWord}</p>
         </div>
       </div>`;
   }
@@ -984,7 +984,7 @@
           await loadFullCalendar();
           initCalendar();
         } catch (e) {
-          document.getElementById('tcalCalendar').innerHTML = `<p class="tcal-empty" style="color:#dc2626;padding:20px">${esc(e.message)}</p>`;
+          document.getElementById('tcalCalendar').innerHTML = `<p class="tcal-empty" style="color:#b91c1c;padding:20px">${esc(e.message)}</p>`;
         }
       } else if (calendar) {
         calendar.refetchEvents();
