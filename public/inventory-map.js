@@ -19,8 +19,8 @@
       #invMapViewer .imv-actions{display:flex;gap:8px;flex-shrink:0}
       #invMapViewer .imv-btn{font-size:.78rem;font-weight:500;padding:7px 12px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;color:#374151;cursor:pointer;text-decoration:none}
       #invMapViewer .imv-btn:hover{background:#f9fafb}
-      #invMapViewer .imv-btn.primary{background:#f97316;border-color:#f97316;color:#fff}
-      #invMapViewer .imv-btn.primary:hover{background:#ea580c}
+      #invMapViewer .imv-btn.primary{background:#c2410c;border-color:#c2410c;color:#fff}
+      #invMapViewer .imv-btn.primary:hover{background:#9a3412}
       #invMapViewer .imv-stage{flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:20px}
       #invMapViewer .imv-stage img{max-width:100%;max-height:calc(100vh - 110px);object-fit:contain;background:#fff;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.35);cursor:zoom-in}
       #invMapViewer.zoomed .imv-stage{align-items:flex-start;justify-content:flex-start}
