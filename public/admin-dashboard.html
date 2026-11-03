@@ -86,6 +86,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="calendar.js"></script>
+<script src="inventory-map.js"></script>
 </head>
 <body class="bg-gray-950 text-white min-h-screen">
 
@@ -348,6 +349,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
           <button onclick="backToProperties()" class="text-xs text-gray-400 hover:text-white flex items-center gap-1">← Back to Properties</button>
           <h3 id="unitsViewTitle" class="font-semibold text-white text-sm"></h3>
           <div class="flex items-center gap-3">
+            <button id="unitInvMapBtn" type="button" onclick="openCurrentInventoryMap()" class="hidden items-center gap-1.5 text-xs font-medium text-orange-500 hover:text-orange-600 border border-orange-500/30 hover:border-orange-500/50 rounded-lg px-3 py-1.5 transition-colors"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg> Inventory Map</button>
             <button id="unitArchivedBtn" onclick="toggleUnitArchived()" class="text-xs text-gray-400 hover:text-white font-medium">Show Archived</button>
             <button id="unitAddBtn" onclick="openModal('addUnitModal')" class="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">+ Add Unit</button>
           </div>
@@ -1110,6 +1112,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
     <p class="text-xs text-gray-500 mb-4">Name, location, type, and a photo — units come next.</p>
     <div class="space-y-3">
       <div><label class="text-xs text-gray-400 mb-1 block">Property Photo</label><input id="pImage" type="file" accept="image/*" class="field"></div>
+      <div><label class="text-xs text-gray-400 mb-1 block">Inventory Map (optional)</label><input id="pInvMap" type="file" accept="image/*" class="field"><p class="text-xs text-gray-400 mt-1">The site development plan showing which lots or units are available.</p></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Property Name *</label><input id="pName" type="text" class="field" placeholder="e.g. Bernwood Centrale"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Location *</label><input id="pLoc" type="text" class="field" placeholder="e.g. Cebu City"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Property Type *</label><select id="pType" class="field"><option value="Condo">Condo</option><option value="House and Lot">House and Lot</option><option value="Lot">Lot</option></select></div>
@@ -1140,6 +1143,14 @@ tr:hover td{background:rgba(0,0,0,.02)}
     <div class="space-y-3">
       <input id="ePI" type="hidden">
       <div><label class="text-xs text-gray-400 mb-1 block">Property Photo (leave blank to keep current)</label><input id="ePImage" type="file" accept="image/*" class="field"></div>
+      <div>
+        <label class="text-xs text-gray-400 mb-1 block">Inventory Map (leave blank to keep current)</label>
+        <input id="ePInvMap" type="file" accept="image/*" class="field">
+        <div id="ePInvMapCurrent" class="mt-1.5 items-center justify-between gap-2 text-xs" style="display:none">
+          <button type="button" id="ePInvMapView" class="text-orange-500 hover:text-orange-600 font-medium">View current map</button>
+          <label class="flex items-center gap-1.5 text-gray-500 cursor-pointer"><input id="ePInvMapRemove" type="checkbox"> Remove map</label>
+        </div>
+      </div>
       <div><label class="text-xs text-gray-400 mb-1 block">Property Name</label><input id="ePName" type="text" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Location</label><input id="ePLoc" type="text" class="field"></div>
       <div><label class="text-xs text-gray-400 mb-1 block">Property Type</label><select id="ePType" class="field"><option value="Condo">Condo</option><option value="House and Lot">House and Lot</option><option value="Lot">Lot</option></select></div>
@@ -1913,6 +1924,7 @@ async function jumpToProperty(propId, propName, propType, devId, devName, matchU
   document.getElementById('devPropsView').classList.add('hidden');
   document.getElementById('unitsView').classList.remove('hidden');
   document.getElementById('unitsViewTitle').textContent = propName;
+  syncUnitInvMapBtn();
   await renderUnits();
   if(matchUnitId) viewUnit(matchUnitId);
 }
@@ -2611,8 +2623,25 @@ function viewProperty(id){
   showingArchivedUnits = false;
   document.getElementById('unitArchivedBtn').textContent = 'Show Archived';
   document.getElementById('unitAddBtn').style.display = '';
+  syncUnitInvMapBtn();
   renderUnits();
 }
+// ── INVENTORY MAP button on a property's units page ──
+let currentPropInvMap = null;
+async function syncUnitInvMapBtn(){
+  let p = (typeof propCache !== 'undefined' ? propCache : []).find(x => x.id === currentPropId);
+  if(!p){
+    try {
+      const res = await fetch('/api/properties', { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') } });
+      if(res.ok) p = (await res.json()).find(x => x.id === currentPropId);
+    } catch(e) { console.error('Could not load the inventory map:', e); }
+  }
+  currentPropInvMap = p && p.inventory_map_url ? p.inventory_map_url : null;
+  const btn = document.getElementById('unitInvMapBtn');
+  btn.classList.toggle('hidden', !currentPropInvMap);
+  btn.classList.toggle('inline-flex', !!currentPropInvMap);
+}
+function openCurrentInventoryMap(){ if(currentPropInvMap) showInventoryMap(currentPropInvMap, currentPropName); }
 function backToProperties(){
   document.getElementById('unitsView').classList.add('hidden');
   document.getElementById('devPropsView').classList.remove('hidden');
@@ -2734,6 +2763,8 @@ async function saveProp(){
   if(currentDevId) fd.append('developer_id', currentDevId);
   const imgFile = document.getElementById('pImage').files[0];
   if(imgFile) fd.append('image', imgFile);
+  const invMapFile = document.getElementById('pInvMap').files[0];
+  if(invMapFile) fd.append('inventory_map', invMapFile);
 
   try {
     const res = await fetch('/api/properties', {
@@ -2753,6 +2784,7 @@ async function saveProp(){
     closeModal('addPropModal');
     ['pName','pLoc','pTurnover'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('pImage').value='';
+    document.getElementById('pInvMap').value='';
     document.getElementById('pType').value='Condo';
     document.getElementById('pSellStatus').value='RFO';
     document.getElementById('pTurnoverRow').classList.add('hidden');
@@ -2773,6 +2805,10 @@ function openEditProp(id){
   document.getElementById('ePTurnover').value=p.turnover_date||'';
   document.getElementById('ePTurnoverRow').classList.toggle('hidden', (p.selling_status||'RFO')!=='Pre-selling');
   document.getElementById('ePImage').value='';
+  document.getElementById('ePInvMap').value='';
+  document.getElementById('ePInvMapRemove').checked=false;
+  document.getElementById('ePInvMapCurrent').style.display = p.inventory_map_url ? 'flex' : 'none';
+  document.getElementById('ePInvMapView').onclick = () => showInventoryMap(p.inventory_map_url, p.name);
   document.getElementById('ePLat').value = p.latitude || '';
   document.getElementById('ePLng').value = p.longitude || '';
   document.getElementById('ePLatLngLabel').textContent = (p.latitude && p.longitude)
@@ -2800,6 +2836,9 @@ async function updateProp(){
   fd.append('longitude', document.getElementById('ePLng').value || '');
   const imgFile = document.getElementById('ePImage').files[0];
   if(imgFile) fd.append('image', imgFile);
+  const invMapFile = document.getElementById('ePInvMap').files[0];
+  if(invMapFile) fd.append('inventory_map', invMapFile);
+  else if(document.getElementById('ePInvMapRemove').checked) fd.append('remove_inventory_map', 'true');
 
   try {
     const res = await fetch(`/api/properties/${id}`, {

@@ -29,7 +29,8 @@ const getProperties = async (req, res) => {
 const createProperty = async (req, res) => {
   try {
     const { name, location, developer_id, property_type, selling_status, turnover_date, latitude, longitude } = req.body;
-    const image_url = await uploadToStorage(req.file, 'property-photos');
+    const image_url = await uploadToStorage(req.files?.image?.[0], 'property-photos');
+    const inventory_map_url = await uploadToStorage(req.files?.inventory_map?.[0], 'inventory-maps');
 
     const { data: property, error } = await supabase
       .from('properties')
@@ -43,6 +44,8 @@ const createProperty = async (req, res) => {
         turnover_date: turnover_date || null,
         latitude: latitude || null,
         longitude: longitude || null,
+        // only sent when a map was uploaded, so adding a property still works before inventory_map.sql is run
+        ...(inventory_map_url ? { inventory_map_url } : {}),
         date: new Date(),
       }])
       .select()
@@ -73,7 +76,10 @@ const updateProperty = async (req, res) => {
     };
 
     if (developer_id) updateData.developer_id = developer_id;
-    if (req.file) updateData.image_url = await uploadToStorage(req.file, 'property-photos');
+    if (req.files?.image?.[0]) updateData.image_url = await uploadToStorage(req.files.image[0], 'property-photos');
+    // A new inventory map replaces the old one; remove_inventory_map=true clears it
+    if (req.files?.inventory_map?.[0]) updateData.inventory_map_url = await uploadToStorage(req.files.inventory_map[0], 'inventory-maps');
+    else if (req.body.remove_inventory_map === 'true') updateData.inventory_map_url = null;
 
     const { data: property, error } = await supabase
       .from('properties')

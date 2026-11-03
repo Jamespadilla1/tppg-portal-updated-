@@ -76,6 +76,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="calendar.js"></script>
+<script src="inventory-map.js"></script>
 </head>
 <body class="bg-gray-950 text-white min-h-screen">
 
@@ -221,6 +222,7 @@
         <div class="flex items-center justify-between flex-wrap gap-2">
           <button onclick="propBackToProperties()" class="text-xs text-gray-400 hover:text-gray-700 flex items-center gap-1">← Back to Properties</button>
           <h3 id="propUnitsTitle" class="font-semibold text-sm"></h3>
+          <button id="propInvMapBtn" type="button" onclick="openPropInventoryMap()" class="hidden items-center gap-1.5 text-xs font-medium text-orange-500 hover:text-orange-600 border border-orange-500/30 hover:border-orange-500/50 rounded-lg px-3 py-1.5 transition-colors"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg> Inventory Map</button>
         </div>
         <div class="flex gap-2 flex-wrap">
           <input type="text" placeholder="Search units…" oninput="searchUnitsList(this.value)" class="field w-full sm:w-64 text-xs">
@@ -1280,6 +1282,13 @@ window.propViewProperty = function(id, name){
   document.getElementById('propListView').classList.add('hidden');
   document.getElementById('propUnitsView').classList.remove('hidden');
   document.getElementById('propUnitsTitle').textContent = name;
+  // Inventory map button: only shown when this property has one
+  const prop = propAllProps.find(p => p.id === id);
+  const mapUrl = prop && prop.inventory_map_url ? prop.inventory_map_url : null;
+  const mapBtn = document.getElementById('propInvMapBtn');
+  mapBtn.classList.toggle('hidden', !mapUrl);
+  mapBtn.classList.toggle('inline-flex', !!mapUrl);
+  window.openPropInventoryMap = () => { if(mapUrl) showInventoryMap(mapUrl, name); };
   unitsListSearch = '';
   renderUnitsList();
 }
