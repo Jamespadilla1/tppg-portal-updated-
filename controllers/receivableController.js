@@ -1,4 +1,5 @@
 const supabase = require('../config/db');
+const uploadToStorage = require('../utils/uploadToStorage');
 
 // GET /api/commission-receivables (admin only)
 const getReceivables = async (req, res) => {
@@ -128,4 +129,35 @@ const permanentlyDeleteReceivable = async (req, res) => {
   }
 };
 
-module.exports = { getReceivables, getMyReceivables, createReceivable, updateReceivable, deleteReceivable, restoreReceivable, permanentlyDeleteReceivable };
+// PATCH /api/commission-receivables/:id/proof — Admin only. Attaches a photo of the paycheck (or a
+// PDF) to one commission release, form field "proof", replacing any earlier one. Body remove=true
+// clears it. The seller sees it next to that release in their Commission page.
+const PROOF_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+const PROOF_MAX_BYTES = 10 * 1024 * 1024;
+const setReceivableProof = async (req, res) => {
+  try {
+    const { data: existing, error: findErr } = await supabase.from('commission_receivables').select('id').eq('id', req.params.id).maybeSingle();
+    if (findErr) throw findErr;
+    if (!existing) return res.status(404).json({ message: 'Release not found.' });
+
+    let patch;
+    if (req.body.remove === 'true' || req.body.remove === true) {
+      patch = { proof_url: null, proof_uploaded_at: null };
+    } else {
+      const file = req.file;
+      if (!file) return res.status(400).json({ message: 'Choose a paycheck photo to upload.' });
+      if (!PROOF_TYPES.includes(file.mimetype)) return res.status(400).json({ message: 'The paycheck photo must be a JPG, PNG, WEBP image or a PDF.' });
+      if (file.size > PROOF_MAX_BYTES) return res.status(400).json({ message: 'The paycheck photo must be 10 MB or smaller.' });
+      patch = { proof_url: await uploadToStorage(file, 'release-proofs'), proof_uploaded_at: new Date() };
+    }
+
+    const { data, error } = await supabase.from('commission_receivables').update(patch).eq('id', req.params.id).select().single();
+    if (error) { console.error('setReceivableProof update failed:', error); return res.status(500).json({ message: 'Update failed: ' + error.message + ' (did you run database/release_proof.sql?)' }); }
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getReceivables, getMyReceivables, createReceivable, updateReceivable, deleteReceivable, restoreReceivable, permanentlyDeleteReceivable, setReceivableProof };

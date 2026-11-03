@@ -653,7 +653,18 @@ async function computeReleaseNotices(){
   const payslips = myBuyers
     .filter(b => !b.cancelled && b.payslip_url && recent(b.payslip_uploaded_at))
     .map(b => ({ kind: 'payslip', key: `payslip:${b.id}:${b.payslip_uploaded_at}`, client: b.name, note: b.payslip_note || '', date: b.payslip_uploaded_at, url: b.payslip_url }));
-  return [...approved, ...payslips].sort((a, b) => new Date(b.date) - new Date(a.date));
+  // Paycheck photos Admin attached to commission releases on this person's sales
+  let paychecks = [];
+  try {
+    const rr = await fetch('/api/commission-receivables/mine', { headers: { 'Authorization': 'Bearer ' + token } });
+    if(rr.ok){
+      const byId = new Map(myBuyers.map(b => [b.id, b]));
+      paychecks = (await rr.json())
+        .filter(r => r.proof_url && recent(r.proof_uploaded_at) && byId.has(r.buyer_id) && !byId.get(r.buyer_id).cancelled)
+        .map(r => ({ kind: 'paycheck', key: `paycheck:${r.id}:${r.proof_uploaded_at}`, client: byId.get(r.buyer_id).name, amount: r.amount, releaseDate: r.release_date, date: r.proof_uploaded_at, url: r.proof_url }));
+    }
+  } catch(e){ console.error('Could not load paycheck notices:', e); }
+  return [...approved, ...payslips, ...paychecks].sort((a, b) => new Date(b.date) - new Date(a.date));
 }
 
 // Which notices has this person already looked at? (remembered per person, in this browser)
@@ -682,7 +693,13 @@ async function renderPromotions(){
   const unreadP = new Set(promoUnread(promoList).map(p => p.id));
 
   releaseNotices.forEach(n => {
-    html += n.kind === 'payslip'
+    html += n.kind === 'paycheck'
+    ? `<div class="px-4 py-3 border-b border-gray-100">
+      <div class="flex items-center gap-2 mb-0.5">${unreadN.has(n.key) ? '<span class="badge badge-orange">New</span>' : ''}<span class="badge badge-blue">📷 Paycheck photo</span><span class="text-[11px] text-gray-400 ml-auto">${promoFmtDate(n.date)}</span></div>
+      <p class="text-sm font-semibold">${promoEsc(n.client)}</p>
+      <p class="text-xs text-gray-500">Admin attached the paycheck for your ${peso(n.amount)} release${n.releaseDate ? ' (' + fmtReleaseDate(n.releaseDate) + ')' : ''}. <a href="${promoEsc(n.url)}" target="_blank" rel="noopener" class="text-blue-600 hover:underline font-medium">View photo</a></p>
+    </div>`
+    : n.kind === 'payslip'
     ? `<div class="px-4 py-3 border-b border-gray-100">
       <div class="flex items-center gap-2 mb-0.5">${unreadN.has(n.key) ? '<span class="badge badge-orange">New</span>' : ''}<span class="badge badge-blue">📄 Pay slip uploaded</span><span class="text-[11px] text-gray-400 ml-auto">${promoFmtDate(n.date)}</span></div>
       <p class="text-sm font-semibold">${promoEsc(n.client)}</p>
@@ -1620,7 +1637,8 @@ async function renderMyReceivables(){
           <td class="py-1.5 pr-4 text-xs text-gray-500">${fmtReleaseDate(r.release_date)}</td>
           <td class="py-1.5 pr-4 text-xs text-orange-600 font-semibold">${peso(r.amount)}</td>
           <td class="py-1.5 pr-4 text-xs">${r.release_type || '—'}</td>
-          <td class="py-1.5 text-xs text-gray-500">${r.notes || '—'}</td>
+          <td class="py-1.5 pr-4 text-xs text-gray-500">${r.notes || '—'}</td>
+          <td class="py-1.5 text-xs">${r.proof_url ? `<a href="${promoEsc(r.proof_url)}" target="_blank" rel="noopener" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">📷 View</a>` : '<span class="text-gray-400">—</span>'}</td>
         </tr>`).join('');
       return `
       <details class="border-b border-gray-200 ${cancelled ? 'opacity-60' : ''}">
@@ -1637,7 +1655,7 @@ async function renderMyReceivables(){
         </summary>
         <div class="px-5 pb-3 overflow-x-auto">
           <table class="w-full">
-            <thead><tr class="text-gray-400 text-[11px] uppercase"><th class="text-left font-medium pb-1 pr-4">Release Date</th><th class="text-left font-medium pb-1 pr-4">Amount</th><th class="text-left font-medium pb-1 pr-4">Type</th><th class="text-left font-medium pb-1">Notes</th></tr></thead>
+            <thead><tr class="text-gray-400 text-[11px] uppercase"><th class="text-left font-medium pb-1 pr-4">Release Date</th><th class="text-left font-medium pb-1 pr-4">Amount</th><th class="text-left font-medium pb-1 pr-4">Type</th><th class="text-left font-medium pb-1 pr-4">Notes</th><th class="text-left font-medium pb-1">Paycheck</th></tr></thead>
             <tbody>${rowsHtml}</tbody>
           </table>
         </div>

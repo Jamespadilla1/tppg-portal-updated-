@@ -491,8 +491,32 @@ tr:hover td{background:rgba(0,0,0,.02)}
             <div><label class="text-xs text-gray-400 mb-1 block">Amount Receivable (₱)</label><input id="qrAmount" type="text" inputmode="decimal" class="field" placeholder="0" oninput="formatMoneyInput(this)"></div>
             <div><label class="text-xs text-gray-400 mb-1 block">Percent <span class="text-gray-600">(optional)</span></label><input id="qrPercent" type="text" class="field" placeholder="e.g. 5%"></div>
             <div><label class="text-xs text-gray-400 mb-1 block">Note <span class="text-gray-600">(optional)</span></label><textarea id="qrNote" rows="2" class="field" placeholder="Add a note for this release"></textarea></div>
+            <div><label class="text-xs text-gray-400 mb-1 block">Paycheck Photo <span class="text-gray-600">(optional)</span></label><input id="qrProof" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" class="field"><p class="text-[11px] text-gray-500 mt-1">A photo of the check or proof of payment. The seller can see it. You can also add it later.</p></div>
             <p id="qrErr" class="text-red-400 text-xs hidden"></p>
             <button onclick="saveQuickRelease()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Save Release</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAYCHECK PHOTO (one per commission release) -->
+      <div id="releaseProofModal" class="modal-backdrop">
+        <div class="modal-box">
+          <button onclick="closeModal('releaseProofModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
+          <h3 class="font-bold text-lg mb-1">Paycheck Photo</h3>
+          <p class="text-xs text-gray-500 mb-4" id="rpSubtitle"></p>
+          <input type="hidden" id="rpReleaseId">
+          <div class="space-y-3">
+            <div id="rpCurrent" class="hidden rounded-lg border border-white/8 bg-white/4 p-3 text-xs">
+              <a id="rpCurrentLink" target="_blank" rel="noopener"><img id="rpCurrentImg" alt="Current paycheck photo" class="w-full max-h-56 object-contain rounded-md mb-2 hidden"></a>
+              <div class="flex items-center justify-between gap-2">
+                <a id="rpCurrentOpen" target="_blank" rel="noopener" class="text-blue-400 hover:text-blue-300 hover:underline">Open current photo</a>
+                <button type="button" onclick="removeReleaseProof()" class="text-red-400 hover:text-red-300">Remove</button>
+              </div>
+            </div>
+            <div><label class="text-xs text-gray-400 mb-1 block" id="rpFileLabel">Paycheck photo *</label><input id="rpFile" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" class="field"></div>
+            <p class="text-[11px] text-gray-500">JPG, PNG, WEBP or PDF, up to 10 MB. The seller sees it next to this release.</p>
+            <p id="rpErr" class="text-red-400 text-xs hidden"></p>
+            <button id="rpSaveBtn" onclick="saveReleaseProof()" class="w-full bg-orange-500 hover:bg-orange-600 py-2.5 rounded-lg font-semibold text-sm transition-colors">Upload Photo</button>
           </div>
         </div>
       </div>
@@ -4603,11 +4627,14 @@ window.openCommClientRecords = async (role, id, name) => {
         ${releases.length ? `
         <div class="mt-3 pt-3 border-t border-white/8">
           <p class="text-[11px] text-gray-500 uppercase tracking-wide mb-1.5">Recorded Releases (${releases.length}) · Total: ${peso(releasesTotal)}</p>
-          <div class="space-y-1 max-h-28 overflow-y-auto">
+          <div class="space-y-1.5 max-h-40 overflow-y-auto">
             ${releases.map(r=>`
-              <div class="flex justify-between text-xs">
+              <div class="flex justify-between gap-3 text-xs">
                 <span class="text-gray-400">${new Date(r.release_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})} <span class="text-gray-600">· ${r.release_type}${r.percent ? ' · '+promoEsc(r.percent) : ''}</span>${r.notes ? `<span class="block text-gray-500 italic">“${promoEsc(r.notes)}”</span>` : ''}</span>
-                <span class="text-green-400 font-medium">${peso(r.amount)}</span>
+                <span class="flex items-center gap-2.5 shrink-0">
+                  <button onclick="openReleaseProof('${r.id}')" class="${r.proof_url ? 'text-blue-400 hover:text-blue-300' : 'text-gray-500 hover:text-orange-400'} hover:underline" title="${r.proof_url ? 'View or replace the paycheck photo' : 'Add a photo of the paycheck'}">${r.proof_url ? '📷 Paycheck' : '+ Paycheck photo'}</button>
+                  <span class="text-green-400 font-medium">${peso(r.amount)}</span>
+                </span>
               </div>
             `).join('')}
           </div>
@@ -4682,6 +4709,64 @@ window.removePayslip = async (buyerId) => {
   } catch(err){ console.error('Error removing pay slip:', err); alert('Failed to remove the pay slip.'); }
 };
 
+// ── Paycheck photo (one per commission release): admin uploads, the seller sees it beside that release ──
+async function uploadReleaseProof(releaseId, file, remove){
+  if(!remove){
+    if(!['image/jpeg','image/png','image/webp','application/pdf'].includes(file.type)) return 'It must be a JPG, PNG, WEBP image or a PDF.';
+    if(file.size > 10 * 1024 * 1024) return 'It must be 10 MB or smaller.';
+  }
+  const form = new FormData();
+  if(remove) form.append('remove', 'true'); else form.append('proof', file);
+  try {
+    const res = await fetch(`/api/commission-receivables/${releaseId}/proof`, { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }, body: form });
+    const body = await res.json().catch(()=>({}));
+    if(!res.ok) return body.message || 'Upload failed.';
+    const i = (allReceivablesCache || []).findIndex(x => x.id === releaseId);
+    if(i >= 0) allReceivablesCache[i] = { ...allReceivablesCache[i], ...body };
+    return null;
+  } catch(e){ console.error('Paycheck photo upload failed:', e); return 'Upload failed.'; }
+}
+window.openReleaseProof = (releaseId) => {
+  const r = (allReceivablesCache || []).find(x => x.id === releaseId);
+  if(!r) return;
+  const b = commBuyersCache.find(x => x.id === r.buyer_id);
+  document.getElementById('rpReleaseId').value = releaseId;
+  document.getElementById('rpSubtitle').textContent = `${b ? b.name + ' · ' : ''}${new Date(r.release_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})} · ${peso(r.amount)}`;
+  document.getElementById('rpFile').value = '';
+  document.getElementById('rpErr').classList.add('hidden');
+  const has = !!r.proof_url, isPdf = has && /\.pdf($|\?)/i.test(r.proof_url);
+  document.getElementById('rpCurrent').classList.toggle('hidden', !has);
+  document.getElementById('rpCurrentImg').classList.toggle('hidden', !has || isPdf);
+  if(has){
+    document.getElementById('rpCurrentImg').src = isPdf ? '' : r.proof_url;
+    document.getElementById('rpCurrentLink').href = r.proof_url;
+    document.getElementById('rpCurrentOpen').href = r.proof_url;
+    document.getElementById('rpCurrentOpen').textContent = isPdf ? 'Open current PDF' : 'Open current photo';
+  }
+  document.getElementById('rpFileLabel').textContent = has ? 'Replace with a new photo' : 'Paycheck photo *';
+  document.getElementById('rpSaveBtn').textContent = has ? 'Replace Photo' : 'Upload Photo';
+  openModal('releaseProofModal');
+};
+window.saveReleaseProof = async () => {
+  const errEl = document.getElementById('rpErr');
+  const file = document.getElementById('rpFile').files[0];
+  if(!file){ errEl.textContent = 'Choose a photo to upload.'; errEl.classList.remove('hidden'); return; }
+  const btn = document.getElementById('rpSaveBtn'), label = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Uploading…';
+  const err = await uploadReleaseProof(document.getElementById('rpReleaseId').value, file);
+  btn.disabled = false; btn.textContent = label;
+  if(err){ errEl.textContent = err; errEl.classList.remove('hidden'); return; }
+  closeModal('releaseProofModal');
+  if(lastCommRecordsArgs) openCommClientRecords(...lastCommRecordsArgs);
+};
+window.removeReleaseProof = async () => {
+  if(!confirm('Remove this paycheck photo? The seller will no longer see it.')) return;
+  const err = await uploadReleaseProof(document.getElementById('rpReleaseId').value, null, true);
+  if(err){ alert(err); return; }
+  closeModal('releaseProofModal');
+  if(lastCommRecordsArgs) openCommClientRecords(...lastCommRecordsArgs);
+};
+
 window.openQuickRelease = (buyerId, clientName, paymentTerm) => {
   document.getElementById('qrBuyerId').value = buyerId;
   document.getElementById('qrPaymentTerm').value = paymentTerm;
@@ -4691,6 +4776,7 @@ window.openQuickRelease = (buyerId, clientName, paymentTerm) => {
   document.getElementById('qrAmount').value = '';
   document.getElementById('qrPercent').value = '';
   document.getElementById('qrNote').value = '';
+  document.getElementById('qrProof').value = '';
   document.getElementById('qrErr').classList.add('hidden');
   openModal('quickReleaseModal');
 };
@@ -4713,6 +4799,12 @@ window.saveQuickRelease = async () => {
       body: JSON.stringify({ buyer_id, amount, release_date, release_type, percent: document.getElementById('qrPercent').value.trim(), notes: document.getElementById('qrNote').value.trim() }),
     });
     if(!res.ok) throw new Error('Save failed');
+    const created = await res.json().catch(()=>null);
+    const proofFile = document.getElementById('qrProof').files[0];
+    if(proofFile && created && created.id){
+      const err = await uploadReleaseProof(created.id, proofFile);
+      if(err) alert('The release was saved, but the paycheck photo was not: ' + err + ' You can add it from Recorded Releases.');
+    }
     closeModal('quickReleaseModal');
     closeModal('commClientsModal');
     if(typeof renderReceivables === 'function') renderReceivables();
