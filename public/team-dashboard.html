@@ -723,6 +723,7 @@ document.addEventListener('click', e => {
 });
 
 window.showSection = (id, linkEl) => {
+  try { history.replaceState(null, '', '#' + id); } catch(e) {}
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById('sec-'+id).classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
@@ -2007,7 +2008,15 @@ function renderProfile(){
   document.getElementById('profileRate').textContent = (localStorage.getItem('commissionRate')||'0') + '%';
 }
 
-renderOverview();
+// ── Stay on the same page after a refresh ──
+// The open section is kept in the address bar (e.g. …dashboard.html#calendar); on load, reopen it.
+(function(){
+  const start = decodeURIComponent((location.hash || '').slice(1));
+  const link = start && document.getElementById('sec-' + start)
+    ? [...document.querySelectorAll('.nav-link')].find(l => (l.getAttribute('onclick') || '').includes(`showSection('${start}'`))
+    : null;
+  if (link) showSection(start, link); else renderOverview();
+})();
 
 });
 </script>

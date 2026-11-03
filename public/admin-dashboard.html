@@ -1525,6 +1525,7 @@ function addLog(msg) {
 // ── SECTION SWITCHING ──
 let currentSection = 'overview';
 function go(id, linkEl) {
+  try { history.replaceState(null, '', '#' + id); } catch(e) {}
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById('sec-'+id).classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
@@ -6120,7 +6121,15 @@ async function removePromo(id){
 
 // ── INIT ──
 addLog('Admin logged in');
-renderOverview();
+// ── Stay on the same page after a refresh ──
+// The open section is kept in the address bar (e.g. …admin-dashboard.html#calendar); on load, reopen it.
+(function(){
+  const start = decodeURIComponent((location.hash || '').slice(1));
+  const link = start && document.getElementById('sec-' + start)
+    ? [...document.querySelectorAll('.nav-link')].find(l => (l.getAttribute('onclick') || '').includes(`go('${start}'`))
+    : null;
+  if (link) go(start, link); else renderOverview();
+})();
 loadAdminNotifs();
 </script>
 <script>
