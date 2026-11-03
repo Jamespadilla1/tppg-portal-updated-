@@ -1221,6 +1221,37 @@ tr:hover td{background:rgba(0,0,0,.02)}
         <div><label class="text-xs text-gray-400 mb-1 block">Downpayment Terms (months)</label><input id="uDPTerms" type="number" min="1" class="field" placeholder="24" value="24" oninput="syncMonthlyDP('u')"></div>
         <div><label class="text-xs text-gray-400 mb-1 block">Monthly DP (₱)</label><input id="uMonthlyDP" type="text" inputmode="decimal" class="field" placeholder="14,583" oninput="formatMoneyInput(this);syncDPFromMonthly('u')"></div>
       </div>
+      <div id="uBankFin" class="rounded-lg border border-white/10 p-3 space-y-2">
+        <p class="text-xs font-semibold text-gray-300">Bank Financing <span class="text-gray-600 font-normal">(optional)</span></p>
+        <div><label class="text-xs text-gray-400 mb-1 block">Bank Financing Amount (₱)</label><input id="uBFAmount" type="text" inputmode="decimal" class="field" placeholder="TCP − Downpayment" oninput="formatMoneyInput(this);this.dataset.manual=this.value?'1':'';computeBankFin('u')"></div>
+        <p class="text-[11px] text-gray-500">Fills in automatically as TCP − Downpayment. Type over it if the bank finances a different amount. Monthly amortization and total interest compute by themselves.</p>
+        <div class="grid grid-cols-12 gap-1.5 text-[11px] text-gray-500"><span class="col-span-3">Year Term</span><span class="col-span-2">Rate (%)</span><span class="col-span-4">Monthly Amortization</span><span class="col-span-3">Total Interest</span></div>
+        <div class="grid grid-cols-12 gap-1.5 items-center">
+          <select id="uBFYears0" class="field col-span-3 px-1 text-xs" onchange="computeBankFin('u')"><option value="">— not used —</option><option value="5">5 years</option><option value="10">10 years</option><option value="15">15 years</option><option value="20">20 years</option><option value="25">25 years</option><option value="30">30 years</option></select>
+          <input id="uBFRate0" type="number" step="0.01" min="0" max="100" class="field col-span-2 px-1 text-xs" placeholder="7.5" oninput="computeBankFin('u')">
+          <p id="uBFMonthly0" class="col-span-4 text-xs text-orange-400 font-semibold">—</p>
+          <p id="uBFInterest0" class="col-span-3 text-xs text-gray-300">—</p>
+        </div>
+        <div class="grid grid-cols-12 gap-1.5 items-center">
+          <select id="uBFYears1" class="field col-span-3 px-1 text-xs" onchange="computeBankFin('u')"><option value="">— not used —</option><option value="5">5 years</option><option value="10">10 years</option><option value="15">15 years</option><option value="20">20 years</option><option value="25">25 years</option><option value="30">30 years</option></select>
+          <input id="uBFRate1" type="number" step="0.01" min="0" max="100" class="field col-span-2 px-1 text-xs" placeholder="7.5" oninput="computeBankFin('u')">
+          <p id="uBFMonthly1" class="col-span-4 text-xs text-orange-400 font-semibold">—</p>
+          <p id="uBFInterest1" class="col-span-3 text-xs text-gray-300">—</p>
+        </div>
+        <div class="grid grid-cols-12 gap-1.5 items-center">
+          <select id="uBFYears2" class="field col-span-3 px-1 text-xs" onchange="computeBankFin('u')"><option value="">— not used —</option><option value="5">5 years</option><option value="10">10 years</option><option value="15">15 years</option><option value="20">20 years</option><option value="25">25 years</option><option value="30">30 years</option></select>
+          <input id="uBFRate2" type="number" step="0.01" min="0" max="100" class="field col-span-2 px-1 text-xs" placeholder="7.5" oninput="computeBankFin('u')">
+          <p id="uBFMonthly2" class="col-span-4 text-xs text-orange-400 font-semibold">—</p>
+          <p id="uBFInterest2" class="col-span-3 text-xs text-gray-300">—</p>
+        </div>
+        <div class="grid grid-cols-12 gap-1.5 items-center">
+          <select id="uBFYears3" class="field col-span-3 px-1 text-xs" onchange="computeBankFin('u')"><option value="">— not used —</option><option value="5">5 years</option><option value="10">10 years</option><option value="15">15 years</option><option value="20">20 years</option><option value="25">25 years</option><option value="30">30 years</option></select>
+          <input id="uBFRate3" type="number" step="0.01" min="0" max="100" class="field col-span-2 px-1 text-xs" placeholder="7.5" oninput="computeBankFin('u')">
+          <p id="uBFMonthly3" class="col-span-4 text-xs text-orange-400 font-semibold">—</p>
+          <p id="uBFInterest3" class="col-span-3 text-xs text-gray-300">—</p>
+        </div>
+        <p id="uBFErr" class="text-red-400 text-xs hidden"></p>
+      </div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="text-xs text-gray-400 mb-1 block">Bedrooms</label><select id="uBeds" class="field">
           <option value="0">Studio</option>
@@ -1268,6 +1299,37 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div class="grid grid-cols-2 gap-3">
         <div><label class="text-xs text-gray-400 mb-1 block">Downpayment Terms (months)</label><input id="eUDPTerms" type="number" min="1" class="field" placeholder="24" oninput="syncMonthlyDP('eU')"></div>
         <div><label class="text-xs text-gray-400 mb-1 block">Monthly DP (₱)</label><input id="eUMonthlyDP" type="text" inputmode="decimal" class="field" placeholder="14,583" oninput="formatMoneyInput(this);syncDPFromMonthly('eU')"></div>
+      </div>
+      <div id="eUBankFin" class="rounded-lg border border-white/10 p-3 space-y-2">
+        <p class="text-xs font-semibold text-gray-300">Bank Financing <span class="text-gray-600 font-normal">(optional)</span></p>
+        <div><label class="text-xs text-gray-400 mb-1 block">Bank Financing Amount (₱)</label><input id="eUBFAmount" type="text" inputmode="decimal" class="field" placeholder="TCP − Downpayment" oninput="formatMoneyInput(this);this.dataset.manual=this.value?'1':'';computeBankFin('eU')"></div>
+        <p class="text-[11px] text-gray-500">Fills in automatically as TCP − Downpayment. Type over it if the bank finances a different amount. Monthly amortization and total interest compute by themselves.</p>
+        <div class="grid grid-cols-12 gap-1.5 text-[11px] text-gray-500"><span class="col-span-3">Year Term</span><span class="col-span-2">Rate (%)</span><span class="col-span-4">Monthly Amortization</span><span class="col-span-3">Total Interest</span></div>
+        <div class="grid grid-cols-12 gap-1.5 items-center">
+          <select id="eUBFYears0" class="field col-span-3 px-1 text-xs" onchange="computeBankFin('eU')"><option value="">— not used —</option><option value="5">5 years</option><option value="10">10 years</option><option value="15">15 years</option><option value="20">20 years</option><option value="25">25 years</option><option value="30">30 years</option></select>
+          <input id="eUBFRate0" type="number" step="0.01" min="0" max="100" class="field col-span-2 px-1 text-xs" placeholder="7.5" oninput="computeBankFin('eU')">
+          <p id="eUBFMonthly0" class="col-span-4 text-xs text-orange-400 font-semibold">—</p>
+          <p id="eUBFInterest0" class="col-span-3 text-xs text-gray-300">—</p>
+        </div>
+        <div class="grid grid-cols-12 gap-1.5 items-center">
+          <select id="eUBFYears1" class="field col-span-3 px-1 text-xs" onchange="computeBankFin('eU')"><option value="">— not used —</option><option value="5">5 years</option><option value="10">10 years</option><option value="15">15 years</option><option value="20">20 years</option><option value="25">25 years</option><option value="30">30 years</option></select>
+          <input id="eUBFRate1" type="number" step="0.01" min="0" max="100" class="field col-span-2 px-1 text-xs" placeholder="7.5" oninput="computeBankFin('eU')">
+          <p id="eUBFMonthly1" class="col-span-4 text-xs text-orange-400 font-semibold">—</p>
+          <p id="eUBFInterest1" class="col-span-3 text-xs text-gray-300">—</p>
+        </div>
+        <div class="grid grid-cols-12 gap-1.5 items-center">
+          <select id="eUBFYears2" class="field col-span-3 px-1 text-xs" onchange="computeBankFin('eU')"><option value="">— not used —</option><option value="5">5 years</option><option value="10">10 years</option><option value="15">15 years</option><option value="20">20 years</option><option value="25">25 years</option><option value="30">30 years</option></select>
+          <input id="eUBFRate2" type="number" step="0.01" min="0" max="100" class="field col-span-2 px-1 text-xs" placeholder="7.5" oninput="computeBankFin('eU')">
+          <p id="eUBFMonthly2" class="col-span-4 text-xs text-orange-400 font-semibold">—</p>
+          <p id="eUBFInterest2" class="col-span-3 text-xs text-gray-300">—</p>
+        </div>
+        <div class="grid grid-cols-12 gap-1.5 items-center">
+          <select id="eUBFYears3" class="field col-span-3 px-1 text-xs" onchange="computeBankFin('eU')"><option value="">— not used —</option><option value="5">5 years</option><option value="10">10 years</option><option value="15">15 years</option><option value="20">20 years</option><option value="25">25 years</option><option value="30">30 years</option></select>
+          <input id="eUBFRate3" type="number" step="0.01" min="0" max="100" class="field col-span-2 px-1 text-xs" placeholder="7.5" oninput="computeBankFin('eU')">
+          <p id="eUBFMonthly3" class="col-span-4 text-xs text-orange-400 font-semibold">—</p>
+          <p id="eUBFInterest3" class="col-span-3 text-xs text-gray-300">—</p>
+        </div>
+        <p id="eUBFErr" class="text-red-400 text-xs hidden"></p>
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="text-xs text-gray-400 mb-1 block">Bedrooms</label><select id="eUBeds" class="field">
@@ -3010,6 +3072,7 @@ function viewUnit(id){
       ${isLotProperty() && u.downpayment && u.downpayment_terms_months ? `<div class="flex justify-between items-center"><p class="text-xs text-gray-400">Monthly Downpayment</p><p class="text-sm font-semibold text-white">${peso(Math.round(u.downpayment / u.downpayment_terms_months))}</p></div>
       <div class="flex justify-between items-center"><p class="text-xs text-gray-400">Monthly Term</p><p class="text-sm font-semibold text-white">${u.downpayment_terms_months} months</p></div>` : ''}
     </div>
+    ${bankFinDetailHtml(u)}
     <p class="text-gray-500 text-xs mb-1">Price History</p>
     <div id="unitPriceHistory" class="rounded-lg border border-white/8 bg-white/4 p-3 mb-3 text-xs text-gray-500">Loading price history…</div>
     ${u.computation_image_url ? `
@@ -3090,6 +3153,9 @@ function printUnitSheet(id){
       td { padding: 9px 0; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
       td:first-child { color: #6b7280; width: 40%; }
       td:last-child { font-weight: 600; }
+      table.bf th { text-align: left; font-size: 11px; color: #6b7280; font-weight: 600; padding: 6px 0; border-bottom: 1px solid #e5e7eb; }
+      table.bf td { width: auto; color: #111; font-weight: 400; }
+      table.bf td:nth-child(3) { font-weight: 700; color: #ea580c; }
       .desc { font-size: 13px; color: #374151; line-height: 1.6; white-space: pre-wrap; }
       .foot { margin-top: 30px; font-size: 11px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 12px; }
       @media print { body { padding: 20px; } }
@@ -3104,6 +3170,7 @@ function printUnitSheet(id){
       <div class="price-row"><span>Downpayment</span><span>${u.downpayment ? peso(u.downpayment) : '—'}</span></div>
     </div>
     <table>${rows.map(([k,v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</table>
+    ${bankFinPrintHtml(u)}
     ${u.description ? `<p class="desc">${u.description.replace(/</g,'&lt;')}</p>` : ''}
     <p class="foot">Printed ${new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'})} · Prices and availability subject to change.</p>
     <script>window.onload = () => window.print();<\/script>
@@ -3166,6 +3233,7 @@ function syncDPFromAmount(prefix){
   const pctEl = document.getElementById(prefix+'DownpaymentPct');
   pctEl.value = tcp > 0 ? +(dp/tcp*100).toFixed(2) : '';
   syncMonthlyDP(prefix);
+  syncBankFinAmount(prefix);
 }
 function syncDPFromPct(prefix){
   const tcp = parseMoney(document.getElementById(prefix+'TCP').value);
@@ -3173,6 +3241,7 @@ function syncDPFromPct(prefix){
   const dpEl = document.getElementById(prefix+'Downpayment');
   dpEl.value = tcp > 0 ? (Math.round((tcp * pct / 100) * 100) / 100).toLocaleString('en-US', {maximumFractionDigits:2}) : '';
   syncMonthlyDP(prefix);
+  syncBankFinAmount(prefix);
 }
 // ── Full Downpayment <-> Monthly DP <-> Terms sync ──
 function syncMonthlyDP(prefix){
@@ -3191,11 +3260,110 @@ function syncDPFromMonthly(prefix){
     syncDPFromAmount(prefix); // keep % in sync too
   }
 }
+// ── BANK FINANCING (admin enters; everyone else only views) ──
+// Same formula as Karl's Mortgage Calculator (standard loan amortization):
+//   Monthly = P × r ÷ (1 − (1 + r)^−n), r = yearly rate ÷ 12 ÷ 100, n = years × 12  (0% → P ÷ n)
+//   Total Interest = Monthly × n − P
+// Only the amount and each term's years + rate are saved; the results are always recomputed.
+const BF_DEFAULT_YEARS = [25, 15, 10, 5];
+function bankAmortization(principal, ratePct, years){
+  const P = Number(principal), n = Number(years) * 12, r = Number(ratePct) / 12 / 100;
+  if(!(P > 0) || !(n > 0) || !Number.isFinite(r) || r < 0) return null;
+  const monthly = r === 0 ? P / n : P * r / (1 - Math.pow(1 + r, -n));
+  const m = Math.round(monthly * 100) / 100;
+  return { monthly: m, totalInterest: Math.round((m * n - P) * 100) / 100 };
+}
+function bankFinTerms(u){
+  let terms = u && u.bank_financing_terms;
+  if(typeof terms === 'string'){ try { terms = JSON.parse(terms); } catch(e){ terms = null; } }
+  return Array.isArray(terms) ? terms : [];
+}
+// Each saved term with its computed monthly amortization and total interest
+function bankFinRows(u){
+  return bankFinTerms(u).map(t => ({ years: t.years, rate: t.rate, res: bankAmortization(u.bank_financing_amount, t.rate, t.years) })).filter(r => r.res);
+}
+// For the "Print for Client" sheet
+function bankFinPrintHtml(u){
+  const rows = bankFinRows(u);
+  if(!rows.length) return '';
+  return `<p class="eyebrow" style="margin-top:4px">Bank Financing · ${peso(u.bank_financing_amount)}</p>
+    <table class="bf"><tr><th>Term</th><th>Interest Rate</th><th>Monthly Amortization</th><th>Total Interest</th></tr>${rows.map(r => `<tr><td>${r.years} years</td><td>${r.rate}%</td><td>${peso(r.res.monthly)}</td><td>${peso(r.res.totalInterest)}</td></tr>`).join('')}</table>
+    <p class="foot" style="margin-top:-12px;border:0;padding:0">Estimates only, based on the interest rates shown. Final amortization depends on the bank's approval.</p>`;
+}
+// For the unit details popup
+function bankFinDetailHtml(u){
+  const rows = bankFinRows(u);
+  if(!rows.length) return '';
+  return `<p class="text-gray-500 text-xs mb-1">Bank Financing · <span class="text-white font-semibold">${peso(u.bank_financing_amount)}</span></p>
+    <div class="rounded-lg border border-white/8 bg-white/4 p-3 mb-3 overflow-x-auto"><table class="w-full text-xs">
+      <thead><tr class="text-gray-500"><th class="text-left pb-1.5">Term</th><th class="text-left pb-1.5">Rate</th><th class="text-left pb-1.5">Monthly Amortization</th><th class="text-left pb-1.5">Total Interest</th></tr></thead>
+      <tbody>${rows.map(r => `<tr class="border-t border-white/6"><td class="py-1.5 text-gray-300">${r.years} years</td><td class="py-1.5 text-gray-300">${r.rate}%</td><td class="py-1.5 text-orange-400 font-semibold">${peso(r.res.monthly)}</td><td class="py-1.5 text-gray-300">${peso(r.res.totalInterest)}</td></tr>`).join('')}</tbody>
+    </table></div>`;
+}
+function syncBankFinAmount(prefix){
+  const el = document.getElementById(prefix+'BFAmount');
+  if(!el || el.dataset.manual) return;
+  const left = parseMoney(document.getElementById(prefix+'TCP').value) - parseMoney(document.getElementById(prefix+'Downpayment').value);
+  el.value = left > 0 ? moneyInputText(String(Math.round(left * 100) / 100)) : '';
+  computeBankFin(prefix);
+}
+function computeBankFin(prefix){
+  const P = parseMoney(document.getElementById(prefix+'BFAmount').value);
+  for(let i = 0; i < 4; i++){
+    const years = document.getElementById(prefix+'BFYears'+i).value;
+    const rate = document.getElementById(prefix+'BFRate'+i).value;
+    const res = years && rate !== '' ? bankAmortization(P, rate, years) : null;
+    document.getElementById(prefix+'BFMonthly'+i).textContent = res ? peso(res.monthly) + '/mo' : '—';
+    document.getElementById(prefix+'BFInterest'+i).textContent = res ? peso(res.totalInterest) : '—';
+  }
+}
+function fillBankFin(prefix, u){
+  const terms = bankFinTerms(u);
+  const amountEl = document.getElementById(prefix+'BFAmount');
+  amountEl.dataset.manual = '';
+  amountEl.value = '';
+  for(let i = 0; i < 4; i++){
+    const t = terms.length ? terms[i] : { years: BF_DEFAULT_YEARS[i], rate: '' };
+    document.getElementById(prefix+'BFYears'+i).value = t ? String(t.years) : '';
+    document.getElementById(prefix+'BFRate'+i).value = t && t.rate !== '' && t.rate !== null && t.rate !== undefined ? t.rate : '';
+  }
+  document.getElementById(prefix+'BFErr').classList.add('hidden');
+  if(u && u.bank_financing_amount){
+    amountEl.value = moneyInputText(String(u.bank_financing_amount));
+    // A saved amount that differs from TCP − Downpayment was typed by hand, so keep it fixed
+    const auto = parseMoney(document.getElementById(prefix+'TCP').value) - parseMoney(document.getElementById(prefix+'Downpayment').value);
+    if(Math.abs(Number(u.bank_financing_amount) - auto) > 0.009) amountEl.dataset.manual = '1';
+    computeBankFin(prefix);
+  } else {
+    syncBankFinAmount(prefix);
+  }
+}
+// Returns { amount, terms } with only the terms that have both a year and a rate, or { error }
+function readBankFin(prefix){
+  const terms = [];
+  for(let i = 0; i < 4; i++){
+    const years = document.getElementById(prefix+'BFYears'+i).value;
+    const rate = document.getElementById(prefix+'BFRate'+i).value;
+    if(years && rate !== '') terms.push({ years: Number(years), rate: Number(rate) });
+  }
+  const amount = parseMoney(document.getElementById(prefix+'BFAmount').value);
+  if(terms.length && !(amount > 0)) return { error: 'Enter the bank financing amount, or clear the interest rates.' };
+  if(terms.some(t => !(t.rate >= 0 && t.rate <= 100))) return { error: 'Each interest rate must be between 0 and 100%.' };
+  return { amount, terms };
+}
+function showBankFinError(prefix, msg){
+  const el = document.getElementById(prefix+'BFErr');
+  el.textContent = msg; el.classList.remove('hidden');
+}
+
 async function saveUnit(){
   const name=document.getElementById('uName').value.trim();
   const tcp=parseMoney(document.getElementById('uTCP').value);
   if(!name||!tcp){document.getElementById('uErr').classList.remove('hidden');return;}
   document.getElementById('uErr').classList.add('hidden');
+  const bank = readBankFin('u');
+  if(bank.error) return showBankFinError('u', bank.error);
+  document.getElementById('uBFErr').classList.add('hidden');
 
   const token = localStorage.getItem('token');
   const unitsLeft = document.getElementById('uUnitsLeft').value || '1';
@@ -3220,6 +3388,11 @@ async function saveUnit(){
   if(imgFile) fd.append('image', imgFile);
   const compFile = document.getElementById('uCompImage').files[0];
   if(compFile) fd.append('computation_image', compFile);
+  // Bank financing is sent only when at least one term has a rate
+  if(bank.terms.length){
+    fd.append('bank_financing_amount', bank.amount);
+    fd.append('bank_financing_terms', JSON.stringify(bank.terms));
+  }
 
   try {
     const res = await fetch('/api/units', {
@@ -3227,7 +3400,7 @@ async function saveUnit(){
       headers: { 'Authorization': 'Bearer ' + token },
       body: fd
     });
-    if(!res.ok) throw new Error('Failed to save unit');
+    if(!res.ok){ const b = await res.json().catch(()=>({})); throw new Error(b.message || 'Failed to save unit.'); }
     const constDetail = ['Under Construction','Pre-selling'].includes(constStatus) && finishDate
       ? ` — ${constStatus}, est. finish: ${finishDate}`
       : ` — ${constStatus}`;
@@ -3245,10 +3418,11 @@ async function saveUnit(){
     document.getElementById('uFinishRow').classList.add('hidden');
     document.getElementById('uImage').value='';
     document.getElementById('uCompImage').value='';
+    fillBankFin('u', null);
     renderUnits();
   } catch(err) {
     console.error('Error saving unit:', err);
-    alert('Failed to save unit.');
+    alert(err.message || 'Failed to save unit.');
   }
 }
 function openEditUnit(id){
@@ -3273,6 +3447,7 @@ function openEditUnit(id){
   document.getElementById('eUDesc').value=u.description||'';
   document.getElementById('eUImage').value='';
   document.getElementById('eUCompImage').value='';
+  fillBankFin('eU', u);
   applyLotMode();
   openModal('editUnitModal');
 }
@@ -3286,6 +3461,10 @@ async function updateUnit(){
   const oldUnit = unitCache.find(x => x.id === id);
   const unitsLeftChanged = oldUnit && String(oldUnit.units_left??1) !== String(newUnitsLeft);
   const constChanged = oldUnit && oldUnit.construction_status !== newConstStatus;
+
+  const bank = readBankFin('eU');
+  if(bank.error) return showBankFinError('eU', bank.error);
+  document.getElementById('eUBFErr').classList.add('hidden');
 
   const fd = new FormData();
   fd.append('unit_name', name);
@@ -3305,6 +3484,11 @@ async function updateUnit(){
   if(imgFile) fd.append('image', imgFile);
   const compFile = document.getElementById('eUCompImage').files[0];
   if(compFile) fd.append('computation_image', compFile);
+  // Sent when there is bank financing now, or there was before (an empty list then clears it)
+  if(bank.terms.length || bankFinTerms(oldUnit).length){
+    fd.append('bank_financing_amount', bank.terms.length ? bank.amount : '');
+    fd.append('bank_financing_terms', JSON.stringify(bank.terms));
+  }
 
   try {
     const res = await fetch(`/api/units/${id}`, {
@@ -3312,7 +3496,7 @@ async function updateUnit(){
       headers: { 'Authorization': 'Bearer ' + token },
       body: fd
     });
-    if(!res.ok) throw new Error('Failed to update unit');
+    if(!res.ok){ const b = await res.json().catch(()=>({})); throw new Error(b.message || 'Failed to update unit.'); }
     let logMsg;
     if(unitsLeftChanged) logMsg = `Unit "${name}" units available changed to ${newUnitsLeft}`;
     else if(constChanged) logMsg = `Unit "${name}" construction status changed to ${newConstStatus}${['Under Construction','Pre-selling'].includes(newConstStatus) && finishDate ? ' (est. finish: '+finishDate+')' : ''}`;
@@ -3326,7 +3510,7 @@ async function updateUnit(){
     renderUnits();
   } catch(err) {
     console.error('Error updating unit:', err);
-    alert('Failed to update unit.');
+    alert(err.message || 'Failed to update unit.');
   }
 }
 async function deleteUnit(id){
@@ -6223,6 +6407,7 @@ addLog('Admin logged in');
   if (link) go(start, link); else renderOverview();
 })();
 loadAdminNotifs();
+fillBankFin('u', null); // Add Unit form starts with the 25 / 15 / 10 / 5 year terms
 </script>
 <script>
 // ── DOUBLE-CLICK / DOUBLE-SUBMIT GUARD ──

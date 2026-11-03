@@ -13,6 +13,30 @@ async function recordPriceChange(unitId, oldTcp, newTcp) {
   if (error) console.error('Failed to record price history (did you run database/unit_price_history.sql?):', error);
 }
 
+// ── Bank financing ──
+// Sent by the admin form only when at least one term has a rate. Returns:
+//   null            → the form sent nothing, leave the unit's bank financing as it is
+//   { error }       → bad input
+//   { amount, terms } → values to save (terms [] clears it)
+const BANK_TERM_YEARS = [5, 10, 15, 20, 25, 30];
+function readBankFinancing(body) {
+  if (body.bank_financing_terms === undefined) return null;
+  let terms;
+  try { terms = JSON.parse(body.bank_financing_terms || '[]'); } catch (e) { return { error: 'Bank financing terms are not valid.' }; }
+  if (!Array.isArray(terms) || terms.length > 4) return { error: 'Bank financing can have at most 4 year terms.' };
+  const clean = [];
+  for (const t of terms) {
+    const years = Number(t.years), rate = Number(t.rate);
+    if (!BANK_TERM_YEARS.includes(years)) return { error: 'Choose a year term of 5, 10, 15, 20, 25 or 30 years.' };
+    if (!Number.isFinite(rate) || rate < 0 || rate > 100) return { error: 'Each interest rate must be between 0 and 100%.' };
+    clean.push({ years, rate });
+  }
+  const amount = body.bank_financing_amount === '' || body.bank_financing_amount === undefined ? null : Number(body.bank_financing_amount);
+  if (clean.length && (!Number.isFinite(amount) || amount <= 0)) return { error: 'Enter the bank financing amount.' };
+  return clean.length ? { amount, terms: clean } : { amount: null, terms: null };
+}
+const BANK_SQL_HINT = ' (did you run database/bank_financing.sql?)';
+
 // GET /api/units?property_id=xxx&archived=true
 const getUnits = async (req, res) => {
   try {
@@ -40,12 +64,16 @@ const getUnits = async (req, res) => {
 const createUnit = async (req, res) => {
   try {
     const { property_id, unit_name, tcp, reservation_fee, downpayment, downpayment_terms_months, units_left, bedrooms, square_meters, lot_type, furnishing, construction_status, estimated_finish_date, description } = req.body;
+    const bank = readBankFinancing(req.body);
+    if (bank && bank.error) return res.status(400).json({ message: bank.error });
     const image_url = await uploadToStorage(req.files?.image?.[0], 'unit-photos');
     const computation_image_url = await uploadToStorage(req.files?.computation_image?.[0], 'unit-computations');
 
+    const bankFields = bank ? { bank_financing_amount: bank.amount, bank_financing_terms: bank.terms } : {};
     const { data: unit, error } = await supabase
       .from('units')
       .insert([{
+        ...bankFields,
         property_id,
         unit_name,
         tcp,
@@ -66,7 +94,10 @@ const createUnit = async (req, res) => {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (bank) { console.error('createUnit failed:', error); return res.status(500).json({ message: 'Failed to save unit: ' + error.message + BANK_SQL_HINT }); }
+      throw error;
+    }
     if (unit.tcp !== null && unit.tcp !== undefined && unit.tcp !== '') await recordPriceChange(unit.id, null, unit.tcp);
     res.status(201).json(unit);
   } catch (err) {
@@ -79,6 +110,8 @@ const createUnit = async (req, res) => {
 const updateUnit = async (req, res) => {
   try {
     const { unit_name, tcp, reservation_fee, downpayment, downpayment_terms_months, units_left, bedrooms, square_meters, lot_type, furnishing, construction_status, estimated_finish_date, description } = req.body;
+    const bank = readBankFinancing(req.body);
+    if (bank && bank.error) return res.status(400).json({ message: bank.error });
 
     const updateData = {
       unit_name,
@@ -96,6 +129,7 @@ const updateUnit = async (req, res) => {
       description,
       updated_at: new Date(),
     };
+    if (bank) { updateData.bank_financing_amount = bank.amount; updateData.bank_financing_terms = bank.terms; }
 
     if (req.files?.image?.[0]) updateData.image_url = await uploadToStorage(req.files.image[0], 'unit-photos');
     if (req.files?.computation_image?.[0]) updateData.computation_image_url = await uploadToStorage(req.files.computation_image[0], 'unit-computations');
@@ -110,7 +144,10 @@ const updateUnit = async (req, res) => {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (bank) { console.error('updateUnit failed:', error); return res.status(500).json({ message: 'Failed to update unit: ' + error.message + BANK_SQL_HINT }); }
+      throw error;
+    }
     if (!unit) return res.status(404).json({ message: 'Unit not found.' });
 
     if (before && Number(before.tcp) !== Number(unit.tcp)) await recordPriceChange(unit.id, before.tcp, unit.tcp);

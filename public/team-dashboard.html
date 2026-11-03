@@ -481,6 +481,46 @@ const peso = n => '₱' + Number(n||0).toLocaleString('en-PH', {minimumFractionD
 function parseMoney(str){
   return parseFloat((str||'').toString().replace(/,/g,'')) || 0;
 }
+// ── BANK FINANCING (view only; admin sets it on the unit) ──
+// Same formula as Karl's Mortgage Calculator (standard loan amortization):
+//   Monthly = P × r ÷ (1 − (1 + r)^−n), r = yearly rate ÷ 12 ÷ 100, n = years × 12  (0% → P ÷ n)
+//   Total Interest = Monthly × n − P
+function bankAmortization(principal, ratePct, years){
+  const P = Number(principal), n = Number(years) * 12, r = Number(ratePct) / 12 / 100;
+  if(!(P > 0) || !(n > 0) || !Number.isFinite(r) || r < 0) return null;
+  const monthly = r === 0 ? P / n : P * r / (1 - Math.pow(1 + r, -n));
+  const m = Math.round(monthly * 100) / 100;
+  return { monthly: m, totalInterest: Math.round((m * n - P) * 100) / 100 };
+}
+function bankFinTerms(u){
+  let terms = u && u.bank_financing_terms;
+  if(typeof terms === 'string'){ try { terms = JSON.parse(terms); } catch(e){ terms = null; } }
+  return Array.isArray(terms) ? terms : [];
+}
+// Each saved term with its computed monthly amortization and total interest
+function bankFinRows(u){
+  return bankFinTerms(u).map(t => ({ years: t.years, rate: t.rate, res: bankAmortization(u.bank_financing_amount, t.rate, t.years) })).filter(r => r.res);
+}
+// For the "Print for Client" sheet
+function bankFinPrintHtml(u){
+  const rows = bankFinRows(u);
+  if(!rows.length) return '';
+  return `<p class="eyebrow" style="margin-top:4px">Bank Financing · ${peso(u.bank_financing_amount)}</p>
+    <table class="bf"><tr><th>Term</th><th>Interest Rate</th><th>Monthly Amortization</th><th>Total Interest</th></tr>${rows.map(r => `<tr><td>${r.years} years</td><td>${r.rate}%</td><td>${peso(r.res.monthly)}</td><td>${peso(r.res.totalInterest)}</td></tr>`).join('')}</table>
+    <p class="foot" style="margin-top:-12px;border:0;padding:0">Estimates only, based on the interest rates shown. Final amortization depends on the bank's approval.</p>`;
+}
+// For the unit details popup (read-only)
+function bankFinDetailHtml(u){
+  const rows = bankFinRows(u);
+  if(!rows.length) return '';
+  return `<p class="text-gray-500 text-xs mb-1">Bank Financing · <span class="text-gray-800 font-semibold">${peso(u.bank_financing_amount)}</span></p>
+    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 mb-3 overflow-x-auto"><table class="w-full text-xs">
+      <thead><tr class="text-gray-500"><th class="text-left pb-1.5">Term</th><th class="text-left pb-1.5">Rate</th><th class="text-left pb-1.5">Monthly Amortization</th><th class="text-left pb-1.5">Total Interest</th></tr></thead>
+      <tbody>${rows.map(r => `<tr class="border-t border-gray-200"><td class="py-1.5">${r.years} years</td><td class="py-1.5">${r.rate}%</td><td class="py-1.5 text-orange-600 font-semibold">${peso(r.res.monthly)}</td><td class="py-1.5">${peso(r.res.totalInterest)}</td></tr>`).join('')}</tbody>
+    </table></div>
+    <p class="text-[11px] text-gray-400 -mt-2 mb-3">Estimates only, based on the rates shown. Final amortization depends on the bank's approval.</p>`;
+}
+
 // Sales value per calendar month, oldest -> newest, with empty months filled in as 0.
 // A sale's month is its reservation date when set (plain YYYY-MM-DD, parsed by parts), otherwise when it was recorded.
 function salesByMonth(rows){
@@ -1371,6 +1411,7 @@ window.viewUnitDetail = function(id){
       <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Monthly DP</p><p class="font-bold">${monthlyDP ? peso(monthlyDP) : '—'}</p></div>
       <div class="bg-gray-50 rounded-lg p-3 border border-gray-200"><p class="text-gray-500 text-xs mb-0.5">Downpayment Terms</p><p class="font-bold">${u.downpayment ? terms + ' months' : '—'}</p></div>
     </div>
+    ${bankFinDetailHtml(u)}
     <p class="text-gray-500 text-xs mb-1">Description</p>
     <p class="text-gray-700 text-sm mb-4">${u.description||'No description provided.'}</p>
     <button onclick="printUnitSheet('${u.id}')" class="w-full bg-gray-900 hover:bg-gray-800 text-white py-2.5 rounded-lg font-semibold text-sm transition-colors">🖨 Print for Client</button>
@@ -1411,6 +1452,9 @@ window.printUnitSheet = function(id){
       td { padding: 9px 0; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
       td:first-child { color: #6b7280; width: 40%; }
       td:last-child { font-weight: 600; }
+      table.bf th { text-align: left; font-size: 11px; color: #6b7280; font-weight: 600; padding: 6px 0; border-bottom: 1px solid #e5e7eb; }
+      table.bf td { width: auto; color: #111; font-weight: 400; }
+      table.bf td:nth-child(3) { font-weight: 700; color: #ea580c; }
       .desc { font-size: 13px; color: #374151; line-height: 1.6; white-space: pre-wrap; }
       .foot { margin-top: 30px; font-size: 11px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 12px; }
       @media print { body { padding: 20px; } }
@@ -1425,6 +1469,7 @@ window.printUnitSheet = function(id){
       <div class="price-row"><span>Full Downpayment</span><span>${u.downpayment ? peso(u.downpayment) : '—'}</span></div>
     </div>
     <table>${rows.map(([k,v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('')}</table>
+    ${bankFinPrintHtml(u)}
     ${u.description ? `<p class="desc">${u.description.replace(/</g,'&lt;')}</p>` : ''}
     <p class="foot">Printed ${new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'})} · Prices and availability subject to change.</p>
     <script>window.onload = () => window.print();<\/script>
