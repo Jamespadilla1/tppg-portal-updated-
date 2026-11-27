@@ -1687,6 +1687,8 @@ window.setCommissionReceived = async function(id, received){
 
 async function renderMyReceivables(){
   const list = document.getElementById('myReceivablesList');
+  // Remember which clients' dropdowns are open, so they stay open after the list refreshes (e.g. after clicking Yes)
+  const openSales = new Set([...list.querySelectorAll('details[open][data-sale]')].map(d => d.dataset.sale));
   try {
     const res = await fetch('/api/commission-receivables/mine', { headers: { 'Authorization': 'Bearer ' + token } });
     const receivables = await res.json();
@@ -1716,7 +1718,7 @@ async function renderMyReceivables(){
           <td class="py-1.5 text-xs">${r.proof_url ? `<a href="${promoEsc(r.proof_url)}" target="_blank" rel="noopener" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">📷 View</a>` : '<span class="text-gray-400">—</span>'}</td>
         </tr>`).join('');
       return `
-      <details class="border-b border-gray-200 ${cancelled ? 'bg-gray-50 grayscale' : ''}">
+      <details data-sale="${buyerId}" ${openSales.has(String(buyerId)) ? 'open' : ''} class="border-b border-gray-200 ${cancelled ? 'bg-gray-50 grayscale' : ''}">
         <summary class="flex items-center justify-between gap-4 px-5 py-3 cursor-pointer hover:bg-gray-50">
           <div class="min-w-0">
             <p class="text-sm font-medium truncate">${clientName}${cancelled ? ' <span class="badge badge-red">Cancelled</span>' : ''}</p>
