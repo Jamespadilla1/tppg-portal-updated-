@@ -494,7 +494,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
       <div id="quickReleaseModal" class="modal-backdrop">
         <div class="modal-box">
           <button onclick="closeModal('quickReleaseModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
-          <h3 class="font-bold text-lg mb-1" id="qrTitle">Add Release</h3>
+          <h3 class="font-bold text-lg mb-1" id="qrTitle">Add Expected Commission</h3>
           <p class="text-xs text-gray-500 mb-4" id="qrSubtitle"></p>
           <input type="hidden" id="qrBuyerId">
           <input type="hidden" id="qrPaymentTerm">
@@ -588,7 +588,7 @@ tr:hover td{background:rgba(0,0,0,.02)}
     <div id="monthlyReleaseModal" class="modal-backdrop">
       <div class="modal-box">
         <button onclick="closeModal('monthlyReleaseModal')" class="absolute top-4 right-5 text-gray-400 hover:text-white text-xl">&times;</button>
-        <h3 class="font-bold text-lg mb-1" id="mrTitle">Monthly Down Payment Releases</h3>
+        <h3 class="font-bold text-lg mb-1" id="mrTitle">Expected Monthly Commission</h3>
         <p class="text-xs text-gray-500 mb-4">Record how the developer is releasing commission for this Monthly Down Payment sale.</p>
         <input type="hidden" id="mrBuyerId">
         <div class="flex gap-2 mb-4" id="mrModePills">
@@ -814,10 +814,10 @@ tr:hover td{background:rgba(0,0,0,.02)}
 
         <!-- Release notifications -->
         <div class="card p-6 space-y-4">
-          <h3 class="font-semibold">Release Notifications</h3>
-          <p class="text-xs text-gray-500 -mt-2">Agents, team leaders, sales managers and unit managers get a heads-up on their Updates page (and the bell) this many days before a commission release, incentive or overriding commission is due.</p>
+          <h3 class="font-semibold">Commission Due Alerts</h3>
+          <p class="text-xs text-gray-500 -mt-2">You get an alert in the bell this many days before a seller's expected commission date, so you can remind the developer in time.</p>
           <div>
-            <label class="text-xs text-gray-400 mb-1 block">Notify this many days before a release</label>
+            <label class="text-xs text-gray-400 mb-1 block">Alert me this many days before the expected date</label>
             <input id="setReleaseNoticeDays" type="number" min="1" max="60" step="1" class="field" placeholder="e.g. 3">
           </div>
           <button onclick="saveReleaseNoticeDays()" class="w-full bg-orange-500 hover:bg-orange-400 py-2.5 rounded-lg text-sm font-semibold transition-colors">Save</button>
@@ -4661,12 +4661,14 @@ window.toggleAdminRepeatRows = function(btn, buyerId){
   tr.after(row);
 };
 
-// ── Admin bell: sales cancelled in the last 30 days, with the seller's reason ──
+function commTodayStr(){ const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+// ── Admin bell: (1) expected commissions coming due, (2) sales cancelled in the last 30 days, with the seller's reason ──
 // "Seen" is remembered in this browser (localStorage), per admin account.
 const ADMIN_NOTIF_DAYS = 30;
 function adminSeenKey(){ return 'adminSeenCancels:' + (localStorage.getItem('personId') || localStorage.getItem('name') || 'admin'); }
 function adminSeenIds(){ try { return new Set(JSON.parse(localStorage.getItem(adminSeenKey()) || '[]')); } catch(e){ return new Set(); } }
 let adminNotifCache = [];
+let adminDueCache = [];
 async function loadAdminNotifs(){
   const body = document.getElementById('adminNotifBody');
   try {
@@ -4676,6 +4678,25 @@ async function loadAdminNotifs(){
     const since = Date.now() - ADMIN_NOTIF_DAYS * 86400000;
     adminNotifCache = buyers.filter(b => b.cancelled && b.cancelled_at && new Date(b.cancelled_at).getTime() >= since)
       .sort((a,b) => new Date(b.cancelled_at) - new Date(a.cancelled_at));
+    // Expected commissions due within the next N days (N = Settings > Commission Due Alerts, default 3)
+    adminDueCache = [];
+    try {
+      const tk = { 'Authorization': 'Bearer ' + localStorage.getItem('token') };
+      const [rr, dr] = await Promise.all([ fetch('/api/commission-receivables?archived=false', { headers: tk }), fetch('/api/inactivity/release-notice-days', { headers: tk }) ]);
+      let days = 3;
+      if(dr.ok){ const dj = await dr.json(); if(Number(dj.release_notice_days) > 0) days = Number(dj.release_notice_days); }
+      if(rr.ok){
+        const recs = await rr.json();
+        const byId = new Map(buyers.map(b => [b.id, b]));
+        const dayNum = s => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s)); return m ? Date.UTC(+m[1], +m[2]-1, +m[3]) / 86400000 : NaN; };
+        const todayN = dayNum(commTodayStr());
+        adminDueCache = recs.filter(r => {
+          const b = byId.get(r.buyer_id); const n = dayNum(r.release_date) - todayN;
+          return b && !b.cancelled && !r.received && n >= 0 && n <= days;
+        }).map(r => ({ key: 'due:' + r.id + ':' + String(r.release_date).slice(0,10), r, buyer: byId.get(r.buyer_id), left: dayNum(r.release_date) - todayN }))
+          .sort((a,b) => a.left - b.left);
+      }
+    } catch(e){ console.error('Error loading due commissions:', e); }
   } catch(err){
     console.error('Error loading notifications:', err);
     body.innerHTML = '<p class="px-4 py-5 text-center text-xs text-red-400">Couldn\'t load notifications.</p>';
@@ -4685,17 +4706,23 @@ async function loadAdminNotifs(){
 }
 function renderAdminNotifs(){
   const seen = adminSeenIds();
-  const unseen = adminNotifCache.filter(b => !seen.has(b.id)).length;
+  const unseen = adminNotifCache.filter(b => !seen.has(b.id)).length + adminDueCache.filter(d => !seen.has(d.key)).length;
   const cnt = document.getElementById('adminBellCount');
   cnt.textContent = unseen;
   cnt.classList.toggle('hidden', unseen === 0);
   const ROLE = { agent:'Agent', team_leader:'Team Leader', sales_manager:'Sales Manager', unit_manager:'Unit Manager' };
-  document.getElementById('adminNotifBody').innerHTML = adminNotifCache.map(b => `
+  const dueHtml = adminDueCache.map(d => `
+    <div class="px-4 py-3 border-b border-white/6 text-xs">
+      <div class="flex items-center gap-2 mb-1">${seen.has(d.key) ? '' : '<span class="badge bg-yellow">New</span>'}<span class="badge bg-blue">💰 Commission due ${d.left === 0 ? 'today' : 'in ' + d.left + ' day' + (d.left === 1 ? '' : 's')}</span><span class="text-gray-500 ml-auto">${new Date(String(d.r.release_date).slice(0,10) + 'T00:00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric'})}</span></div>
+      <p class="text-gray-200"><b>${promoEsc(d.buyer.name)}</b> — ${peso(d.r.amount)} expected for ${promoEsc(d.buyer.input_by_name || 'the seller')}</p>
+      <p class="text-gray-400 mt-0.5">Remind the developer to release this commission.</p>
+    </div>`).join('');
+  document.getElementById('adminNotifBody').innerHTML = dueHtml + adminNotifCache.map(b => `
     <div class="px-4 py-3 border-b border-white/6 text-xs">
       <div class="flex items-center gap-2 mb-1">${seen.has(b.id) ? '' : '<span class="badge bg-yellow">New</span>'}<span class="badge bg-red">Sale cancelled</span><span class="text-gray-500 ml-auto">${new Date(b.cancelled_at).toLocaleDateString('en-PH',{month:'short',day:'numeric'})}</span></div>
       <p class="text-gray-200"><b>${promoEsc(b.name)}</b> — cancelled by ${promoEsc(b.input_by_name || 'the seller')} (${ROLE[b.input_by_role] || '—'})</p>
       <p class="text-gray-400 italic mt-0.5">“${promoEsc(b.cancel_reason || 'No reason given')}”</p>
-    </div>`).join('') || `<p class="px-4 py-5 text-center text-xs text-gray-500">No cancelled sales in the last ${ADMIN_NOTIF_DAYS} days.</p>`;
+    </div>`).join('') || (dueHtml ? '' : `<p class="px-4 py-5 text-center text-xs text-gray-500">Nothing new: no commissions due soon and no cancelled sales in the last ${ADMIN_NOTIF_DAYS} days.</p>`);
 }
 window.toggleAdminNotif = function(e){
   e.stopPropagation();
@@ -4704,7 +4731,7 @@ window.toggleAdminNotif = function(e){
   panel.classList.toggle('hidden');
   if(opening){
     renderAdminNotifs(); // still shows "New" on this opening
-    try { localStorage.setItem(adminSeenKey(), JSON.stringify(adminNotifCache.map(b => b.id))); } catch(err){}
+    try { localStorage.setItem(adminSeenKey(), JSON.stringify(adminNotifCache.map(b => b.id).concat(adminDueCache.map(d => d.key)))); } catch(err){}
     document.getElementById('adminBellCount').classList.add('hidden');
   }
 };
@@ -4794,9 +4821,9 @@ window.openCommClientRecords = async (role, id, name) => {
     const isQuickRelease = COMM_RELEASE_TERMS.includes(b.payment_option);
     let releaseBtn = '';
     if(isMonthlyDP){
-      releaseBtn = `<button onclick="openMonthlyRelease('${b.id}','${b.name.replace(/'/g,"\\'")}')" class="text-[11px] px-2.5 py-1 rounded-md bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-colors">Add Monthly Releases</button>`;
+      releaseBtn = `<button onclick="openMonthlyRelease('${b.id}','${b.name.replace(/'/g,"\\'")}')" class="text-[11px] px-2.5 py-1 rounded-md bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-colors">Add Expected Monthly Commission</button>`;
     } else if(isQuickRelease){
-      releaseBtn = `<button onclick="openQuickRelease('${b.id}','${b.name.replace(/'/g,"\\'")}','${b.payment_option}')" class="text-[11px] px-2.5 py-1 rounded-md bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-colors">Add Release</button>`;
+      releaseBtn = `<button onclick="openQuickRelease('${b.id}','${b.name.replace(/'/g,"\\'")}','${b.payment_option}')" class="text-[11px] px-2.5 py-1 rounded-md bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-colors">Add Expected Commission</button>`;
     }
     const releases = allReceivablesCache.filter(r=>r.buyer_id===b.id).sort((a,b2)=>new Date(a.release_date)-new Date(b2.release_date));
     const releasesTotal = releases.reduce((s,r)=>s+(Number(r.amount)||0),0);
@@ -4822,12 +4849,13 @@ window.openCommClientRecords = async (role, id, name) => {
         </div>` : ''}
         ${releases.length ? `
         <div class="mt-3 pt-3 border-t border-white/8">
-          <p class="text-[11px] text-gray-500 uppercase tracking-wide mb-1.5">Recorded Releases (${releases.length}) · Total: ${peso(releasesTotal)}</p>
+          <p class="text-[11px] text-gray-500 uppercase tracking-wide mb-1.5">Expected Commission Schedule (${releases.length}) · Total: ${peso(releasesTotal)}</p>
           <div class="space-y-1.5 max-h-40 overflow-y-auto">
             ${releases.map(r=>`
               <div class="flex justify-between gap-3 text-xs">
                 <span class="text-gray-400">${new Date(r.release_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})} <span class="text-gray-600">· ${r.release_type}${r.percent ? ' · '+promoEsc(r.percent) : ''}</span>${r.notes ? `<span class="block text-gray-500 italic">“${promoEsc(r.notes)}”</span>` : ''}</span>
                 <span class="flex items-center gap-2.5 shrink-0">
+                  ${r.received ? '<span class="badge bg-green" title="Confirmed by the seller">✓ Seller received</span>' : (String(r.release_date).slice(0,10) <= commTodayStr() ? '<span class="badge bg-yellow">Awaiting seller</span>' : '')}
                   <button onclick="openReleaseProof('${r.id}')" class="${r.proof_url ? 'text-blue-400 hover:text-blue-300' : 'text-gray-500 hover:text-orange-400'} hover:underline" title="${r.proof_url ? 'View or replace the paycheck photo' : 'Add a photo of the paycheck'}">${r.proof_url ? '📷 Paycheck' : '+ Paycheck photo'}</button>
                   <span class="text-green-400 font-medium">${peso(r.amount)}</span>
                 </span>
@@ -4966,7 +4994,7 @@ window.removeReleaseProof = async () => {
 window.openQuickRelease = (buyerId, clientName, paymentTerm) => {
   document.getElementById('qrBuyerId').value = buyerId;
   document.getElementById('qrPaymentTerm').value = paymentTerm;
-  document.getElementById('qrTitle').textContent = `Add Release — ${clientName}`;
+  document.getElementById('qrTitle').textContent = `Add Expected Commission — ${clientName}`;
   document.getElementById('qrSubtitle').textContent = `Payment Terms: ${paymentTerm}`;
   document.getElementById('qrDate').value = '';
   document.getElementById('qrAmount').value = '';
@@ -4999,7 +5027,7 @@ window.saveQuickRelease = async () => {
     const proofFile = document.getElementById('qrProof').files[0];
     if(proofFile && created && created.id){
       const err = await uploadReleaseProof(created.id, proofFile);
-      if(err) alert('The release was saved, but the paycheck photo was not: ' + err + ' You can add it from Recorded Releases.');
+      if(err) alert('The release was saved, but the paycheck photo was not: ' + err + ' You can add it from the Expected Commission Schedule.');
     }
     closeModal('quickReleaseModal');
     closeModal('commClientsModal');
@@ -5385,7 +5413,7 @@ let mrRowCount = 0;
 
 window.openMonthlyRelease = (buyerId, clientName) => {
   document.getElementById('mrBuyerId').value = buyerId;
-  document.getElementById('mrTitle').textContent = `Monthly Down Payment Releases — ${clientName}`;
+  document.getElementById('mrTitle').textContent = `Expected Monthly Commission — ${clientName}`;
   document.getElementById('mrMonthlyAmount').value = '';
   document.getElementById('mrMonths').value = '';
   document.getElementById('mrStartDate').value = '';
@@ -6452,4 +6480,4 @@ fillBankFin('u', null); // Add Unit form starts with the 25 / 15 / 10 / 5 year t
 })();
 </script>
 </body>
-</html>
+</html>

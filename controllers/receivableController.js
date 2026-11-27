@@ -80,7 +80,7 @@ const updateReceivable = async (req, res) => {
     const { developer_id, buyer_id, amount, release_date, release_type, monthly_amount, tranche_months, notes, percent } = req.body;
     const { data, error } = await supabase
       .from('commission_receivables')
-      .update({ developer_id, buyer_id, amount, release_date, release_type, monthly_amount: monthly_amount || null, tranche_months: tranche_months || null, notes: notes || null })
+      .update({ developer_id, buyer_id, amount, release_date, release_type, monthly_amount: monthly_amount || null, tranche_months: tranche_months || null, notes: notes || null, percent: percent ? String(percent).trim().slice(0, 20) : null })
       .eq('id', req.params.id)
       .select()
       .single();
@@ -160,4 +160,35 @@ const setReceivableProof = async (req, res) => {
   }
 };
 
-module.exports = { getReceivables, getMyReceivables, createReceivable, updateReceivable, deleteReceivable, restoreReceivable, permanentlyDeleteReceivable, setReceivableProof };
+// PATCH /api/commission-receivables/:id/received — the SELLER (not admin) confirms whether they received
+// this expected commission. Body { received: true|false }. Only allowed once the date has arrived.
+const setReceivableReceived = async (req, res) => {
+  try {
+    const { id: userId, role } = req.user;
+    if (role === 'admin') return res.status(403).json({ message: 'Only the seller can confirm receipt.' });
+    const { data: rec, error: recErr } = await supabase.from('commission_receivables').select('id, buyer_id, release_date').eq('id', req.params.id).maybeSingle();
+    if (recErr) throw recErr;
+    if (!rec) return res.status(404).json({ message: 'Commission record not found.' });
+    const { data: buyer, error: buyerErr } = await supabase.from('buyers').select('id, input_by_id, input_by_role, cancelled').eq('id', rec.buyer_id).maybeSingle();
+    if (buyerErr) throw buyerErr;
+    if (!buyer || buyer.input_by_id !== userId || buyer.input_by_role !== role) {
+      return res.status(403).json({ message: 'You can only confirm commission for your own sales.' });
+    }
+    if (buyer.cancelled) return res.status(400).json({ message: 'This sale was cancelled.' });
+    const received = req.body.received !== false && req.body.received !== 'false';
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+    if (received && String(rec.release_date).slice(0, 10) > today) {
+      return res.status(400).json({ message: 'This commission is not due yet.' });
+    }
+    const { error } = await supabase.from('commission_receivables')
+      .update(received ? { received: true, received_at: new Date() } : { received: false, received_at: null })
+      .eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ message: received ? 'Marked as received.' : 'Marked as not received.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+};
+
+module.exports = { getReceivables, getMyReceivables, createReceivable, updateReceivable, deleteReceivable, restoreReceivable, permanentlyDeleteReceivable, setReceivableProof, setReceivableReceived };

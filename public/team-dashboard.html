@@ -281,7 +281,7 @@
         </table></div>
       </div>
       <div class="card overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200"><h3 class="font-semibold">My Commission Releases</h3><p class="text-xs text-gray-500 mt-0.5">Commission payouts recorded by Admin for sales you made.</p></div>
+        <div class="px-6 py-4 border-b border-gray-200"><h3 class="font-semibold">My Expected Commission</h3><p class="text-xs text-gray-500 mt-0.5">Commission expected from the developer for sales you made. When the date arrives, confirm whether you received it.</p></div>
         <div id="myReceivablesList"></div>
       </div>
     </div>
@@ -1668,6 +1668,23 @@ function fmtReleaseDate(s){
   return `${mon[+m[2]-1]} ${+m[3]}, ${m[1]}`;
 }
 
+// Seller confirms whether an expected commission has arrived (only once its date has come)
+function receivedCellHtml(r, cancelled){
+  if(cancelled) return '<span class="text-gray-400">—</span>';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(r.release_date));
+  const d = new Date(); const today = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  if(r.received) return `<span class="badge badge-green">✓ Received</span> <button onclick="setCommissionReceived('${r.id}', false)" class="text-[11px] text-gray-500 hover:underline">Undo</button>`;
+  if(m && String(r.release_date).slice(0,10) > today) return '<span class="text-gray-400">Not due yet</span>';
+  return `<span class="text-gray-600">Did you receive it?</span> <button onclick="setCommissionReceived('${r.id}', true)" class="text-[11px] px-2 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 font-medium">Yes</button>`;
+}
+window.setCommissionReceived = async function(id, received){
+  try {
+    const res = await fetch(`/api/commission-receivables/${id}/received`, { method:'PATCH', headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body: JSON.stringify({ received }) });
+    if(!res.ok){ const err = await res.json().catch(()=>({})); alert(err.message || 'Could not update. Please try again.'); return; }
+    renderMyReceivables();
+  } catch(e){ alert('Could not update. Please try again.'); }
+};
+
 async function renderMyReceivables(){
   const list = document.getElementById('myReceivablesList');
   try {
@@ -1695,6 +1712,7 @@ async function renderMyReceivables(){
           <td class="py-1.5 pr-4 text-xs text-orange-600 font-semibold">${peso(r.amount)}</td>
           <td class="py-1.5 pr-4 text-xs">${r.release_type || '—'}</td>
           <td class="py-1.5 pr-4 text-xs text-gray-500">${r.notes || '—'}</td>
+          <td class="py-1.5 pr-4 text-xs">${receivedCellHtml(r, cancelled)}</td>
           <td class="py-1.5 text-xs">${r.proof_url ? `<a href="${promoEsc(r.proof_url)}" target="_blank" rel="noopener" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">📷 View</a>` : '<span class="text-gray-400">—</span>'}</td>
         </tr>`).join('');
       return `
@@ -1705,20 +1723,20 @@ async function renderMyReceivables(){
             <p class="text-xs text-gray-500 truncate">${saleLabel}</p>
           </div>
           <div class="flex items-center gap-4 shrink-0">
-            <span class="text-xs text-gray-500">${rows.length} release${rows.length === 1 ? '' : 's'}</span>
+            <span class="text-xs text-gray-500">${rows.length} expected payment${rows.length === 1 ? '' : 's'}</span>
             <span class="text-sm font-semibold text-orange-600">${peso(total)}</span>
             <span class="rel-chev text-gray-400 text-[10px]">&#9660;</span>
           </div>
         </summary>
         <div class="px-5 pb-3 overflow-x-auto">
           <table class="w-full">
-            <thead><tr class="text-gray-400 text-[11px] uppercase"><th class="text-left font-medium pb-1 pr-4">Release Date</th><th class="text-left font-medium pb-1 pr-4">Amount</th><th class="text-left font-medium pb-1 pr-4">Type</th><th class="text-left font-medium pb-1 pr-4">Notes</th><th class="text-left font-medium pb-1">Paycheck</th></tr></thead>
+            <thead><tr class="text-gray-400 text-[11px] uppercase"><th class="text-left font-medium pb-1 pr-4">Release Date</th><th class="text-left font-medium pb-1 pr-4">Amount</th><th class="text-left font-medium pb-1 pr-4">Type</th><th class="text-left font-medium pb-1 pr-4">Notes</th><th class="text-left font-medium pb-1 pr-4">Received?</th><th class="text-left font-medium pb-1">Paycheck</th></tr></thead>
             <tbody>${rowsHtml}</tbody>
           </table>
         </div>
       </details>`;
     });
-    list.innerHTML = cards.join('') || `<p class="px-5 py-5 text-center text-gray-400 text-xs">No commission releases recorded yet.</p>`;
+    list.innerHTML = cards.join('') || `<p class="px-5 py-5 text-center text-gray-400 text-xs">No expected commission recorded yet.</p>`;
   } catch(err) {
     console.error('Error loading my receivables:', err);
   }
@@ -2127,4 +2145,4 @@ function renderProfile(){
 })();
 </script>
 </body>
-</html>
+</html>

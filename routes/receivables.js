@@ -2,7 +2,7 @@ const express = require('express');
 const router  = express.Router();
 const { protect, adminOnly } = require('../middleware/auth');
 const multer  = require('multer');
-const { getReceivables, getMyReceivables, createReceivable, updateReceivable, deleteReceivable, restoreReceivable, permanentlyDeleteReceivable, setReceivableProof } = require('../controllers/receivableController');
+const { getReceivables, getMyReceivables, createReceivable, updateReceivable, deleteReceivable, restoreReceivable, permanentlyDeleteReceivable, setReceivableProof, setReceivableReceived } = require('../controllers/receivableController');
 
 // Paycheck photo uploads: memory storage, files go straight to Supabase Storage
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -19,6 +19,7 @@ router.put('/:id',    protect, adminOnly, updateReceivable);
 router.delete('/:id', protect, adminOnly, deleteReceivable);
 router.patch('/:id/restore', protect, adminOnly, restoreReceivable);
 router.delete('/:id/permanent', protect, adminOnly, permanentlyDeleteReceivable);
+router.patch('/:id/received', protect, setReceivableReceived);
 router.patch('/:id/proof', protect, adminOnly, proofUpload, setReceivableProof);
 
 module.exports = router;
