@@ -4858,12 +4858,12 @@ window.openCommClientRecords = async (role, id, name) => {
         <div class="mt-3 pt-3 border-t border-white/8">
           <p class="text-[11px] text-gray-500 uppercase tracking-wide mb-1.5">Expected Commission Schedule (${releases.length}) · Total: ${peso(releasesTotal)}</p>
           <div class="space-y-1.5 max-h-40 overflow-y-auto">
-            ${releases.map(r=>`
+            ${releases.map((r,ri)=>`
               <div class="flex justify-between gap-3 text-xs">
                 <span class="text-gray-400">${new Date(r.release_date).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})} <span class="text-gray-600">· ${r.release_type}${r.percent ? ' · '+promoEsc(r.percent) : ''}</span>${r.notes ? `<span class="block text-gray-500 italic">“${promoEsc(r.notes)}”</span>` : ''}</span>
                 <span class="flex items-center gap-2.5 shrink-0">
                   ${r.received ? '<span class="badge bg-green" title="Confirmed by the seller">✓ Seller received</span>' : (String(r.release_date).slice(0,10) <= commTodayStr() ? '<span class="badge bg-yellow">Awaiting seller</span>' : '')}
-                  <button onclick="openReleaseProof('${r.id}')" class="${r.proof_url ? 'text-blue-400 hover:text-blue-300' : 'text-gray-500 hover:text-orange-400'} hover:underline" title="${r.proof_url ? 'View or replace the paycheck photo' : 'Add a photo of the paycheck'}">${r.proof_url ? '📷 Paycheck' : '+ Paycheck photo'}</button>
+                  ${(()=>{ const mon = releases.filter(x=>x.release_type==='Monthly Down Payment'); if(r.release_type==='Monthly Down Payment' && mon.length>1){ const anchor = mon.find(x=>x.proof_url) || mon[0]; if(anchor.id!==r.id) return ''; return `<button onclick="openReleaseProof('${r.id}')" class="${r.proof_url ? 'text-blue-400 hover:text-blue-300' : 'text-gray-500 hover:text-orange-400'} hover:underline" title="${r.proof_url ? 'View or replace the paycheck photo' : 'Add a photo of the paycheck'}">${r.proof_url ? '📷 Paycheck (all months)' : '+ Paycheck photo (all months)'}</button>`; } return `<button onclick="openReleaseProof('${r.id}')" class="${r.proof_url ? 'text-blue-400 hover:text-blue-300' : 'text-gray-500 hover:text-orange-400'} hover:underline" title="${r.proof_url ? 'View or replace the paycheck photo' : 'Add a photo of the paycheck'}">${r.proof_url ? '📷 Paycheck' : '+ Paycheck photo'}</button>`; })()}
                   <span class="text-green-400 font-medium">${peso(r.amount)}</span>
                 </span>
               </div>

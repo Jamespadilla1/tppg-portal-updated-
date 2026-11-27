@@ -1595,14 +1595,27 @@ async function renderMyReceivables(){
       const clientName = buyer ? buyer.name : 'Archived client';
       const saleLabel = buyer ? salePropertyLabel(buyer) : '—';
       const cancelled = buyer && buyer.cancelled;
-      const rowsHtml = rows.map(r => `
+      // One paycheck covers a whole monthly tranche, so it is shown once (merged cell) instead of on every month.
+      const isMonthly = r => r.release_type === 'Monthly Down Payment';
+      const monthlyIdx = rows.map((r, i) => isMonthly(r) ? i : -1).filter(i => i >= 0);
+      const monthlyProofRow = rows.find(r => isMonthly(r) && r.proof_url);
+      const monthlyProof = monthlyProofRow ? monthlyProofRow.proof_url : '';
+      const monthlyContiguous = monthlyIdx.length > 1 && monthlyIdx[monthlyIdx.length - 1] - monthlyIdx[0] === monthlyIdx.length - 1;
+      const proofLink = url => url ? `<a href="${promoEsc(url)}" target="_blank" rel="noopener" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">📷 View</a>` : '<span class="text-gray-400">—</span>';
+      const proofCell = (r, i) => {
+        if(!isMonthly(r) || monthlyIdx.length < 2) return `<td class="py-1.5 text-xs">${proofLink(r.proof_url)}</td>`;
+        if(!monthlyContiguous) return `<td class="py-1.5 text-xs">${proofLink(monthlyProof)}</td>`;
+        if(i !== monthlyIdx[0]) return '';
+        return `<td class="py-1.5 text-xs align-middle border-l border-gray-200 pl-4" rowspan="${monthlyIdx.length}">${monthlyProof ? proofLink(monthlyProof) + '<p class="text-[10px] text-gray-500 mt-0.5">covers all ${monthlyIdx.length} months</p>' : '<span class="text-gray-400">—</span>'}</td>`;
+      };
+      const rowsHtml = rows.map((r, i) => `
         <tr>
           <td class="py-1.5 pr-4 text-xs text-gray-500">${fmtReleaseDate(r.release_date)}</td>
           <td class="py-1.5 pr-4 text-xs text-orange-600 font-semibold">${peso(r.amount)}</td>
           <td class="py-1.5 pr-4 text-xs">${r.release_type || '—'}</td>
           <td class="py-1.5 pr-4 text-xs text-gray-500">${r.notes || '—'}</td>
           <td class="py-1.5 pr-4 text-xs">${receivedCellHtml(r, cancelled)}</td>
-          <td class="py-1.5 text-xs">${r.proof_url ? `<a href="${promoEsc(r.proof_url)}" target="_blank" rel="noopener" class="text-blue-600 hover:text-blue-700 hover:underline font-medium">📷 View</a>` : '<span class="text-gray-400">—</span>'}</td>
+          ${proofCell(r, i)}
         </tr>`).join('');
       return `
       <details data-sale="${buyerId}" ${openSales.has(String(buyerId)) ? 'open' : ''} class="border-b border-gray-200 ${cancelled ? 'bg-gray-50 grayscale' : ''}">
